@@ -8,24 +8,64 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111827;line-height:1.6}
-.kentsel-surec{padding:55px 16px;background:#f3f4f6;text-align:center}
-.kentsel-surec .container{max-width:1200px;margin:auto}
-.kentsel-surec h1{font-size:38px;margin-bottom:10px;color:#111827}
-.kentsel-surec .aciklama{max-width:850px;margin:0 auto 28px;color:#374151;font-size:18px}
-.slider-box{position:relative;max-width:1200px;margin:auto;border-radius:18px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.28);background:#111}
-.slider-box img{width:100%;height:650px;object-fit:cover;display:block}
-.slider-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:58px;height:78px;border:0;border-radius:10px;background:rgba(0,0,0,.55);color:#fff;font-size:52px;cursor:pointer;line-height:1}
+.kentsel-surec{padding:45px 14px;background:#f3f4f6;text-align:center}
+.kentsel-surec .container{max-width:1050px;margin:auto}
+.kentsel-surec h1{font-size:34px;margin-bottom:8px;color:#111827}
+.kentsel-surec .aciklama{max-width:760px;margin:0 auto 24px;color:#374151;font-size:17px}
+
+/* RESİMLER FARKLI BOYUTTA OLSA DA AYNI KUTUYA OTURUR */
+.slider-box{
+  position:relative;
+  max-width:850px;
+  height:520px;
+  margin:0 auto;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 12px 32px rgba(0,0,0,.22);
+  background:#ffffff;
+}
+.slider-box img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+  background:#ffffff;
+}
+.slider-btn{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:3;
+  width:48px;
+  height:58px;
+  border:0;
+  border-radius:10px;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+  font-size:42px;
+  cursor:pointer;
+  line-height:1;
+}
 .slider-btn:hover{background:rgba(0,0,0,.75)}
-.prev{left:16px}.next{right:16px}
-.slide-info{position:absolute;left:0;right:0;bottom:0;padding:18px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:white;text-align:left}
-.slide-info strong{font-size:24px;display:block}.slide-info span{font-size:15px;opacity:.95}
-.dots{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+.prev{left:12px}.next{right:12px}
+.slide-info{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:14px 18px;
+  background:linear-gradient(transparent,rgba(0,0,0,.78));
+  color:white;
+  text-align:left;
+}
+.slide-info strong{font-size:21px;display:block}.slide-info span{font-size:14px;opacity:.95}
+.dots{display:flex;justify-content:center;gap:8px;margin-top:16px;flex-wrap:wrap}
 .dot{width:12px;height:12px;border-radius:50%;background:#9ca3af;border:0;cursor:pointer}.dot.active{background:#111827;transform:scale(1.25)}
-.surec-adimlar{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;text-align:left}
-.adim{background:white;border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.08);font-weight:700;color:#111827}
-.adim span{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#111827;color:white;margin-right:8px;font-size:14px}
-@media(max-width:900px){.slider-box img{height:470px}.surec-adimlar{grid-template-columns:repeat(2,1fr)}.kentsel-surec h1{font-size:30px}}
-@media(max-width:600px){.kentsel-surec{padding:35px 10px}.slider-box img{height:340px}.slider-btn{width:42px;height:60px;font-size:36px}.prev{left:8px}.next{right:8px}.slide-info strong{font-size:19px}.surec-adimlar{grid-template-columns:1fr}.kentsel-surec .aciklama{font-size:16px}}
+.surec-adimlar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px;text-align:left}
+.adim{background:white;border-radius:14px;padding:14px;box-shadow:0 6px 16px rgba(0,0,0,.08);font-weight:700;color:#111827;font-size:15px}
+.adim span{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#111827;color:white;margin-right:8px;font-size:13px}
+@media(max-width:900px){.slider-box{max-width:760px;height:460px}.surec-adimlar{grid-template-columns:repeat(2,1fr)}.kentsel-surec h1{font-size:29px}}
+@media(max-width:600px){.kentsel-surec{padding:32px 10px}.slider-box{width:100%;height:300px;border-radius:14px}.slider-btn{width:38px;height:50px;font-size:32px}.prev{left:7px}.next{right:7px}.slide-info{padding:12px}.slide-info strong{font-size:17px}.slide-info span{font-size:13px}.surec-adimlar{grid-template-columns:1fr}.kentsel-surec .aciklama{font-size:15px}}
 </style>
 </head>
 <body>
