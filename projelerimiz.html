@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projelerimiz | Kentseldönüşüm.com.tr</title>
+<meta name="description" content="Tamamlanan proje örnekleri, proje tasarımları ve devam eden kaba inşaat projeleri.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#111827;line-height:1.6}
+a{text-decoration:none;color:inherit}
+.header{background:#061b33;color:white;position:sticky;top:0;z-index:1000;box-shadow:0 4px 15px rgba(0,0,0,.18)}
+.nav{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:16px 20px;gap:20px}
+.brand{font-size:22px;font-weight:800;letter-spacing:.5px;color:white;white-space:nowrap}
+.menu{display:flex;gap:22px;align-items:center;font-size:14px;flex-wrap:wrap}
+.menu a{color:white;opacity:.92}.menu a:hover,.menu a.active{color:#f6b01a;opacity:1}
+.hero{background:linear-gradient(135deg,#071f3c,#0c315b);color:white;text-align:center;padding:60px 20px}
+.hero h1{font-size:42px;margin-bottom:12px}.hero p{font-size:18px;max-width:780px;margin:auto;color:#dbeafe}
+.section{padding:45px 15px 65px}.wrap{max-width:1120px;margin:auto}.section-title{text-align:center;margin:30px 0 22px}.section-title h2{font-size:32px;color:#061b33;margin-bottom:6px}.section-title p{color:#4b5563;font-size:16px}
+.gallery{background:white;border-radius:18px;padding:16px;box-shadow:0 10px 28px rgba(0,0,0,.10);margin-bottom:45px}
+.gallery-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}.counter{font-weight:700;color:#061b33;background:#eef3f8;padding:8px 14px;border-radius:20px}.hint{font-size:14px;color:#6b7280}
+.stage{position:relative;background:#eef2f7;border-radius:14px;overflow:hidden;height:650px;display:flex;align-items:center;justify-content:center;touch-action:pan-y}
+.stage img{width:100%;height:100%;object-fit:contain;display:block;cursor:pointer;background:#eef2f7}
+.navbtn{position:absolute;top:50%;transform:translateY(-50%);width:54px;height:54px;border:none;border-radius:50%;background:rgba(6,27,51,.88);color:white;font-size:32px;cursor:pointer;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.navbtn:hover{background:#f6b01a;color:#061b33}.prev{left:12px}.next{right:12px}
+.dots{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:14px}.dot{width:9px;height:9px;border-radius:50%;border:none;background:#cbd5e1;cursor:pointer}.dot.active{background:#f6b01a;transform:scale(1.35)}
+.cta{background:#061b33;color:white;text-align:center;padding:50px 20px}.cta h2{font-size:30px;margin-bottom:10px}.phone{color:#f6b01a;font-size:28px;font-weight:800;margin-top:10px;display:inline-block}.footer{background:#031020;color:#cbd5e1;text-align:center;padding:22px;font-size:14px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:9999;padding:18px}.lightbox.active{display:flex}.lightbox img{max-width:96vw;max-height:92vh;object-fit:contain;border-radius:10px}.close{position:absolute;top:18px;right:24px;background:white;color:#111;border:none;border-radius:50%;width:42px;height:42px;font-size:28px;cursor:pointer}
+@media(max-width:820px){.nav{flex-direction:column}.menu{justify-content:center;gap:14px}.hero h1{font-size:30px}.hero{padding:42px 15px}.section-title h2{font-size:26px}.gallery{padding:10px}.stage{height:420px}.navbtn{display:none}.hint{display:none}}
+@media(max-width:520px){.stage{height:330px}.brand{font-size:18px}.menu{font-size:13px}.section{padding:32px 10px 45px}.gallery{border-radius:12px}.stage{border-radius:10px}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="nav">
+    <a class="brand" href="index.html">KENTSELDÖNÜŞÜM.COM.TR</a>
+    <nav class="menu">
+      <a href="index.html">Ana Sayfa</a>
+      <a href="kurumsal.html">Kurumsal</a>
+      <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
+      <a class="active" href="projelerimiz.html">Projelerimiz</a>
+      <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
+      <a href="iletisim.html">İletişim</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Projelerimiz</h1>
+  <p>Tamamlanan projeler, örnek tasarımlar ve devam eden kaba inşaat çalışmalarımız.</p>
+</section>
+
+<section class="section">
+  <div class="wrap">
+
+    <div class="section-title">
+      <h2>Tamamlanan Proje Örnekleri</h2>
+      <p>Teslim edilmiş ve tamamlanmış modern yapı örnekleri.</p>
+    </div>
+    <div class="gallery" data-total="18" data-prefix="tamam." data-ext="jpg" data-title="Tamamlanan Proje">
+      <div class="gallery-top"><div class="counter">1 / 18</div><div class="hint">Telefonda parmakla kaydırın, görsele tıklayınca büyür</div></div>
+      <div class="stage"><button class="navbtn prev">‹</button><img alt="Tamamlanan Proje"><button class="navbtn next">›</button></div>
+      <div class="dots"></div>
+    </div>
+
+    <div class="section-title">
+      <h2>Proje Tasarım Örnekleri</h2>
+      <p>Farklı konut ve site konseptleri için hazırlanmış örnek proje görselleri.</p>
+    </div>
+    <div class="gallery" data-total="30" data-prefix="proje." data-ext="png" data-title="Proje Tasarımı">
+      <div class="gallery-top"><div class="counter">1 / 30</div><div class="hint">Telefonda parmakla kaydırın, görsele tıklayınca büyür</div></div>
+      <div class="stage"><button class="navbtn prev">‹</button><img alt="Proje Tasarımı"><button class="navbtn next">›</button></div>
+      <div class="dots"></div>
+    </div>
+
+    <div class="section-title">
+      <h2>Devam Eden Projeler</h2>
+      <p>Kaba inşaat, temel ve şantiye aşamasındaki proje çalışmalarımız.</p>
+    </div>
+    <div class="gallery" data-total="7" data-prefix="kaba." data-ext="png" data-title="Devam Eden Proje">
+      <div class="gallery-top"><div class="counter">1 / 7</div><div class="hint">Telefonda parmakla kaydırın, görsele tıklayınca büyür</div></div>
+      <div class="stage"><button class="navbtn prev">‹</button><img alt="Devam Eden Proje"><button class="navbtn next">›</button></div>
+      <div class="dots"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="cta" id="iletisim">
+  <h2>Binanız İçin Kentsel Dönüşüm Teklifi Alın</h2>
+  <p>Uzman çözüm ortaklarımızla güvenli dönüşüm süreci.</p>
+  <a class="phone" href="tel:05431813485">0543 181 34 85</a>
+</section>
+<footer class="footer">© 2026 Kentseldönüşüm.com.tr | Tüm Hakları Saklıdır</footer>
+
+<div class="lightbox" id="lightbox"><button class="close" id="close">×</button><img id="lightboxImg" src="" alt="Proje görseli"></div>
+
+<script>
+const lightbox=document.getElementById('lightbox');
+const lightboxImg=document.getElementById('lightboxImg');
+function openLightbox(src){lightboxImg.src=src;lightbox.classList.add('active')}
+document.getElementById('close').onclick=()=>lightbox.classList.remove('active');
+lightbox.onclick=e=>{if(e.target===lightbox)lightbox.classList.remove('active')};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')lightbox.classList.remove('active')});
+
+document.querySelectorAll('.gallery').forEach(gallery=>{
+  const total=Number(gallery.dataset.total);
+  const prefix=gallery.dataset.prefix;
+  const ext=gallery.dataset.ext;
+  const title=gallery.dataset.title;
+  const img=gallery.querySelector('.stage img');
+  const counter=gallery.querySelector('.counter');
+  const dots=gallery.querySelector('.dots');
+  let aktif=1;
+  let startX=0;
+  let startY=0;
+  let isTouch=false;
+
+  function file(i){return prefix+i+'.'+ext}
+  function preload(i){const p=new Image();p.src=file(i)}
+
+  for(let i=1;i<=total;i++){
+    const dot=document.createElement('button');
+    dot.className='dot';
+    dot.onclick=()=>go(i);
+    dots.appendChild(dot);
+  }
+
+  function update(){
+    const src=file(aktif);
+    img.src=src;
+    img.alt=title+' '+aktif;
+    counter.textContent=aktif+' / '+total;
+    gallery.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i+1===aktif));
+    const next=aktif===total?1:aktif+1;
+    const prev=aktif===1?total:aktif-1;
+    preload(next); preload(prev);
+  }
+
+  function go(i){
+    if(i<1)i=total;
+    if(i>total)i=1;
+    aktif=i;
+    update();
+  }
+
+  gallery.querySelector('.next').onclick=()=>go(aktif+1);
+  gallery.querySelector('.prev').onclick=()=>go(aktif-1);
+  img.onclick=()=>openLightbox(img.src);
+
+  const stage=gallery.querySelector('.stage');
+  stage.addEventListener('touchstart',e=>{
+    isTouch=true;
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+  },{passive:true});
+  stage.addEventListener('touchend',e=>{
+    if(!isTouch)return;
+    const endX=e.changedTouches[0].clientX;
+    const endY=e.changedTouches[0].clientY;
+    const diffX=startX-endX;
+    const diffY=startY-endY;
+    if(Math.abs(diffX)>50 && Math.abs(diffX)>Math.abs(diffY)){
+      if(diffX>0)go(aktif+1); else go(aktif-1);
+    }
+    isTouch=false;
+  },{passive:true});
+
+  let mouseDown=false,mouseStart=0;
+  stage.addEventListener('mousedown',e=>{mouseDown=true;mouseStart=e.clientX});
+  stage.addEventListener('mouseup',e=>{
+    if(!mouseDown)return;
+    const diff=mouseStart-e.clientX;
+    if(Math.abs(diff)>60){ if(diff>0)go(aktif+1); else go(aktif-1); }
+    mouseDown=false;
+  });
+  stage.addEventListener('mouseleave',()=>mouseDown=false);
+
+  update();
+});
+</script>
+</body>
+</html>
