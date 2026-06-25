@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projelerimiz | Kentseldönüşüm.com.tr</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#111827}a{text-decoration:none;color:inherit}.header{background:#061b33;color:white;position:sticky;top:0;z-index:1000}.nav{max-width:1200px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:16px 20px;gap:20px}.brand{font-size:22px;font-weight:800}.menu{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}.menu a{color:white}.menu a.active,.menu a:hover{color:#f6b01a}.hero{background:linear-gradient(135deg,#071f3c,#0c315b);color:white;text-align:center;padding:55px 20px}.hero h1{font-size:38px}.hero p{margin-top:10px;color:#dbeafe}.section{padding:45px 16px}.wrap{max-width:1220px;margin:auto}.title{text-align:center;margin:30px 0 22px}.title h2{font-size:30px;color:#061b33}.title p{color:#4b5563;margin-top:6px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}.card{background:white;border-radius:14px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.10);cursor:pointer;transition:transform 0.2s}.card:hover{transform:translateY(-3px)}.card img{width:100%;height:190px;object-fit:cover;display:block;background:#e5e7eb;aspect-ratio:4/3}.card span{display:block;padding:12px 14px;font-weight:700;color:#061b33;font-size:14px}.load{display:block;margin:25px auto 5px;border:0;background:#061b33;color:white;padding:13px 24px;border-radius:8px;font-weight:800;cursor:pointer}.load:hover{background:#f6b01a;color:#061b33}.cta{background:#061b33;color:white;text-align:center;padding:50px 20px;margin-top:40px}.phone{display:inline-block;margin-top:12px;color:#f6b01a;font-size:28px;font-weight:900}.footer{background:#031020;color:#cbd5e1;text-align:center;padding:22px;font-size:14px}.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;z-index:9999;padding:18px;backdrop-filter:blur(5px)}.lightbox.active{display:flex}.lightbox img{max-width:96vw;max-height:90vh;object-fit:contain;border-radius:10px}.close,.lbnav{position:absolute;border:0;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:center}.close{top:16px;right:18px;background:white;color:#111;border-radius:50%;width:42px;height:42px;font-size:28px}.lbnav{top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);color:#111;border-radius:50%;width:48px;height:48px;font-size:34px}.lbprev{left:18px}.lbnext{right:18px}@media(max-width:700px){.nav{flex-direction:column}.hero h1{font-size:30px}.grid{grid-template-columns:repeat(2,1fr);gap:10px}.card img{height:135px}.card span{font-size:12px;padding:8px}.lbnav{width:42px;height:42px;font-size:28px}}
+</style>
+</head>
+<body>
+<header class="header"><div class="nav"><a class="brand" href="index.html">KENTSELDÖNÜŞÜM.COM.TR</a><nav class="menu"><a href="index.html">Ana Sayfa</a><a href="kurumsal.html">Kurumsal</a><a href="kentsel-donusum.html">Kentsel Dönüşüm</a><a class="active" href="projelerimiz.html">Projelerimiz</a><a href="hizmetlerimiz.html">Hizmetlerimiz</a><a href="iletisim.html">İletişim</a></nav></div></header>
+<section class="hero"><h1>Projelerimiz</h1><p>Geliştirdiğimiz modern yaşam alanları, güncel şantiye süreçlerimiz ve tasarım konseptlerimiz.</p></section>
+
+<section class="section"><div class="wrap">
+  <!-- 1. KATEGORİ -->
+  <div class="title"><h2>Tamamlanan Projeler</h2><p>Anahtar teslimi yapılmış güncel projelerimiz.</p></div>
+  <div class="grid" id="grid-tamamlanmis"></div>
+  <button class="load" onclick="kategoriYukle('tamamlanmis')">Daha Fazla Göster</button>
+
+  <!-- 2. KATEGORİ -->
+  <div class="title"><h2>Devam Eden Projeler</h2><p>Kaba inşaat ve aktif şantiye çalışmalarımız.</p></div>
+  <div class="grid" id="grid-devam-eden"></div>
+  <button class="load" onclick="kategoriYukle('devam-eden')">Daha Fazla Göster</button>
+
+  <!-- 3. KATEGORİ -->
+  <div class="title"><h2>Proje Örnekleri</h2><p>Gelecekte hayata geçecek modern konut tasarımları.</p></div>
+  <div class="grid" id="grid-ornekler"></div>
+  <button class="load" onclick="kategoriYukle('ornekler')">Daha Fazla Göster</button>
+</div></section>
+
+<section class="cta"><h2>Binanız İçin Kentsel Dönüşüm Teklifi Alın</h2><a class="phone" href="tel:05431813485">0543 181 34 85</a></section>
+<footer class="footer">© 2026 Kentseldönüşüm.com.tr</footer>
+
+<div class="lightbox" id="lightbox"><button class="close" id="close">×</button><button class="lbnav lbprev" id="lbprev">‹</button><img id="bigImg" alt="Galeri Görseli"><button class="lbnav lbnext" id="lbnext">›</button></div>
+
+<script>
+// TÜM GÖRSELLERİN LİSTESİ (19 Tamamlanan, 9 Devam Eden, 30 Örnek Proje)
+const TUM_RESIMLER = [
+  { kategori: 'tamamlanmis', src: 'tamam.1.jpg', baslik: 'Tamamlanan Proje 1' },
+  { kategori: 'tamamlanmis', src: 'tamam.2.jpg', baslik: 'Tamamlanan Proje 2' },
+  { kategori: 'tamamlanmis', src: 'tamam.3.jpg', baslik: 'Tamamlanan Proje 3' },
+  { kategori: 'tamamlanmis', src: 'tamam.4.jpg', baslik: 'Tamamlanan Proje 4' },
+  { kategori: 'tamamlanmis', src: 'tamam.5.jpg', baslik: 'Tamamlanan Proje 5' },
+  { kategori: 'tamamlanmis', src: 'tamam.6.jpg', baslik: 'Tamamlanan Proje 6' },
+  { kategori: 'tamamlanmis', src: 'tamam.7.jpg', baslik: 'Tamamlanan Proje 7' },
+  { kategori: 'tamamlanmis', src: 'tamam.8.jpg', baslik: 'Tamamlanan Proje 8' },
+  { kategori: 'tamamlanmis', src: 'tamam.9.jpg', baslik: 'Tamamlanan Proje 9' },
+  { kategori: 'tamamlanmis', src: 'tamam.10.jpg', baslik: 'Tamamlanan Proje 10' },
+  { kategori: 'tamamlanmis', src: 'tamam.11.jpg', baslik: 'Tamamlanan Proje 11' },
+  { kategori: 'tamamlanmis', src: 'tamam.12.jpg', baslik: 'Tamamlanan Proje 12' },
+  { kategori: 'tamamlanmis', src: 'tamam.13.jpg', baslik: 'Tamamlanan Proje 13' },
+  { kategori: 'tamamlanmis', src: 'tamam.14.jpg', baslik: 'Tamamlanan Proje 14' },
+  { kategori: 'tamamlanmis', src: 'tamam.15.jpg', baslik: 'Tamamlanan Proje 15' },
+  { kategori: 'tamamlanmis', src: 'tamam.16.jpg', baslik: 'Tamamlanan Proje 16' },
+  { kategori: 'tamamlanmis', src: 'tamam.17.jpg', baslik: 'Tamamlanan Proje 17' },
+  { kategori: 'tamamlanmis', src: 'tamam.18.jpg', baslik: 'Tamamlanan Proje 18' },
+  { kategori: 'tamamlanmis', src: 'tamam.19.jpg', baslik: 'Tamamlanan Proje 19' },
+  { kategori: 'devam-eden', src: 'kaba.1.png', baslik: 'Devam Eden Proje 1' },
+  { kategori: 'devam-eden', src: 'kaba.2.png', baslik: 'Devam Eden Proje 2' },
+  { kategori: 'devam-eden', src: 'kaba.3.png', baslik: 'Devam Eden Proje 3' },
+  { kategori: 'devam-eden', src: 'kaba.4.png', baslik: 'Devam Eden Proje 4' },
+  { kategori: 'devam-eden', src: 'kaba.5.png', baslik: 'Devam Eden Proje 5' },
+  { kategori: 'devam-eden', src: 'kaba.6.png', baslik: 'Devam Eden Proje 6' },
+  { kategori: 'devam-eden', src: 'kaba.7.png', baslik: 'Devam Eden Proje 7' },
+  { kategori: 'devam-eden', src: 'kaba.8.png', baslik: 'Devam Eden Proje 8' },
+  { kategori: 'devam-eden', src: 'kaba.9.png', baslik: 'Devam Eden Proje 9' },
+  { kategori: 'ornekler', src: 'proje.1.png', baslik: 'Proje Örneği 1' },
+  { kategori: 'ornekler', src: 'proje.2.png', baslik: 'Proje Örneği 2' },
+  { kategori: 'ornekler', src: 'proje.3.png', baslik: 'Proje Örneği 3' },
+  { kategori: 'ornekler', src: 'proje.4.png', baslik: 'Proje Örneği 4' },
+  { kategori: 'ornekler', src: 'proje.5.png', baslik: 'Proje Örneği 5' },
+  { kategori: 'ornekler', src: 'proje.6.png', baslik: 'Proje Örneği 6' },
+  { kategori: 'ornekler', src: 'proje.7.png', baslik: 'Proje Örneği 7' },
+  { kategori: 'ornekler', src: 'proje.8.png', baslik: 'Proje Örneği 8' },
+  { kategori: 'ornekler', src: 'proje.9.png', baslik: 'Proje Örneği 9' },
+  { kategori: 'ornekler', src: 'proje.10.png', baslik: 'Proje Örneği 10' },
+  { kategori: 'ornekler', src: 'proje.11.png', baslik: 'Proje Örneği 11' },
+  { kategori: 'ornekler', src: 'proje.12.png', baslik: 'Proje Örneği 12' },
+  { kategori: 'ornekler', src: 'proje.13.png', baslik: 'Proje Örneği 13' },
+  { kategori: 'ornekler', src: 'proje.14.png', baslik: 'Proje Örneği 14' },
+  { kategori: 'ornekler', src: 'proje.15.png', baslik: 'Proje Örneği 15' },
+  { kategori: 'ornekler', src: 'proje.16.png', baslik: 'Proje Örneği 16' },
+  { kategori: 'ornekler', src: 'proje.17.png', baslik: 'Proje Örneği 17' },
+  { kategori: 'ornekler', src: 'proje.18.png', baslik: 'Proje Örneği 18' },
+  { kategori: 'ornekler', src: 'proje.19.png', baslik: 'Proje Örneği 19' },
+  { kategori: 'ornekler', src: 'proje.20.png', baslik: 'Proje Örneği 20' },
+  { kategori: 'ornekler', src: 'proje.21.png', baslik: 'Proje Örneği 21' },
+  { kategori: 'ornekler', src: 'proje.22.png', baslik: 'Proje Örneği 22' },
+  { kategori: 'ornekler', src: 'proje.23.png', baslik: 'Proje Örneği 23' },
+  { kategori: 'ornekler', src: 'proje.24.png', baslik: 'Proje Örneği 24' },
+  { kategori: 'ornekler', src: 'proje.25.png', baslik: 'Proje Örneği 25' },
+  { kategori: 'ornekler', src: 'proje.26.png', baslik: 'Proje Örneği 26' },
+  { kategori: 'ornekler', src: 'proje.27.png', baslik: 'Proje Örneği 27' },
+  { kategori: 'ornekler', src: 'proje.28.png', baslik: 'Proje Örneği 28' },
+  { kategori: 'ornekler', src: 'proje.29.png', baslik: 'Proje Örneği 29' },
+  { kategori: 'ornekler', src: 'proje.30.png', baslik: 'Proje Örneği 30' }
+];
+
+// Ayarlar
+const limit = 8; // Her tıklamada yüklenecek resim miktarı
+const durum = { 'tamamlanmis': 0, 'devam-eden': 0, 'ornekler': 0 };
+let aktifGaleriListesi = [];
+let aktifIndex = 0;
+
+const lb = document.getElementById('lightbox');
+const big = document.getElementById('bigImg');
+
+function updateActiveImages() {
+  aktifGaleriListesi = Array.from(document.querySelectorAll('.grid .card img')).map(img => img.src);
+}
+
+function kategoriYukle(katAd) {
+  const filtrelenmis = TUM_RESIMLER.filter(item => item.kategori === katAd);
+  const grid = document.getElementById('grid-' + katAd);
+  const basla = durum[katAd];
+  const bitir = Math.min(basla + limit, filtrelenmis.length);
+
+  for (let i = basla; i < bitir; i++) {
+    const item = filtrelenmis[i];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <img src="${item.src}" alt="${item.baslik}" loading="lazy" onerror="this.parentElement.style.display='none'">
+      <span>${item.baslik}</span>
+    `;
+    card.addEventListener('click', () => {
+      updateActiveImages();
+      const imgSrc = card.querySelector('img').src;
+      aktifIndex = aktifGaleriListesi.indexOf(imgSrc);
+      big.src = imgSrc;
+      lb.classList.add('active');
+    });
+    grid.appendChild(card);
+  }
+
+  durum[katAd] = bitir;
+  const btn = document.querySelector(`button[onclick="kategoriYukle('${katAd}')"]`);
+  if (btn && durum[katAd] >= filtrelenmis.length) btn.style.display = 'none';
+}
+
+function onceki() {
+  if (!aktifGaleriListesi.length) return;
+  aktifIndex = (aktifIndex - 1 + aktifGaleriListesi.length) % aktifGaleriListesi.length;
+  big.src = aktifGaleriListesi[aktifIndex];
+}
+
+function sonraki() {
+  if (!aktifGaleriListesi.length) return;
+  aktifIndex = (aktifIndex + 1) % aktifGaleriListesi.length;
+  big.src = aktifGaleriListesi[aktifIndex];
+}
+
+document.getElementById('close').onclick = () => lb.classList.remove('active');
+document.getElementById('lbprev').onclick = onceki;
+document.getElementById('lbnext').onclick = sonraki;
+lb.addEventListener('click', e => { if (e.target === lb) lb.classList.remove('active'); });
+document.addEventListener('keydown', e => {
+  if (!lb.classList.contains('active')) return;
+  if (e.key === 'Escape') lb.classList.remove('active');
+  if (e.key === 'ArrowLeft') onceki();
+  if (e.key === 'ArrowRight') sonraki();
+});
+
+// Sayfa açılır açılmaz ilk 8 görsel gelsin
+kategoriYukle('tamamlanmis');
+kategoriYukle('devam-eden');
+kategoriYukle('ornekler');
+</script>
+</body>
+</html>
