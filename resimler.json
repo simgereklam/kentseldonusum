@@ -36,6 +36,11 @@
   },
   {
     "kategori": "devam-eden",
+    "src": "kaba.8.jpg",
+    "baslik": "Devam Eden Proje 8"
+  },
+  {
+    "kategori": "devam-eden",
     "src": "kaba.9.png",
     "baslik": "Devam Eden Proje 9"
   },
@@ -48,6 +53,16 @@
     "kategori": "devam-eden",
     "src": "kaba.11.png",
     "baslik": "Devam Eden Proje 11"
+  },
+  {
+    "kategori": "devam-eden",
+    "src": "kaba.12.png",
+    "baslik": "Devam Eden Proje 12"
+  },
+  {
+    "kategori": "devam-eden",
+    "src": "kaba.13.png",
+    "baslik": "Devam Eden Proje 13"
   },
   {
     "kategori": "ornekler",
