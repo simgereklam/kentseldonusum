@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/</loc>
+    <priority>1.00</priority>
+  </url>
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/index.html</loc>
+    <priority>1.00</priority>
+  </url>
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/hizmetlerimiz.html</loc>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/kentsel-donusum.html</loc>
+    <priority>0.90</priority>
+  </url>
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/projelerimiz.html</loc>
+    <priority>0.85</priority>
+  </url>
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/kurumsal.html</loc>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://kentseldönüşüm.com.tr/iletisim.html</loc>
+    <priority>0.80</priority>
+  </url>
+
+</urlset>
