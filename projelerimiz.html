@@ -1,6 +1,377 @@
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Projelerimiz | Masfey İnşaat Kardelen İnşaat Lavinay İnşaat Örnek Yapı İnşaat</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f4f6f8;
+  color:#111827;
+}
+
+a{
+  text-decoration:none;
+  color:inherit;
+}
+
+.header{
+  background:#061b33;
+  color:white;
+  position:sticky;
+  top:0;
+  z-index:1000;
+}
+
+.nav{
+  max-width:1200px;
+  margin:auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:16px 20px;
+  gap:20px;
+}
+
+.brand{
+  font-size:22px;
+  font-weight:800;
+}
+
+.menu{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  font-size:14px;
+}
+
+.menu a{
+  color:white;
+}
+
+.menu a.active,
+.menu a:hover{
+  color:#f6b01a;
+}
+
+.hero{
+  background:linear-gradient(135deg,#071f3c,#0c315b);
+  color:white;
+  text-align:center;
+  padding:55px 20px;
+}
+
+.hero h1{
+  font-size:38px;
+}
+
+.hero p{
+  margin-top:10px;
+  color:#dbeafe;
+}
+
+.section{
+  padding:45px 16px;
+}
+
+.wrap{
+  max-width:1220px;
+  margin:auto;
+}
+
+.title{
+  text-align:center;
+  margin:30px 0 22px;
+}
+
+.title h2{
+  font-size:30px;
+  color:#061b33;
+}
+
+.title p{
+  color:#4b5563;
+  margin-top:6px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:18px;
+}
+
+.card{
+  background:white;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 8px 22px rgba(0,0,0,.10);
+  cursor:pointer;
+  transition:transform .2s;
+}
+
+.card:hover{
+  transform:translateY(-3px);
+}
+
+.card img{
+  width:100%;
+  height:190px;
+  object-fit:cover;
+  display:block;
+  background:#e5e7eb;
+  aspect-ratio:4/3;
+}
+
+.card span{
+  display:block;
+  padding:12px 14px;
+  font-weight:700;
+  color:#061b33;
+  font-size:14px;
+}
+
+.load{
+  display:block;
+  margin:25px auto 5px;
+  border:0;
+  background:#061b33;
+  color:white;
+  padding:13px 24px;
+  border-radius:8px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.load:hover{
+  background:#f6b01a;
+  color:#061b33;
+}
+
+.empty{
+  text-align:center;
+  color:#6b7280;
+  padding:18px;
+  background:white;
+  border-radius:12px;
+  box-shadow:0 5px 15px rgba(0,0,0,.06);
+}
+
+.cta{
+  background:#061b33;
+  color:white;
+  text-align:center;
+  padding:50px 20px;
+  margin-top:40px;
+}
+
+.phone{
+  display:inline-block;
+  margin-top:12px;
+  color:#f6b01a;
+  font-size:28px;
+  font-weight:900;
+}
+
+.footer{
+  background:#031020;
+  color:#cbd5e1;
+  text-align:center;
+  padding:22px;
+  font-size:14px;
+}
+
+.lightbox{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.95);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  padding:18px;
+  backdrop-filter:blur(5px);
+}
+
+.lightbox.active{
+  display:flex;
+}
+
+.lightbox img{
+  max-width:96vw;
+  max-height:90vh;
+  object-fit:contain;
+  border-radius:10px;
+}
+
+.close,
+.lbnav{
+  position:absolute;
+  border:0;
+  cursor:pointer;
+  user-select:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.close{
+  top:16px;
+  right:18px;
+  background:white;
+  color:#111;
+  border-radius:50%;
+  width:42px;
+  height:42px;
+  font-size:28px;
+}
+
+.lbnav{
+  top:50%;
+  transform:translateY(-50%);
+  background:rgba(255,255,255,.9);
+  color:#111;
+  border-radius:50%;
+  width:48px;
+  height:48px;
+  font-size:34px;
+}
+
+.lbprev{
+  left:18px;
+}
+
+.lbnext{
+  right:18px;
+}
+
+@media(max-width:700px){
+  .nav{
+    flex-direction:column;
+  }
+
+  .brand{
+    font-size:17px;
+    text-align:center;
+  }
+
+  .menu{
+    justify-content:center;
+    font-size:13px;
+  }
+
+  .hero h1{
+    font-size:30px;
+  }
+
+  .grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+  }
+
+  .card img{
+    height:135px;
+  }
+
+  .card span{
+    font-size:12px;
+    padding:8px;
+  }
+
+  .lbnav{
+    width:42px;
+    height:42px;
+    font-size:28px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+  <div class="nav">
+    <a class="brand" href="index.html">Masfey İnşaat Kardelen İnşaat Lavinay İnşaat Örnek Yapı İnşaat</a>
+
+    <nav class="menu">
+      <a href="index.html">Ana Sayfa</a>
+      <a href="kurumsal.html">Kurumsal</a>
+      <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
+      <a class="active" href="projelerimiz.html">Projelerimiz</a>
+      <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
+      <a href="iletisim.html">İletişim</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Projelerimiz</h1>
+  <p>Geliştirdiğimiz modern yaşam alanları, güncel şantiye süreçlerimiz ve tasarım konseptlerimiz.</p>
+</section>
+
+<section class="section">
+  <div class="wrap">
+
+    <div class="title">
+      <h2>Tamamlanan Projeler</h2>
+      <p>Anahtar teslimi yapılmış güncel projelerimiz.</p>
+    </div>
+
+    <div class="grid" id="grid-tamamlanmis"></div>
+    <button class="load" id="btn-tamamlanmis">Daha Fazla Göster</button>
+
+    <div class="title">
+      <h2>Devam Eden Projeler</h2>
+      <p>Kaba inşaat ve aktif şantiye çalışmalarımız.</p>
+    </div>
+
+    <div class="grid" id="grid-devam-eden"></div>
+    <button class="load" id="btn-devam-eden">Daha Fazla Göster</button>
+
+    <div class="title">
+      <h2>Proje Örnekleri</h2>
+      <p>Gelecekte hayata geçecek modern konut tasarımları.</p>
+    </div>
+
+    <div class="grid" id="grid-ornekler"></div>
+    <button class="load" id="btn-ornekler">Daha Fazla Göster</button>
+
+  </div>
+</section>
+
+<section class="cta">
+  <h2>Binanız İçin Kentsel Dönüşüm Teklifi Alın</h2>
+  <a class="phone" href="tel:05431813485">0543 181 34 85</a>
+</section>
+
+<footer class="footer">
+  © 2026 Kentseldönüşüm.com.tr
+</footer>
+
+<div class="lightbox" id="lightbox">
+  <button class="close" id="close" type="button">×</button>
+  <button class="lbnav lbprev" id="lbprev" type="button">‹</button>
+  <img id="bigImg" alt="Galeri Görseli">
+  <button class="lbnav lbnext" id="lbnext" type="button">›</button>
+</div>
+
 <script>
 const limit = 8;
-const durum = { 'tamamlanmis': 0, 'devam-eden': 0, 'ornekler': 0 };
+
+const durum = {
+  'tamamlanmis': 0,
+  'devam-eden': 0,
+  'ornekler': 0
+};
 
 let TUM_RESIMLER = [];
 let aktifGaleriListesi = [];
@@ -11,13 +382,19 @@ const big = document.getElementById('bigImg');
 
 function temizYol(src){
   if(!src) return '';
-  if(src.startsWith('http')) return src;
+
+  if(src.startsWith('http')){
+    return src;
+  }
+
   return './' + src.replace(/^\.?\//, '');
 }
 
 async function baslat(){
   try{
-    const r = await fetch('./resimler.json?ts=' + Date.now(), { cache: 'reload' });
+    const r = await fetch('./resimler.json?ts=' + Date.now(), {
+      cache: 'no-store'
+    });
 
     if(!r.ok){
       throw new Error('resimler.json bulunamadı veya okunamadı');
@@ -36,6 +413,7 @@ async function baslat(){
     ['tamamlanmis','devam-eden','ornekler'].forEach(katAd => {
       const grid = document.getElementById('grid-' + katAd);
       const btn = document.getElementById('btn-' + katAd);
+
       grid.innerHTML = '<div class="empty">resimler.json okunamadı. Dosya adını ve JSON formatını kontrol et.</div>';
       btn.style.display = 'none';
     });
@@ -50,7 +428,7 @@ function kategoriYukle(katAd){
   const grid = document.getElementById('grid-' + katAd);
   const btn = document.getElementById('btn-' + katAd);
 
-  const liste = TUM_RESIMLER.filter(x => x.kategori === katAd);
+  const liste = TUM_RESIMLER.filter(item => item.kategori === katAd);
   const bas = durum[katAd];
   const parca = liste.slice(bas, bas + limit);
 
@@ -60,7 +438,7 @@ function kategoriYukle(katAd){
     return;
   }
 
-  parca.forEach((item) => {
+  parca.forEach(item => {
     const src = temizYol(item.src);
 
     const card = document.createElement('div');
@@ -73,8 +451,6 @@ function kategoriYukle(katAd){
     img.loading = 'lazy';
 
     img.onerror = function(){
-      console.error('Resim açılmadı:', item.src);
-
       const hata = document.createElement('div');
       hata.className = 'empty';
       hata.style.fontSize = '12px';
@@ -90,13 +466,21 @@ function kategoriYukle(katAd){
     card.appendChild(img);
     card.appendChild(span);
 
-    card.addEventListener('click', () => resmiAc(src));
+    card.addEventListener('click', () => {
+      resmiAc(src);
+    });
 
     grid.appendChild(card);
   });
 
   durum[katAd] += parca.length;
-  btn.style.display = durum[katAd] >= liste.length ? 'none' : 'block';
+
+  if(durum[katAd] >= liste.length){
+    btn.style.display = 'none';
+  }else{
+    btn.style.display = 'block';
+  }
+
   btn.onclick = () => kategoriYukle(katAd);
 
   updateActiveImages();
@@ -109,8 +493,13 @@ function updateActiveImages(){
 
 function resmiAc(src){
   updateActiveImages();
+
   aktifIndex = aktifGaleriListesi.indexOf(src);
-  if(aktifIndex < 0) aktifIndex = 0;
+
+  if(aktifIndex < 0){
+    aktifIndex = 0;
+  }
+
   big.src = src + '?v=' + Date.now();
   lb.classList.add('active');
 }
@@ -122,12 +511,14 @@ function kapat(){
 
 function ileri(){
   if(!aktifGaleriListesi.length) return;
+
   aktifIndex = (aktifIndex + 1) % aktifGaleriListesi.length;
   big.src = aktifGaleriListesi[aktifIndex] + '?v=' + Date.now();
 }
 
 function geri(){
   if(!aktifGaleriListesi.length) return;
+
   aktifIndex = (aktifIndex - 1 + aktifGaleriListesi.length) % aktifGaleriListesi.length;
   big.src = aktifGaleriListesi[aktifIndex] + '?v=' + Date.now();
 }
@@ -137,15 +528,30 @@ document.getElementById('lbnext').onclick = ileri;
 document.getElementById('lbprev').onclick = geri;
 
 lb.addEventListener('click', e => {
-  if(e.target === lb) kapat();
+  if(e.target === lb){
+    kapat();
+  }
 });
 
 document.addEventListener('keydown', e => {
   if(!lb.classList.contains('active')) return;
-  if(e.key === 'Escape') kapat();
-  if(e.key === 'ArrowRight') ileri();
-  if(e.key === 'ArrowLeft') geri();
+
+  if(e.key === 'Escape'){
+    kapat();
+  }
+
+  if(e.key === 'ArrowRight'){
+    ileri();
+  }
+
+  if(e.key === 'ArrowLeft'){
+    geri();
+  }
 });
 
 baslat();
 </script>
+
+</body>
+</html>
+```
