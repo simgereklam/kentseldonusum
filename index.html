@@ -143,6 +143,19 @@ a{text-decoration:none;color:inherit}
   flex-wrap:wrap;
   gap:14px;
 }
+
+.hero-mobile-image{
+  display:none;
+  background:linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+  padding:0 0 20px;
+}
+.hero-mobile-image img{
+  width:100%;
+  display:block;
+  border-radius:16px;
+  box-shadow:0 12px 28px rgba(0,0,0,.22);
+}
+
 .btn{
   min-height:52px;
   padding:0 22px;
@@ -454,11 +467,15 @@ a{text-decoration:none;color:inherit}
   }
   .brand{font-size:19px}
   .menu{font-size:13px}
-  .hero{padding:44px 0 36px}
+  .hero{
+    background:linear-gradient(135deg,#07182c,#102f52);
+    padding:38px 0 28px;
+  }
   .hero h1{font-size:31px}
   .hero p{font-size:15px}
   .hero-buttons{display:grid}
   .btn{width:100%}
+  .hero-mobile-image{display:block}
   .quick-menu-section{
     padding:0 0 28px;
   }
@@ -546,6 +563,12 @@ a{text-decoration:none;color:inherit}
       <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
       <a href="iletisim.html">İletişim</a>
     </div>
+  </div>
+</section>
+
+<section class="hero-mobile-image">
+  <div class="container">
+    <img src="hero-bg.png" alt="Kentsel dönüşüm süreci">
   </div>
 </section>
 
