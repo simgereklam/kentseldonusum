@@ -1,297 +1,326 @@
-```html
 <!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Projelerimiz | Masfey İnşaat Kardelen İnşaat Lavinay İnşaat Örnek Yapı İnşaat</title>
+<title>Projelerimiz | KentselDönüşüm.com.tr</title>
+<meta name="description" content="Tamamlanan projeler, devam eden kaba inşaat çalışmaları ve kentsel dönüşüm proje örnekleri.">
+<meta name="keywords" content="kentsel dönüşüm projeleri, tamamlanan projeler, devam eden inşaat projeleri, kat karşılığı inşaat">
+<meta name="robots" content="index, follow">
 
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+    --lacivert:#07182c;
+    --koyu:#061426;
+    --lacivert2:#102f52;
+    --turuncu:#ff6b00;
+    --turuncu2:#ff8a1f;
+    --acik:#f7f4f0;
+    --beyaz:#fff;
+    --metin:#111827;
+    --muted:#64748b;
+    --border:#e5e7eb;
 }
-
 body{
-  font-family:Arial,Helvetica,sans-serif;
-  background:#f4f6f8;
-  color:#111827;
+    font-family:Arial,Helvetica,sans-serif;
+    background:var(--acik);
+    color:var(--metin);
+    line-height:1.5;
 }
+a{text-decoration:none;color:inherit}
+.container{max-width:1180px;margin:auto;padding:0 20px}
 
-a{
-  text-decoration:none;
-  color:inherit;
-}
-
+/* HEADER */
 .header{
-  background:#061b33;
-  color:white;
-  position:sticky;
-  top:0;
-  z-index:1000;
+    background:var(--lacivert);
+    color:#fff;
+    position:sticky;
+    top:0;
+    z-index:50;
+    box-shadow:0 8px 22px rgba(7,24,44,.22);
 }
-
 .nav{
-  max-width:1200px;
-  margin:auto;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:16px 20px;
-  gap:20px;
+    min-height:72px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:22px;
 }
-
 .brand{
-  font-size:22px;
-  font-weight:800;
+    font-size:24px;
+    font-weight:900;
+    letter-spacing:.4px;
+    color:#fff;
+    white-space:nowrap;
 }
-
+.brand span{color:var(--turuncu)}
 .menu{
-  display:flex;
-  gap:18px;
-  flex-wrap:wrap;
-  font-size:14px;
+    display:flex;
+    align-items:center;
+    gap:22px;
+    font-size:14px;
+    font-weight:800;
 }
+.menu a{color:#fff;opacity:.95}
+.menu a:hover,.menu a.active{color:var(--turuncu);opacity:1}
 
-.menu a{
-  color:white;
-}
-
-.menu a.active,
-.menu a:hover{
-  color:#f6b01a;
-}
-
+/* HERO */
 .hero{
-  background:linear-gradient(135deg,#071f3c,#0c315b);
-  color:white;
-  text-align:center;
-  padding:55px 20px;
-}
-
-.hero h1{
-  font-size:38px;
-}
-
-.hero p{
-  margin-top:10px;
-  color:#dbeafe;
-}
-
-.section{
-  padding:45px 16px;
-}
-
-.wrap{
-  max-width:1220px;
-  margin:auto;
-}
-
-.title{
-  text-align:center;
-  margin:30px 0 22px;
-}
-
-.title h2{
-  font-size:30px;
-  color:#061b33;
-}
-
-.title p{
-  color:#4b5563;
-  margin-top:6px;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-  gap:18px;
-}
-
-.card{
-  background:white;
-  border-radius:14px;
-  overflow:hidden;
-  box-shadow:0 8px 22px rgba(0,0,0,.10);
-  cursor:pointer;
-  transition:transform .2s;
-}
-
-.card:hover{
-  transform:translateY(-3px);
-}
-
-.card img{
-  width:100%;
-  height:190px;
-  object-fit:cover;
-  display:block;
-  background:#e5e7eb;
-  aspect-ratio:4/3;
-}
-
-.card span{
-  display:block;
-  padding:12px 14px;
-  font-weight:700;
-  color:#061b33;
-  font-size:14px;
-}
-
-.load{
-  display:block;
-  margin:25px auto 5px;
-  border:0;
-  background:#061b33;
-  color:white;
-  padding:13px 24px;
-  border-radius:8px;
-  font-weight:800;
-  cursor:pointer;
-}
-
-.load:hover{
-  background:#f6b01a;
-  color:#061b33;
-}
-
-.empty{
-  text-align:center;
-  color:#6b7280;
-  padding:18px;
-  background:white;
-  border-radius:12px;
-  box-shadow:0 5px 15px rgba(0,0,0,.06);
-}
-
-.cta{
-  background:#061b33;
-  color:white;
-  text-align:center;
-  padding:50px 20px;
-  margin-top:40px;
-}
-
-.phone{
-  display:inline-block;
-  margin-top:12px;
-  color:#f6b01a;
-  font-size:28px;
-  font-weight:900;
-}
-
-.footer{
-  background:#031020;
-  color:#cbd5e1;
-  text-align:center;
-  padding:22px;
-  font-size:14px;
-}
-
-.lightbox{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.95);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  padding:18px;
-  backdrop-filter:blur(5px);
-}
-
-.lightbox.active{
-  display:flex;
-}
-
-.lightbox img{
-  max-width:96vw;
-  max-height:90vh;
-  object-fit:contain;
-  border-radius:10px;
-}
-
-.close,
-.lbnav{
-  position:absolute;
-  border:0;
-  cursor:pointer;
-  user-select:none;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.close{
-  top:16px;
-  right:18px;
-  background:white;
-  color:#111;
-  border-radius:50%;
-  width:42px;
-  height:42px;
-  font-size:28px;
-}
-
-.lbnav{
-  top:50%;
-  transform:translateY(-50%);
-  background:rgba(255,255,255,.9);
-  color:#111;
-  border-radius:50%;
-  width:48px;
-  height:48px;
-  font-size:34px;
-}
-
-.lbprev{
-  left:18px;
-}
-
-.lbnext{
-  right:18px;
-}
-
-@media(max-width:700px){
-  .nav{
-    flex-direction:column;
-  }
-
-  .brand{
-    font-size:17px;
+    background:
+        radial-gradient(circle at 18% 20%,rgba(255,107,0,.18),transparent 28%),
+        linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+    color:white;
     text-align:center;
-  }
+    padding:58px 20px 46px;
+}
+.hero h1{
+    font-size:40px;
+    line-height:1.2;
+    font-weight:900;
+    margin-bottom:10px;
+}
+.hero h1 span{color:var(--turuncu)}
+.hero p{
+    color:#e5e7eb;
+    max-width:760px;
+    margin:auto;
+    font-size:17px;
+}
 
-  .menu{
-    justify-content:center;
+/* SECTION */
+.section{
+    padding:48px 0 70px;
+}
+.category{
+    margin-bottom:54px;
+}
+.title{
+    text-align:center;
+    margin-bottom:24px;
+}
+.title h2{
+    font-size:31px;
+    line-height:1.2;
+    color:var(--lacivert);
+}
+.title h2 span{color:var(--turuncu)}
+.title p{
+    color:#64748b;
+    margin-top:7px;
+}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+}
+.card{
+    background:#fff;
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 10px 28px rgba(7,24,44,.10);
+    border:1px solid rgba(7,24,44,.06);
+    cursor:pointer;
+    transition:.2s ease;
+}
+.card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 16px 36px rgba(7,24,44,.14);
+}
+.card img{
+    width:100%;
+    height:190px;
+    object-fit:cover;
+    display:block;
+    background:#e5e7eb;
+}
+.card-body{
+    padding:14px;
+}
+.card h3{
+    font-size:15px;
+    color:var(--lacivert);
+    margin-bottom:4px;
+}
+.card p{
+    color:#64748b;
     font-size:13px;
-  }
+}
+.load{
+    display:block;
+    margin:24px auto 0;
+    border:0;
+    background:var(--lacivert);
+    color:#fff;
+    padding:13px 25px;
+    border-radius:9px;
+    font-weight:900;
+    cursor:pointer;
+}
+.load:hover{
+    background:var(--turuncu);
+}
+.empty{
+    grid-column:1/-1;
+    background:white;
+    border:1px dashed #cbd5e1;
+    color:#64748b;
+    text-align:center;
+    border-radius:14px;
+    padding:26px 16px;
+}
 
-  .hero h1{
+/* CTA */
+.cta{
+    background:linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+    color:white;
+    text-align:center;
+    padding:54px 20px;
+}
+.cta h2{
     font-size:30px;
-  }
+    margin-bottom:8px;
+}
+.cta p{
+    color:#e5e7eb;
+    margin-bottom:10px;
+}
+.phone{
+    display:inline-block;
+    color:var(--turuncu);
+    font-size:30px;
+    font-weight:900;
+    margin:6px 0 20px;
+}
+.cta-buttons{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    flex-wrap:wrap;
+}
+.btn{
+    min-height:52px;
+    padding:0 22px;
+    border-radius:9px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    border:2px solid transparent;
+}
+.btn-orange{background:var(--turuncu);color:white}
+.btn-outline{border-color:white;color:white}
 
-  .grid{
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-  }
+/* FOOTER */
+.footer{
+    background:var(--koyu);
+    color:#cbd5e1;
+    text-align:center;
+    padding:22px;
+    font-size:14px;
+}
 
-  .card img{
-    height:135px;
-  }
+/* LIGHTBOX */
+.lightbox{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.94);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    padding:18px;
+}
+.lightbox.active{display:flex}
+.lightbox img{
+    max-width:96vw;
+    max-height:88vh;
+    object-fit:contain;
+    border-radius:10px;
+    background:#111;
+}
+.close,.lbnav{
+    position:absolute;
+    border:0;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.close{
+    top:18px;
+    right:20px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:#fff;
+    color:#111;
+    font-size:30px;
+}
+.lbnav{
+    top:50%;
+    transform:translateY(-50%);
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    background:rgba(255,255,255,.92);
+    color:var(--lacivert);
+    font-size:40px;
+}
+.lbprev{left:22px}
+.lbnext{right:22px}
+.lbtext{
+    position:absolute;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    background:rgba(7,24,44,.85);
+    color:#fff;
+    padding:9px 16px;
+    border-radius:999px;
+    font-size:14px;
+    white-space:nowrap;
+}
 
-  .card span{
-    font-size:12px;
-    padding:8px;
-  }
-
-  .lbnav{
-    width:42px;
-    height:42px;
-    font-size:28px;
-  }
+/* MOBIL */
+@media(max-width:900px){
+    .nav{
+        align-items:flex-start;
+        flex-direction:column;
+        padding:15px 0;
+    }
+    .menu{
+        width:100%;
+        overflow-x:auto;
+        white-space:nowrap;
+        gap:18px;
+        padding-bottom:5px;
+    }
+    .menu a{flex:0 0 auto}
+    .grid{grid-template-columns:repeat(2,1fr);gap:14px}
+    .card img{height:165px}
+}
+@media(max-width:520px){
+    .container{padding:0 14px}
+    .brand{font-size:19px}
+    .menu{font-size:13px}
+    .hero{padding:42px 16px 36px}
+    .hero h1{font-size:31px}
+    .hero p{font-size:15px}
+    .section{padding:34px 0 48px}
+    .title h2{font-size:26px}
+    .grid{grid-template-columns:1fr 1fr;gap:11px}
+    .card{border-radius:11px}
+    .card img{height:135px}
+    .card-body{padding:10px}
+    .card h3{font-size:13px}
+    .card p{display:none}
+    .lbnav{display:none}
+    .cta h2{font-size:24px}
+    .phone{font-size:25px}
+    .cta-buttons{display:grid}
+    .btn{width:100%}
 }
 </style>
 </head>
@@ -299,254 +328,244 @@ a{
 <body>
 
 <header class="header">
-  <div class="nav">
-    <a class="brand" href="index.html">Masfey İnşaat Kardelen İnşaat Lavinay İnşaat Örnek Yapı İnşaat</a>
-
-    <nav class="menu">
-      <a href="index.html">Ana Sayfa</a>
-      <a href="kurumsal.html">Kurumsal</a>
-      <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
-      <a class="active" href="projelerimiz.html">Projelerimiz</a>
-      <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
-      <a href="iletisim.html">İletişim</a>
-    </nav>
-  </div>
+    <div class="container nav">
+        <a class="brand" href="index.html">Kentsel<span>Dönüşüm</span>.com.tr</a>
+        <nav class="menu" aria-label="Ana Menü">
+            <a href="index.html">Ana Sayfa</a>
+            <a href="kurumsal.html">Kurumsal</a>
+            <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
+            <a class="active" href="projelerimiz.html">Projelerimiz</a>
+            <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
+            <a href="sss.html">S.S.S</a>
+            <a href="iletisim.html">İletişim</a>
+        </nav>
+    </div>
 </header>
 
 <section class="hero">
-  <h1>Projelerimiz</h1>
-  <p>Geliştirdiğimiz modern yaşam alanları, güncel şantiye süreçlerimiz ve tasarım konseptlerimiz.</p>
+    <h1>Projelerimiz</h1>
+    <p>Tamamlanan projeler, devam eden şantiye çalışmalarımız ve proje tasarım örneklerimizi kategoriler halinde inceleyin.</p>
 </section>
 
-<section class="section">
-  <div class="wrap">
+<main class="section">
+    <div class="container">
 
-    <div class="title">
-      <h2>Tamamlanan Projeler</h2>
-      <p>Anahtar teslimi yapılmış güncel projelerimiz.</p>
+        <section class="category">
+            <div class="title">
+                <h2>Tamamlanan <span>Projeler</span></h2>
+                <p>Anahtar teslimi yapılmış güncel projelerimiz.</p>
+            </div>
+            <div class="grid" id="grid-tamamlanmis"></div>
+            <button class="load" id="btn-tamamlanmis" type="button">Daha Fazla Göster</button>
+        </section>
+
+        <section class="category">
+            <div class="title">
+                <h2>Devam Eden <span>Projeler</span></h2>
+                <p>Kaba inşaat, temel ve aktif şantiye çalışmalarımız.</p>
+            </div>
+            <div class="grid" id="grid-devam-eden"></div>
+            <button class="load" id="btn-devam-eden" type="button">Daha Fazla Göster</button>
+        </section>
+
+        <section class="category">
+            <div class="title">
+                <h2>Proje <span>Örnekleri</span></h2>
+                <p>Gelecekte hayata geçecek modern konut tasarımları.</p>
+            </div>
+            <div class="grid" id="grid-ornekler"></div>
+            <button class="load" id="btn-ornekler" type="button">Daha Fazla Göster</button>
+        </section>
+
     </div>
-
-    <div class="grid" id="grid-tamamlanmis"></div>
-    <button class="load" id="btn-tamamlanmis">Daha Fazla Göster</button>
-
-    <div class="title">
-      <h2>Devam Eden Projeler</h2>
-      <p>Kaba inşaat ve aktif şantiye çalışmalarımız.</p>
-    </div>
-
-    <div class="grid" id="grid-devam-eden"></div>
-    <button class="load" id="btn-devam-eden">Daha Fazla Göster</button>
-
-    <div class="title">
-      <h2>Proje Örnekleri</h2>
-      <p>Gelecekte hayata geçecek modern konut tasarımları.</p>
-    </div>
-
-    <div class="grid" id="grid-ornekler"></div>
-    <button class="load" id="btn-ornekler">Daha Fazla Göster</button>
-
-  </div>
-</section>
+</main>
 
 <section class="cta">
-  <h2>Binanız İçin Kentsel Dönüşüm Teklifi Alın</h2>
-  <a class="phone" href="tel:05431813485">0543 181 34 85</a>
+    <h2>Binanız İçin Kentsel Dönüşüm Teklifi Alın</h2>
+    <p>Masfey, Lavinay, Kardelen ve Örnek Yapı iş ortaklığıyla güvenli dönüşüm süreci.</p>
+    <a class="phone" href="tel:+905431813485">0543 181 34 85</a>
+    <div class="cta-buttons">
+        <a class="btn btn-orange" href="https://wa.me/905431813485?text=Merhaba,%20binam%20için%20kentsel%20dönüşüm%20teklifi%20almak%20istiyorum.">WhatsApp’tan Yaz</a>
+        <a class="btn btn-outline" href="iletisim.html">İletişim Formu</a>
+    </div>
 </section>
 
-<footer class="footer">
-  © 2026 Kentseldönüşüm.com.tr
-</footer>
+<footer class="footer">© 2026 KentselDönüşüm.com.tr | Tüm Hakları Saklıdır</footer>
 
 <div class="lightbox" id="lightbox">
-  <button class="close" id="close" type="button">×</button>
-  <button class="lbnav lbprev" id="lbprev" type="button">‹</button>
-  <img id="bigImg" alt="Galeri Görseli">
-  <button class="lbnav lbnext" id="lbnext" type="button">›</button>
+    <button class="close" id="close" type="button">×</button>
+    <button class="lbnav lbprev" id="lbprev" type="button">‹</button>
+    <img id="bigImg" alt="Galeri Görseli">
+    <button class="lbnav lbnext" id="lbnext" type="button">›</button>
+    <div class="lbtext" id="lbtext"></div>
 </div>
 
 <script>
-const limit = 8;
-
-const durum = {
-  'tamamlanmis': 0,
-  'devam-eden': 0,
-  'ornekler': 0
-};
-
+const LIMIT = 8;
+const durum = { "tamamlanmis": 0, "devam-eden": 0, "ornekler": 0 };
 let TUM_RESIMLER = [];
 let aktifGaleriListesi = [];
 let aktifIndex = 0;
 
-const lb = document.getElementById('lightbox');
-const big = document.getElementById('bigImg');
+const kategoriMetinleri = {
+    "tamamlanmis": {
+        grid: "grid-tamamlanmis",
+        btn: "btn-tamamlanmis",
+        baslik: "Tamamlanan Proje",
+        aciklama: "Anahtar teslimi yapılmış proje görseli."
+    },
+    "devam-eden": {
+        grid: "grid-devam-eden",
+        btn: "btn-devam-eden",
+        baslik: "Devam Eden Proje",
+        aciklama: "Kaba inşaat ve şantiye aşaması."
+    },
+    "ornekler": {
+        grid: "grid-ornekler",
+        btn: "btn-ornekler",
+        baslik: "Proje Örneği",
+        aciklama: "Modern konut ve site konsepti."
+    }
+};
+
+const fallbackResimler = [
+    ...Array.from({length:19}, (_,i)=>({kategori:"tamamlanmis", src:"tamam."+(i+1)+".jpg", baslik:"Tamamlanan Proje "+(i+1)})),
+    ...Array.from({length:9}, (_,i)=>({kategori:"devam-eden", src:"kaba."+(i+1)+".png", baslik:"Devam Eden Proje "+(i+1)})),
+    ...Array.from({length:30}, (_,i)=>({kategori:"ornekler", src:"proje."+(i+1)+".png", baslik:"Proje Örneği "+(i+1)}))
+];
 
 function temizYol(src){
-  if(!src) return '';
-
-  if(src.startsWith('http')){
-    return src;
-  }
-
-  return './' + src.replace(/^\.?\//, '');
+    if(!src) return "";
+    if(src.startsWith("http")) return src;
+    return src.replace(/^\.?\//, "");
 }
 
 async function baslat(){
-  try{
-    const r = await fetch('./resimler.json?ts=' + Date.now(), {
-      cache: 'no-store'
-    });
-
-    if(!r.ok){
-      throw new Error('resimler.json bulunamadı veya okunamadı');
+    try{
+        const r = await fetch("resimler.json?v=" + Date.now(), {cache:"no-store"});
+        if(!r.ok) throw new Error("resimler.json yok");
+        const data = await r.json();
+        if(!Array.isArray(data)) throw new Error("resimler.json liste değil");
+        TUM_RESIMLER = data;
+    }catch(e){
+        TUM_RESIMLER = fallbackResimler;
     }
 
-    const text = await r.text();
-    TUM_RESIMLER = JSON.parse(text);
-
-    if(!Array.isArray(TUM_RESIMLER)){
-      throw new Error('resimler.json liste formatında değil');
-    }
-
-  }catch(e){
-    console.error(e);
-
-    ['tamamlanmis','devam-eden','ornekler'].forEach(katAd => {
-      const grid = document.getElementById('grid-' + katAd);
-      const btn = document.getElementById('btn-' + katAd);
-
-      grid.innerHTML = '<div class="empty">resimler.json okunamadı. Dosya adını ve JSON formatını kontrol et.</div>';
-      btn.style.display = 'none';
-    });
-
-    return;
-  }
-
-  ['tamamlanmis','devam-eden','ornekler'].forEach(kategoriYukle);
+    ["tamamlanmis","devam-eden","ornekler"].forEach(kategoriYukle);
 }
 
-function kategoriYukle(katAd){
-  const grid = document.getElementById('grid-' + katAd);
-  const btn = document.getElementById('btn-' + katAd);
+function kategoriYukle(kategori){
+    const ayar = kategoriMetinleri[kategori];
+    const grid = document.getElementById(ayar.grid);
+    const btn = document.getElementById(ayar.btn);
+    const liste = TUM_RESIMLER.filter(x => x.kategori === kategori);
+    const bas = durum[kategori];
+    const parca = liste.slice(bas, bas + LIMIT);
 
-  const liste = TUM_RESIMLER.filter(item => item.kategori === katAd);
-  const bas = durum[katAd];
-  const parca = liste.slice(bas, bas + limit);
+    if(liste.length === 0 && bas === 0){
+        grid.innerHTML = '<div class="empty">Bu kategoriye henüz görsel eklenmedi.</div>';
+        btn.style.display = "none";
+        return;
+    }
 
-  if(liste.length === 0 && bas === 0){
-    grid.innerHTML = '<div class="empty">Bu kategoriye henüz görsel eklenmedi.</div>';
-    btn.style.display = 'none';
-    return;
-  }
+    parca.forEach(item => {
+        const src = temizYol(item.src);
+        const title = item.baslik || ayar.baslik;
+        const card = document.createElement("article");
+        card.className = "card";
+        card.innerHTML = `
+            <img loading="lazy" src="${src}" alt="${title}">
+            <div class="card-body">
+                <h3>${title}</h3>
+                <p>${item.aciklama || ayar.aciklama}</p>
+            </div>
+        `;
 
-  parca.forEach(item => {
-    const src = temizYol(item.src);
+        const img = card.querySelector("img");
+        img.dataset.realSrc = src;
+        img.onerror = function(){
+            card.style.display = "none";
+        };
 
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const img = document.createElement('img');
-    img.src = src + '?v=' + Date.now();
-    img.dataset.realSrc = src;
-    img.alt = item.baslik || 'Proje Görseli';
-    img.loading = 'lazy';
-
-    img.onerror = function(){
-      const hata = document.createElement('div');
-      hata.className = 'empty';
-      hata.style.fontSize = '12px';
-      hata.style.padding = '25px 8px';
-      hata.innerHTML = 'Resim açılmadı:<br><b>' + item.src + '</b>';
-
-      this.replaceWith(hata);
-    };
-
-    const span = document.createElement('span');
-    span.textContent = item.baslik || 'Proje Görseli';
-
-    card.appendChild(img);
-    card.appendChild(span);
-
-    card.addEventListener('click', () => {
-      resmiAc(src);
+        card.addEventListener("click", () => resmiAc(src, title));
+        grid.appendChild(card);
     });
 
-    grid.appendChild(card);
-  });
-
-  durum[katAd] += parca.length;
-
-  if(durum[katAd] >= liste.length){
-    btn.style.display = 'none';
-  }else{
-    btn.style.display = 'block';
-  }
-
-  btn.onclick = () => kategoriYukle(katAd);
-
-  updateActiveImages();
+    durum[kategori] += parca.length;
+    btn.style.display = durum[kategori] >= liste.length ? "none" : "block";
+    btn.onclick = () => kategoriYukle(kategori);
+    updateActiveImages();
 }
 
 function updateActiveImages(){
-  aktifGaleriListesi = Array.from(document.querySelectorAll('.grid .card img'))
-    .map(img => img.dataset.realSrc || img.getAttribute('src'));
+    aktifGaleriListesi = Array.from(document.querySelectorAll(".grid .card img"))
+        .filter(img => img.closest(".card").style.display !== "none")
+        .map(img => ({
+            src: img.dataset.realSrc || img.getAttribute("src"),
+            title: img.getAttribute("alt") || "Proje Görseli"
+        }));
 }
 
-function resmiAc(src){
-  updateActiveImages();
+const lb = document.getElementById("lightbox");
+const big = document.getElementById("bigImg");
+const lbtext = document.getElementById("lbtext");
 
-  aktifIndex = aktifGaleriListesi.indexOf(src);
+function resmiAc(src, title){
+    updateActiveImages();
+    aktifIndex = aktifGaleriListesi.findIndex(x => x.src === src);
+    if(aktifIndex < 0) aktifIndex = 0;
+    goster();
+    lb.classList.add("active");
+}
 
-  if(aktifIndex < 0){
-    aktifIndex = 0;
-  }
-
-  big.src = src + '?v=' + Date.now();
-  lb.classList.add('active');
+function goster(){
+    if(!aktifGaleriListesi.length) return;
+    const item = aktifGaleriListesi[aktifIndex];
+    big.src = item.src;
+    lbtext.textContent = (aktifIndex + 1) + " / " + aktifGaleriListesi.length + " - " + item.title;
 }
 
 function kapat(){
-  lb.classList.remove('active');
-  big.removeAttribute('src');
+    lb.classList.remove("active");
+    big.removeAttribute("src");
 }
 
 function ileri(){
-  if(!aktifGaleriListesi.length) return;
-
-  aktifIndex = (aktifIndex + 1) % aktifGaleriListesi.length;
-  big.src = aktifGaleriListesi[aktifIndex] + '?v=' + Date.now();
+    if(!aktifGaleriListesi.length) return;
+    aktifIndex = (aktifIndex + 1) % aktifGaleriListesi.length;
+    goster();
 }
 
 function geri(){
-  if(!aktifGaleriListesi.length) return;
-
-  aktifIndex = (aktifIndex - 1 + aktifGaleriListesi.length) % aktifGaleriListesi.length;
-  big.src = aktifGaleriListesi[aktifIndex] + '?v=' + Date.now();
+    if(!aktifGaleriListesi.length) return;
+    aktifIndex = (aktifIndex - 1 + aktifGaleriListesi.length) % aktifGaleriListesi.length;
+    goster();
 }
 
-document.getElementById('close').onclick = kapat;
-document.getElementById('lbnext').onclick = ileri;
-document.getElementById('lbprev').onclick = geri;
+document.getElementById("close").onclick = kapat;
+document.getElementById("lbnext").onclick = ileri;
+document.getElementById("lbprev").onclick = geri;
 
-lb.addEventListener('click', e => {
-  if(e.target === lb){
-    kapat();
-  }
+lb.addEventListener("click", e => {
+    if(e.target === lb) kapat();
 });
 
-document.addEventListener('keydown', e => {
-  if(!lb.classList.contains('active')) return;
+document.addEventListener("keydown", e => {
+    if(!lb.classList.contains("active")) return;
+    if(e.key === "Escape") kapat();
+    if(e.key === "ArrowRight") ileri();
+    if(e.key === "ArrowLeft") geri();
+});
 
-  if(e.key === 'Escape'){
-    kapat();
-  }
+let startX = 0;
+lb.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+}, {passive:true});
 
-  if(e.key === 'ArrowRight'){
-    ileri();
-  }
-
-  if(e.key === 'ArrowLeft'){
-    geri();
-  }
+lb.addEventListener("touchend", e => {
+    const endX = e.changedTouches[0].clientX;
+    if(startX - endX > 50) ileri();
+    if(endX - startX > 50) geri();
 });
 
 baslat();
@@ -554,4 +573,3 @@ baslat();
 
 </body>
 </html>
-```
