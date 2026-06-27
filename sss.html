@@ -1,71 +1,323 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sık Sorulan Sorular | Kentsel Dönüşüm</title>
-<meta name="description" content="Kentsel dönüşüm, riskli yapı, kat karşılığı inşaat ve malik hakları hakkında sık sorulan sorular.">
-<link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sık Sorulan Sorular | KentselDönüşüm.com.tr</title>
+<meta name="description" content="Kentsel dönüşüm, riskli yapı tespiti, itiraz süresi, kira yardımı, kat karşılığı inşaat ve malik hakları hakkında sık sorulan sorular.">
+<meta name="keywords" content="kentsel dönüşüm sık sorulan sorular, riskli yapı tespiti, kentsel dönüşüm kira yardımı, kat karşılığı inşaat">
+<meta name="robots" content="index, follow">
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lacivert:#07182c;
+  --koyu:#061426;
+  --lacivert2:#102f52;
+  --turuncu:#ff6b00;
+  --turuncu2:#ff8a1f;
+  --acik:#f7f4f0;
+  --beyaz:#fff;
+  --metin:#111827;
+  --muted:#64748b;
+  --border:#e5e7eb;
+}
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--acik);
+  color:var(--metin);
+  line-height:1.55;
+}
+a{text-decoration:none;color:inherit}
+.container{max-width:1180px;margin:auto;padding:0 20px}
+.topbar{background:var(--koyu);color:white;font-size:14px}
+.topbar .container{min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.topbar b{color:var(--turuncu)}
+.header{
+  background:var(--lacivert);
+  color:white;
+  position:sticky;
+  top:0;
+  z-index:50;
+  box-shadow:0 8px 22px rgba(7,24,44,.22);
+}
+.nav{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:22px}
+.brand{font-size:24px;font-weight:900;letter-spacing:.3px;white-space:nowrap}
+.brand span{color:var(--turuncu)}
+.menu{display:flex;align-items:center;gap:22px;font-size:14px;font-weight:800}
+.menu a{color:white;opacity:.95}
+.menu a:hover,.menu a.active{color:var(--turuncu);opacity:1}
+.btn{
+  min-height:52px;
+  padding:0 22px;
+  border-radius:9px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  border:2px solid transparent;
+}
+.btn-orange{background:var(--turuncu);color:white;box-shadow:0 12px 26px rgba(255,107,0,.28)}
+.btn-outline{border-color:white;color:white}
+.page-hero{
+  background:
+    radial-gradient(circle at 18% 20%,rgba(255,107,0,.18),transparent 28%),
+    linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+  color:white;
+  padding:58px 0 46px;
+  text-align:center;
+}
+.page-hero h1{font-size:40px;line-height:1.18;margin-bottom:10px}
+.page-hero h1 span{color:var(--turuncu)}
+.page-hero p{color:#e5e7eb;max-width:780px;margin:auto;font-size:17px}
+.cta{
+  background:linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+  color:white;
+  text-align:center;
+  padding:54px 20px;
+}
+.cta h2{font-size:30px;margin-bottom:8px}
+.cta p{color:#e5e7eb;margin-bottom:10px}
+.phone{display:inline-block;color:var(--turuncu);font-size:30px;font-weight:900;margin:6px 0 20px}
+.cta-buttons{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.footer{background:var(--koyu);color:#cbd5e1;text-align:center;padding:22px;font-size:14px}
+.fixed-whatsapp{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:80;
+  background:#16a34a;
+  color:white;
+  padding:14px 20px;
+  border-radius:999px;
+  font-weight:900;
+  box-shadow:0 12px 28px rgba(22,163,74,.35);
+}
+@media(max-width:900px){
+  .nav{align-items:flex-start;flex-direction:column;padding:14px 0}
+  .menu{width:100%;overflow-x:auto;white-space:nowrap;gap:18px;padding-bottom:5px}
+  .menu a{flex:0 0 auto}
+}
+@media(max-width:560px){
+  .container{padding:0 16px}
+  .topbar .container{align-items:flex-start;flex-direction:column;gap:3px;padding-top:7px;padding-bottom:7px}
+  .brand{font-size:19px}
+  .menu{font-size:13px}
+  .page-hero{padding:42px 0 36px}
+  .page-hero h1{font-size:31px}
+  .page-hero p{font-size:15px}
+  .cta h2{font-size:24px}
+  .phone{font-size:25px}
+  .cta-buttons{display:grid}
+  .btn{width:100%}
+}
+
+.faq-wrap{padding:56px 0}
+.faq-intro{
+  background:white;
+  border-radius:18px;
+  padding:28px;
+  box-shadow:0 12px 34px rgba(7,24,44,.08);
+  border:1px solid rgba(7,24,44,.06);
+  margin-bottom:26px;
+}
+.faq-intro h2{font-size:28px;color:var(--lacivert);margin-bottom:10px}
+.faq-intro h2 span{color:var(--turuncu)}
+.faq-intro p{color:#475569}
+.faq-grid{display:grid;grid-template-columns:1fr;gap:14px}
+.faq-item{
+  background:white;
+  border:1px solid rgba(7,24,44,.08);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(7,24,44,.06);
+}
+.faq-q{
+  width:100%;
+  background:white;
+  border:0;
+  padding:20px 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  cursor:pointer;
+  text-align:left;
+  color:var(--lacivert);
+  font-size:17px;
+  font-weight:900;
+}
+.faq-q span{color:var(--turuncu);font-size:24px;min-width:24px;text-align:center}
+.faq-a{
+  display:none;
+  padding:0 22px 20px;
+  color:#475569;
+  font-size:15px;
+}
+.faq-item.open .faq-a{display:block}
+.faq-item.open .faq-q span{transform:rotate(45deg)}
+.notice{
+  margin-top:24px;
+  background:#fff7ed;
+  border:1px solid rgba(255,107,0,.25);
+  border-radius:14px;
+  padding:18px 20px;
+  color:#7c2d12;
+  font-size:14px;
+}
+@media(max-width:560px){
+  .faq-wrap{padding:36px 0}
+  .faq-q{font-size:15px;padding:17px}
+  .faq-a{padding:0 17px 17px;font-size:14px}
+}
+</style>
 </head>
 <body>
-<div class="topbar"><div class="container"><span>İstanbul Geneli Kentsel Dönüşüm ve Kat Karşılığı İnşaat</span><span>WhatsApp: 0543 181 34 85</span></div></div>
-<header>
+
+<div class="topbar">
+  <div class="container">
+    <div>📍 İstanbul Geneli Kentsel Dönüşüm ve Kat Karşılığı İnşaat</div>
+    <div>WhatsApp: <b>0543 181 34 85</b></div>
+  </div>
+</div>
+
+<header class="header">
   <div class="container nav">
-    <a class="logo" href="index.html">KentselDönüşüm.com.tr<small>İstanbul Kentsel Dönüşüm Hizmetleri</small></a>
-    <nav class="menu">
-      <a class="" href="index.html">Ana Sayfa</a>
-<a class="" href="hizmetlerimiz.html">Hizmetler</a>
-<a class="" href="kentsel-donusum.html">Kentsel Dönüşüm</a>
-<a class="" href="hakkimizda.html">Hakkımızda</a>
-<a class="active" href="sss.html">S.S.S</a>
-<a class="" href="iletisim.html">İletişim</a>
+    <a class="brand" href="index.html">Kentsel<span>Dönüşüm</span>.com.tr</a>
+    <nav class="menu" aria-label="Ana Menü">
+      <a href="index.html">Ana Sayfa</a>
+      <a href="kurumsal.html">Kurumsal</a>
+      <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
+      <a href="projelerimiz.html">Projelerimiz</a>
+      <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
+      <a class="active" href="sss.html">S.S.S</a>
+      <a href="iletisim.html">İletişim</a>
     </nav>
   </div>
 </header>
-<section class="hero inner">
+
+<section class="page-hero">
+  <h1>Sık Sorulan <span>Sorular</span></h1>
+  <p>Kentsel dönüşüm, riskli yapı, kat karşılığı inşaat, malik hakları ve ön değerlendirme süreci hakkında net bilgiler.</p>
+</section>
+
+<main class="faq-wrap">
   <div class="container">
-    <div class="hero-box">
-      <h1>Sık Sorulan Sorular</h1>
-      <p>Kentsel dönüşüm sürecinde en çok merak edilen konuları cevaplıyoruz.</p>
-      <div class="buttons">
-        <a class="btn" href="https://wa.me/905431813485">WhatsApp’tan Bilgi Al</a>
-        <a class="btn dark" href="iletisim.html">Ücretsiz Ön Fizibilite</a>
-      </div>
+    <section class="faq-intro">
+      <h2>Kentsel dönüşümde <span>doğru bilgi önemlidir.</span></h2>
+      <p>Her bina için sonuç; imar durumu, ada/parsel, ruhsat, iskan, malik yapısı, mevcut metrekareler ve yerinde keşif sonrasında netleşir. Aşağıdaki cevaplar genel bilgilendirme amaçlıdır.</p>
+    </section>
+
+    <section class="faq-grid">
+
+      <article class="faq-item open">
+        <button class="faq-q" type="button">1. Kentsel dönüşüm nedir? <span>+</span></button>
+        <div class="faq-a">Kentsel dönüşüm; eski, riskli veya ekonomik ömrünü tamamlamış yapıların, güncel yönetmeliklere uygun, güvenli ve modern yapılarla yenilenmesi sürecidir. Süreç; risk analizi, malik görüşmeleri, proje, ruhsat, yıkım, inşaat ve teslim aşamalarından oluşur.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">2. Binamın dönüşüme uygun olup olmadığı nasıl anlaşılır? <span>+</span></button>
+        <div class="faq-a">İlk aşamada ilçe, ada/parsel, arsa alanı, mevcut daire metrekareleri, kat sayısı, ruhsat/iskan durumu ve imar planı incelenir. Kesin değerlendirme için yerinde keşif ve belediye imar bilgileri gerekir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">3. Riskli yapı tespiti nasıl yapılır? <span>+</span></button>
+        <div class="faq-a">Riskli yapı tespiti, Bakanlıkça lisanslandırılmış kurum ve kuruluşlar tarafından yapılır. Maliklerden biri veya kanuni temsilcisi başvurabilir. Tespit sonucuna göre yapı riskli çıkarsa süreç resmi olarak başlar.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">4. Riskli yapı tespitine itiraz süresi var mı? <span>+</span></button>
+        <div class="faq-a">Evet. Riskli yapı tespitine karşı yapı malikleri veya kanuni temsilcileri tarafından tebliğ/ilan süreci sonrasında 15 gün içinde ilgili Müdürlüğe veya yetki devri yapılmış idareye itiraz edilebilir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">5. Riskli yapı kesinleşirse bina hemen yıkılır mı? <span>+</span></button>
+        <div class="faq-a">Riskli yapı kesinleştikten sonra maliklere yıkım için süre verilir. Uygulamada süreç; tebligatlar, tahliye, yıkım ruhsatı ve yıkım organizasyonu ile ilerler. Süreç bina ve idare durumuna göre değişebilir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">6. Kat karşılığı inşaatta maliklerin hakkı nasıl belirlenir? <span>+</span></button>
+        <div class="faq-a">Malik hakları; arsa payı, mevcut bağımsız bölüm metrekareleri, imar hakkı, yeni yapılabilecek inşaat alanı, maliyet ve proje fizibilitesiyle birlikte değerlendirilir. Bu yüzden kesin paylaşım, ön fizibilite ve proje hesabından sonra netleşir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">7. Mevcut daire metrekarem korunur mu? <span>+</span></button>
+        <div class="faq-a">Bu durum her projede değişir. İmar hakkı, arsa alanı, ortak alanlar, otopark, çekme mesafeleri ve yeni yönetmelikler daire metrekarelerini etkileyebilir. Ön değerlendirmede mevcut metrekareniz ve beklentiniz birlikte hesaplanır.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">8. Ada parsel bilgisi neden isteniyor? <span>+</span></button>
+        <div class="faq-a">Ada/parsel bilgisi binanın imar durumuna, parsel alanına, plan notlarına ve yapılabilecek inşaat hakkına ulaşmak için önemlidir. Bu bilgi olmadan net dönüşüm hesabı yapmak sağlıklı olmaz.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">9. Kira yardımı alınabilir mi? <span>+</span></button>
+        <div class="faq-a">6306 sayılı Kanun kapsamındaki riskli yapı süreçlerinde, koşulları sağlayan hak sahipleri için kira yardımı veya farklı destekler gündeme gelebilir. Başvuru, süre ve tutarlar güncel Bakanlık duyurularına göre değişir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">10. Binada herkesin onayı gerekir mi? <span>+</span></button>
+        <div class="faq-a">Kentsel dönüşüm ve kat karşılığı süreçlerde malik kararları, arsa payı çoğunluğu, sözleşme şartları ve resmi prosedürler önemlidir. Bina özelindeki karar yapısı tapu, arsa payı ve malik durumuna göre değerlendirilmelidir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">11. Noter onaylı sözleşme neden önemlidir? <span>+</span></button>
+        <div class="faq-a">Sözleşme; teslim süresi, malzeme standardı, paylaşım, teminat, cezai şartlar ve tarafların yükümlülüklerini netleştirir. Yazılı ve resmi sözleşme olmadan dönüşüm süreci başlatmak malik açısından risk oluşturabilir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">12. Teminatlı inşaat süreci ne demektir? <span>+</span></button>
+        <div class="faq-a">Teminatlı süreç; işin sözleşme, ödeme, teslim ve yükümlülüklerinin güvence altına alınması anlamına gelir. Projeye göre teminat türü ve kapsamı değişebilir; bu konu sözleşme aşamasında netleştirilir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">13. Süreç ne kadar sürer? <span>+</span></button>
+        <div class="faq-a">Süre; malik anlaşması, riskli yapı süreci, proje, belediye ruhsat işlemleri, yıkım ve inşaat büyüklüğüne göre değişir. Küçük parseller ile büyük blok projelerin süreleri aynı değildir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">14. Ücretsiz ön değerlendirme kesin teklif midir? <span>+</span></button>
+        <div class="faq-a">Hayır. Ön değerlendirme ilk görüşme ve bilgi toplama aşamasıdır. Kesin teklif için ada/parsel, imar durumu, mevcut metrekareler, tapu/ruhsat bilgileri ve yerinde keşif birlikte incelenmelidir.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">15. Sadece bilgi almak için başvurabilir miyim? <span>+</span></button>
+        <div class="faq-a">Evet. Binanızın dönüşüme uygun olup olmadığını, yaklaşık sürecin nasıl işleyeceğini ve hangi belgelere ihtiyaç olduğunu öğrenmek için ön başvuru yapabilirsiniz.</div>
+      </article>
+
+      <article class="faq-item">
+        <button class="faq-q" type="button">16. İlk görüşme için hangi bilgiler gerekli? <span>+</span></button>
+        <div class="faq-a">İlçe, ada/parsel, daire metrekareniz, arsa/toplam metrekare, kat sayısı, mevcut daire/dükkan sayısı ve mümkünse tapu, ruhsat veya iskan bilgileri ilk değerlendirme için faydalıdır.</div>
+      </article>
+
+    </section>
+
+    <div class="notice">
+      Not: Bu sayfadaki bilgiler genel bilgilendirme amaçlıdır. Bina özelindeki kesin değerlendirme için resmi imar durumu, tapu/ruhsat bilgileri, malik yapısı ve yerinde keşif birlikte incelenmelidir.
     </div>
+  </div>
+</main>
+
+<section class="cta">
+  <h2>Binanız İçin Net Ön Değerlendirme Alın</h2>
+  <p>Ada/parsel ve daire metrekarenizi paylaşın, uzman ekibimiz sizi arasın.</p>
+  <a class="phone" href="tel:+905431813485">0543 181 34 85</a>
+  <div class="cta-buttons">
+    <a class="btn btn-orange" href="https://wa.me/905431813485?text=Merhaba,%20SSS%20sayfasından%20ulaşıyorum.%20Binam%20için%20ön%20değerlendirme%20almak%20istiyorum.">WhatsApp'tan Yaz</a>
+    <a class="btn btn-outline" href="iletisim.html">İletişim Formu</a>
   </div>
 </section>
 
-<section><div class="container"><div class="section-title"><span>Sık Sorulan Sorular</span><h2>Kentsel Dönüşüm Hakkında Merak Edilenler</h2></div><div class="faq">
-<div class="faq-item"><h3>Kentsel dönüşüm için ilk adım nedir?</h3><p>İlk adım binanın, arsanın, malik sayısının ve imar durumunun ön değerlendirmesidir.</p></div>
-<div class="faq-item"><h3>Kat karşılığı inşaatta paylaşım nasıl belirlenir?</h3><p>Arsa değeri, imar hakkı, toplam inşaat alanı, mevcut daireler ve proje maliyeti birlikte değerlendirilir.</p></div>
-<div class="faq-item"><h3>Maliklerin hakları nasıl korunur?</h3><p>Net sözleşme, teslim şartları, teminatlar ve metrekare paylaşımı açıkça belirlenmelidir.</p></div>
-<div class="faq-item"><h3>Ön fizibilite için ne gerekir?</h3><p>Adres, arsa metrekaresi, mevcut daire sayısı ve mümkünse imar durumu bilgisi yeterlidir.</p></div>
-<div class="faq-item"><h3>İstanbul’un hangi ilçelerinde çalışıyorsunuz?</h3><p>Bahçelievler, Bakırköy, Bağcılar, Güngören, Avcılar, Küçükçekmece, Esenler, Zeytinburnu, Başakşehir, Üsküdar ve İstanbul geneli.</p></div>
-</div></div></section>
+<footer class="footer">© 2026 KentselDönüşüm.com.tr | Tüm Hakları Saklıdır</footer>
+<a class="fixed-whatsapp" href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum.">WhatsApp</a>
 
-<footer>
-  <div class="container footer-grid">
-    <div>
-      <h3>KentselDönüşüm.com.tr</h3>
-      <p>İstanbul genelinde kentsel dönüşüm, kat karşılığı inşaat, riskli yapı dönüşümü ve proje geliştirme hizmetleri.</p>
-    </div>
-    <div>
-      <h3>Menü</h3>
-      <a href="index.html">Ana Sayfa</a>
-      <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
-      <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
-      <a href="sss.html">S.S.S</a>
-      <a href="iletisim.html">İletişim</a>
-    </div>
-    <div>
-      <h3>İletişim</h3>
-      <p>Telefon / WhatsApp:</p>
-      <p><strong>0543 181 34 85</strong></p>
-      <p>İstanbul</p>
-    </div>
-  </div>
-  <div class="container copy"><p>© 2026 KentselDönüşüm.com.tr - Tüm Hakları Saklıdır.</p></div>
-</footer>
-<a class="whatsapp" href="https://wa.me/905431813485">WhatsApp</a>
+<script>
+document.querySelectorAll(".faq-q").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    this.closest(".faq-item").classList.toggle("open");
+  });
+});
+</script>
+
 </body>
 </html>
