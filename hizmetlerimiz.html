@@ -3,983 +3,203 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Kentsel Dönüşüm | İstanbul Kentsel Dönüşüm ve Kat Karşılığı İnşaat</title>
-<meta name="description" content="İstanbul geneli kentsel dönüşüm, kat karşılığı inşaat, yerinde keşif, ücretsiz ön değerlendirme ve anahtar teslim inşaat hizmetleri.">
-<meta name="keywords" content="kentsel dönüşüm, İstanbul kentsel dönüşüm, kat karşılığı inşaat, bina yenileme, riskli yapı, ücretsiz keşif, ön değerlendirme">
+<title>Hizmetlerimiz | KentselDönüşüm.com.tr</title>
+<meta name="description" content="Kentsel dönüşüm, kat karşılığı inşaat, yerinde keşif, imar fizibilite, proje ve ruhsat takibi hizmetleri.">
 <meta name="robots" content="index, follow">
-
 <style>
+
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-    --lacivert:#07182c;
-    --lacivert2:#0b2038;
-    --turuncu:#ff6b00;
-    --yesil:#16c85b;
-    --gri:#f5f7fa;
-    --metin:#111827;
-    --muted:#6b7280;
-    --border:#e5e7eb;
+  --lacivert:#07182c;
+  --koyu:#061426;
+  --lacivert2:#102f52;
+  --turuncu:#ff6b00;
+  --turuncu2:#ff8a1f;
+  --acik:#f7f4f0;
+  --beyaz:#fff;
+  --metin:#111827;
+  --muted:#64748b;
+  --border:#e5e7eb;
 }
 body{
-    font-family:Arial,Helvetica,sans-serif;
-    color:var(--metin);
-    background:#fff;
-    line-height:1.45;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--acik);
+  color:var(--metin);
+  line-height:1.55;
 }
 a{text-decoration:none;color:inherit}
-.container{max-width:1240px;margin:auto;padding:0 20px}
-
-/* ÜST BAR */
+.container{max-width:1180px;margin:auto;padding:0 20px}
 .topbar{
-    background:#07182c;
-    color:white;
-    font-size:14px;
+  background:var(--koyu);
+  color:white;
+  font-size:14px;
 }
 .topbar .container{
-    min-height:34px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:20px;
-    padding-top:6px;
-    padding-bottom:6px;
+  min-height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
 }
-.topbar-left,.topbar-right{
-    display:flex;
-    align-items:center;
-    gap:24px;
-    flex-wrap:wrap;
-}
-.topbar b{color:#ff7a18}
-
-/* HEADER */
+.topbar b{color:var(--turuncu)}
 .header{
-    background:#fff;
-    position:sticky;
-    top:0;
-    z-index:50;
-    box-shadow:0 2px 12px rgba(15,23,42,.08);
+  background:var(--lacivert);
+  color:white;
+  position:sticky;
+  top:0;
+  z-index:50;
+  box-shadow:0 8px 22px rgba(7,24,44,.22);
 }
 .nav{
-    min-height:86px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:20px;
+  min-height:74px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
 }
-.logo{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    min-width:320px;
+.brand{
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:.3px;
+  white-space:nowrap;
 }
-.logo-mark{
-    width:54px;
-    height:54px;
-    border-radius:14px;
-    background:linear-gradient(135deg,#ff6b00,#ff9a3d);
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:28px;
-    font-weight:900;
-    box-shadow:0 10px 25px rgba(255,107,0,.28);
-}
-.logo-text strong{
-    display:block;
-    font-size:20px;
-    letter-spacing:.2px;
-}
-.logo-text strong span{color:var(--turuncu)}
-.logo-text small{
-    display:block;
-    color:#6b7280;
-    font-size:12px;
-    margin-top:2px;
-}
+.brand span{color:var(--turuncu)}
 .menu{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:18px;
-    font-size:12.5px;
-    font-weight:800;
-    flex:1;
+  display:flex;
+  align-items:center;
+  gap:22px;
+  font-size:14px;
+  font-weight:800;
 }
-.menu a{
-    padding:32px 0;
-    border-bottom:3px solid transparent;
+.menu a{color:white;opacity:.95}
+.menu a:hover,.menu a.active{color:var(--turuncu);opacity:1}
+.page-hero{
+  background:
+    radial-gradient(circle at 18% 20%,rgba(255,107,0,.18),transparent 28%),
+    linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+  color:white;
+  padding:58px 0 46px;
+  text-align:center;
 }
-.menu a.active,.menu a:hover{
-    color:var(--turuncu);
-    border-bottom-color:var(--turuncu);
+.page-hero h1{
+  font-size:40px;
+  line-height:1.18;
+  margin-bottom:10px;
 }
-.nav-cta{
-    background:var(--turuncu);
-    color:white;
-    font-weight:900;
-    padding:16px 22px;
-    border-radius:8px;
-    box-shadow:0 12px 25px rgba(255,107,0,.25);
-    white-space:nowrap;
-}
-
-/* HERO - GÖRSELSİZ */
-.hero{
-    position:relative;
-    min-height:570px;
-    overflow:hidden;
-    background:
-        radial-gradient(circle at 18% 25%, rgba(255,107,0,.28), transparent 28%),
-        radial-gradient(circle at 80% 30%, rgba(255,255,255,.14), transparent 24%),
-        linear-gradient(135deg,#061426 0%,#07182c 45%,#102f52 100%);
-}
-.hero:before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:
-        linear-gradient(115deg,transparent 0 58%,rgba(255,255,255,.08) 58.3% 58.9%,transparent 59.2%),
-        repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 90px),
-        repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 90px);
-    pointer-events:none;
-}
-.hero .container{
-    position:relative;
-    z-index:2;
-    min-height:570px;
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 400px;
-    gap:40px;
-    align-items:center;
-}
-.hero-content h1{
-    color:white;
-    font-size:54px;
-    line-height:1.12;
-    font-weight:900;
-    max-width:610px;
-    letter-spacing:-1.5px;
-}
-.hero-content h1 span{color:var(--turuncu)}
-.hero-content p{
-    margin-top:24px;
-    color:white;
-    font-size:20px;
-    max-width:560px;
-}
-.hero-note{
-    margin-top:16px;
-    color:#d1d5db;
-    font-size:15px;
-    max-width:560px;
-}
-.hero-buttons{
-    display:flex;
-    gap:18px;
-    margin-top:30px;
-    flex-wrap:wrap;
+.page-hero h1 span{color:var(--turuncu)}
+.page-hero p{
+  color:#e5e7eb;
+  max-width:760px;
+  margin:auto;
+  font-size:17px;
 }
 .btn{
-    min-height:56px;
-    padding:0 24px;
-    border-radius:9px;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    font-weight:900;
-    border:2px solid transparent;
+  min-height:52px;
+  padding:0 22px;
+  border-radius:9px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  border:2px solid transparent;
 }
-.btn-orange{
-    background:var(--turuncu);
-    color:white;
-    box-shadow:0 12px 28px rgba(255,107,0,.35);
+.btn-orange{background:var(--turuncu);color:white;box-shadow:0 12px 26px rgba(255,107,0,.28)}
+.btn-outline{border-color:white;color:white}
+.cta{
+  background:linear-gradient(135deg,var(--lacivert),var(--lacivert2));
+  color:white;
+  text-align:center;
+  padding:54px 20px;
 }
-.btn-outline{
-    color:white;
-    border-color:rgba(255,255,255,.75);
-    background:rgba(0,0,0,.15);
-    backdrop-filter:blur(4px);
+.cta h2{font-size:30px;margin-bottom:8px}
+.cta p{color:#e5e7eb;margin-bottom:10px}
+.phone{
+  display:inline-block;
+  color:var(--turuncu);
+  font-size:30px;
+  font-weight:900;
+  margin:6px 0 20px;
 }
-
-/* HERO SAĞDA GÖRSELSİZ ÇİZİM ALANI */
-.hero-visual{
-    position:relative;
-    min-height:auto;
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
+.cta-buttons{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
 }
-.city-card{
-    display:none;
-    position:absolute;
-    left:0;
-    top:38px;
-    width:250px;
-    height:250px;
-    border-radius:18px;
-    background:rgba(255,255,255,.08);
-    border:1px solid rgba(255,255,255,.16);
-    box-shadow:0 30px 60px rgba(0,0,0,.25);
-    overflow:hidden;
+.footer{
+  background:var(--koyu);
+  color:#cbd5e1;
+  text-align:center;
+  padding:22px;
+  font-size:14px;
 }
-.city-card:before{
-    content:"";
-    position:absolute;
-    left:24px;
-    bottom:0;
-    width:42px;
-    height:155px;
-    background:#d1d5db;
-    box-shadow:
-        58px 35px 0 #f97316,
-        116px -18px 0 #e5e7eb,
-        174px 18px 0 #94a3b8;
-}
-.city-card:after{
-    content:"ESKİ BİNA → YENİ PROJE";
-    position:absolute;
-    left:20px;
-    right:20px;
-    top:20px;
-    color:white;
-    font-size:13px;
-    font-weight:900;
-    letter-spacing:.4px;
-}
-.analysis-card{
-    width:100%;
-    max-width:390px;
-    margin-left:0;
-    background:white;
-    border-radius:8px;
-    overflow:hidden;
-    box-shadow:0 25px 55px rgba(0,0,0,.28);
-    position:relative;
-    z-index:3;
-}
-.analysis-head{
-    background:#101f35;
-    color:white;
-    text-align:center;
-    padding:26px 22px 22px;
-}
-.analysis-head h2{
-    font-size:20px;
-    margin-bottom:8px;
-}
-.analysis-head p{
-    color:white;
-    font-size:14px;
-}
-.analysis-body{padding:20px}
-.input{
-    height:44px;
-    border:1px solid var(--border);
-    border-radius:8px;
-    width:100%;
-    padding:0 14px;
-    margin-bottom:10px;
-    color:#374151;
-    background:#fff;
-    outline:none;
-}
-.input:focus{
-    border-color:var(--turuncu);
-    box-shadow:0 0 0 3px rgba(255,107,0,.12);
-}
-.analysis-body .btn{
-    width:100%;
-    margin-top:8px;
-    border:none;
-    cursor:pointer;
-    font-size:15px;
-}
-.privacy{
-    margin-top:10px;
-    font-size:10px;
-    color:#4b5563;
-}
-
-/* GÜVEN KUTUSU */
-.trust-wrap{
-    position:relative;
-    z-index:5;
-    margin-top:-24px;
-}
-.trust-box{
-    background:white;
-    border-radius:8px;
-    box-shadow:0 12px 35px rgba(15,23,42,.15);
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    overflow:hidden;
-}
-.trust-item{
-    padding:24px;
-    display:flex;
-    gap:16px;
-    align-items:flex-start;
-    border-right:1px solid var(--border);
-}
-.trust-item:last-child{border-right:none}
-.trust-icon{
-    width:44px;
-    height:44px;
-    min-width:44px;
-    border:2px solid #111827;
-    border-radius:12px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-}
-.trust-item h3{
-    font-size:14px;
-    font-weight:900;
-    margin-bottom:4px;
-}
-.trust-item p{
-    font-size:13px;
-    color:#374151;
-}
-
-/* PROJELER - GÖRSELSİZ */
-.section{padding:50px 0 26px}
-.section-title-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:18px;
-    margin-bottom:24px;
-}
-.section-title h2{font-size:26px;line-height:1.15}
-.section-title h2 span{color:var(--turuncu)}
-.section-title p{
-    color:#6b7280;
-    margin-top:4px;
-    font-size:14px;
-}
-.small-btn{
-    border:1px solid var(--border);
-    background:white;
-    border-radius:8px;
-    padding:14px 20px;
-    font-size:13px;
-    font-weight:900;
-    color:#111827;
-}
-.project-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:26px;
-}
-.project-card{
-    border-radius:10px;
-    overflow:hidden;
-    background:white;
-    box-shadow:0 8px 28px rgba(15,23,42,.12);
-}
-.project-top{
-    height:150px;
-    position:relative;
-    background:
-        linear-gradient(135deg,#111827 0 48%,#ff6b00 48% 50%,#e5e7eb 50% 100%);
-}
-.project-top:before{
-    content:"";
-    position:absolute;
-    left:30px;
-    bottom:0;
-    width:36px;
-    height:92px;
-    background:#6b7280;
-    box-shadow:
-        54px 25px 0 #9ca3af,
-        108px -16px 0 #f8fafc,
-        162px 9px 0 #cbd5e1,
-        216px -4px 0 #f97316;
-}
-.project-top:after{
-    content:"ÖNCE / SONRA";
-    position:absolute;
-    left:18px;
-    top:16px;
-    background:rgba(255,255,255,.94);
-    color:#111827;
-    font-size:11px;
-    font-weight:900;
-    padding:6px 9px;
-    border-radius:5px;
-}
-.project-body{
-    padding:18px;
-    display:grid;
-    grid-template-columns:1fr auto;
-    gap:12px;
-    align-items:end;
-}
-.project-body h3{
-    font-size:16px;
-    margin-bottom:7px;
-}
-.project-body p{
-    color:#374151;
-    font-size:13px;
-}
-.delivery{
-    color:var(--turuncu);
-    font-size:14px;
-    font-weight:900;
-    text-align:right;
-    white-space:nowrap;
-}
-
-/* ÖN DEĞERLENDİRME */
-.potential-section{
-    padding:28px 0 50px;
-    background:#fff;
-}
-.potential-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:20px;
-}
-.potential-card{
-    text-align:center;
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:24px 18px;
-    box-shadow:0 8px 24px rgba(15,23,42,.08);
-    background:#fff;
-}
-.potential-card h3{
-    font-size:15px;
-    margin:10px 0 6px;
-}
-.potential-card p{
-    font-size:13px;
-    color:#4b5563;
-}
-.potential-icon{
-    width:54px;
-    height:54px;
-    margin:auto;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:26px;
-    background:#f3f4f6;
-}
-.low .potential-icon{background:#fff1f2;color:#e11d48}
-.mid .potential-icon{background:#fff7ed;color:#f59e0b}
-.high .potential-icon{background:#ecfdf5;color:#16a34a}
-
-/* SÜREÇ */
-.process-section{
-    background:#07182c;
-    color:white;
-    padding:32px 0 40px;
-}
-.process-section h2{
-    font-size:26px;
-    margin-bottom:28px;
-}
-.process-section h2 span{color:var(--turuncu)}
-.process-grid{
-    display:grid;
-    grid-template-columns:repeat(6,1fr);
-    gap:18px;
-}
-.process-icon{
-    width:58px;
-    height:58px;
-    color:var(--turuncu);
-    border:2px solid var(--turuncu);
-    border-radius:14px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:27px;
-    margin-bottom:14px;
-}
-.process-item h3{
-    font-size:15px;
-    margin-bottom:6px;
-}
-.process-item p{
-    color:#d1d5db;
-    font-size:13px;
-}
-
-/* ORTAKLAR */
-.partners{
-    padding:24px 0;
-    background:#fff;
-}
-.partners .container{
-    display:grid;
-    grid-template-columns:190px 1fr 280px;
-    gap:18px;
-    align-items:center;
-}
-.partners-text h3{
-    font-size:16px;
-    margin-bottom:6px;
-}
-.partners-text p{
-    color:#4b5563;
-    font-size:13px;
-}
-.partner-logos{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:18px;
-}
-.partner-logo{
-    height:78px;
-    border:1px solid var(--border);
-    border-radius:8px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:white;
-    box-shadow:0 5px 18px rgba(15,23,42,.07);
-    font-weight:900;
-    letter-spacing:3px;
-    font-size:18px;
-    text-align:center;
-}
-.partner-logo small{
-    display:block;
-    font-size:10px;
-    letter-spacing:7px;
-    margin-top:3px;
-}
-.call-box{
-    height:78px;
-    background:#07182c;
-    color:white;
-    border-radius:8px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    padding:0 18px;
-}
-.call-box .phone{
-    font-size:18px;
-    font-weight:900;
-}
-.call-box p{
-    font-size:13px;
-    color:white;
-}
-.whatsapp-round{
-    width:54px;
-    height:54px;
-    border-radius:50%;
-    background:#16c85b;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:white;
-    font-size:28px;
-    font-weight:900;
-}
-
-/* SABİT WHATSAPP */
 .fixed-whatsapp{
-    position:fixed;
-    right:20px;
-    bottom:20px;
-    z-index:80;
-    width:62px;
-    height:62px;
-    border-radius:50%;
-    background:#16c85b;
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:34px;
-    font-weight:900;
-    box-shadow:0 10px 26px rgba(22,200,91,.4);
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:80;
+  background:#16a34a;
+  color:white;
+  padding:14px 20px;
+  border-radius:999px;
+  font-weight:900;
+  box-shadow:0 12px 28px rgba(22,163,74,.35);
 }
-
-/* MOBİL */
-@media(max-width:980px){
-    .nav{height:auto;padding:15px 0;align-items:flex-start}
-    .menu{display:none}
-    .nav-cta{display:none}
-    .hero .container{
-        grid-template-columns:1fr;
-        padding-top:45px;
-        padding-bottom:70px;
-    }
-    .hero-content h1{font-size:42px}
-    .hero-visual{min-height:auto;display:block}
-    .city-card{display:none}
-    .analysis-card{margin:0;width:100%;max-width:430px}
-    .trust-box{grid-template-columns:repeat(2,1fr)}
-    .project-grid{grid-template-columns:1fr}
-    .potential-grid{grid-template-columns:1fr}
-    .process-grid{grid-template-columns:repeat(2,1fr)}
-    .partners .container{grid-template-columns:1fr}
-    .partner-logos{grid-template-columns:repeat(2,1fr)}
+@media(max-width:900px){
+  .nav{align-items:flex-start;flex-direction:column;padding:14px 0}
+  .menu{width:100%;overflow-x:auto;white-space:nowrap;gap:18px;padding-bottom:5px}
+  .menu a{flex:0 0 auto}
 }
 @media(max-width:560px){
-    .container{padding:0 16px}
-    .topbar .container{align-items:flex-start;flex-direction:column;gap:4px}
-    .topbar-left,.topbar-right{gap:10px}
-    .topbar{font-size:12px}
-    .logo{min-width:auto}
-    .logo-mark{width:46px;height:46px;font-size:24px}
-    .logo-text strong{font-size:16px}
-    .hero{min-height:auto}
-    .hero .container{min-height:auto}
-    .hero-content h1{font-size:34px}
-    .hero-content p{font-size:17px}
-    .hero-buttons{display:grid}
-    .btn{width:100%}
-    .trust-wrap{margin-top:-22px}
-    .trust-box{grid-template-columns:1fr}
-    .trust-item{border-right:none;border-bottom:1px solid var(--border)}
-    .section-title-row{align-items:flex-start;flex-direction:column}
-    .project-top{height:170px}
-    .process-grid{grid-template-columns:1fr}
-    .partner-logos{grid-template-columns:1fr}
-    .call-box{height:auto;padding:18px}
+  .container{padding:0 16px}
+  .topbar .container{align-items:flex-start;flex-direction:column;gap:3px;padding-top:7px;padding-bottom:7px}
+  .brand{font-size:19px}
+  .menu{font-size:13px}
+  .page-hero{padding:42px 0 36px}
+  .page-hero h1{font-size:31px}
+  .page-hero p{font-size:15px}
+  .cta h2{font-size:24px}
+  .phone{font-size:25px}
+  .cta-buttons{display:grid}
+  .btn{width:100%}
 }
 
-/* HEADER SOLA YAKLAŞTIRMA + KURUMSAL MENÜ DÜZENİ */
-.header .container.nav{
-    max-width:100%;
-    padding-left:32px;
-    padding-right:32px;
-}
-.header .logo{
-    margin-right:20px;
-}
-.header .menu{
-    justify-content:flex-end;
-    gap:18px;
-    font-size:12.5px;
-}
-@media(max-width:560px){
-    .header .container.nav{
-        padding-left:16px;
-        padding-right:16px;
-    }
-}
-
-
-/* MOBİLDE BÜYÜK MENÜ BUTONLARI */
-.mobile-menu-buttons{
-    display:none;
-}
-@media(max-width:700px){
-    .header .menu,
-    .menu{
-        display:none !important;
-    }
-    .mobile-menu-buttons{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:14px;
-        margin-top:28px;
-        width:100%;
-    }
-    .mobile-menu-buttons a{
-        min-height:78px;
-        border-radius:16px;
-        background:rgba(255,255,255,.08);
-        border:1px solid rgba(255,255,255,.18);
-        color:white;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        text-align:center;
-        font-size:20px;
-        font-weight:900;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 22px rgba(0,0,0,.16);
-    }
-    .mobile-menu-buttons a:active{
-        transform:scale(.98);
-        background:rgba(255,107,0,.22);
-        border-color:rgba(255,107,0,.7);
-    }
-}
-@media(max-width:420px){
-    .mobile-menu-buttons{
-        gap:12px;
-    }
-    .mobile-menu-buttons a{
-        min-height:72px;
-        font-size:18px;
-        border-radius:14px;
-    }
-}
-
+.services{padding:56px 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.service{background:#fff;border-radius:16px;padding:28px 24px;box-shadow:0 10px 28px rgba(7,24,44,.08);border:1px solid rgba(7,24,44,.06)}
+.service .icon{font-size:34px;margin-bottom:12px}
+.service h2{font-size:21px;color:var(--lacivert);margin-bottom:8px}
+.service p{color:#475569;font-size:15px}
+.service ul{list-style:none;margin-top:14px;display:grid;gap:7px}
+.service li{color:#334155;font-size:14px}
+.service li:before{content:"✓";color:var(--turuncu);font-weight:900;margin-right:8px}
+@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
-
 <body>
-
-<div class="topbar">
-    <div class="container">
-        <div class="topbar-left">
-            <span>📍 İstanbul Geneli Kentsel Dönüşüm ve Kat Karşılığı İnşaat</span>
-        </div>
-        <div class="topbar-right">
-            <a href="https://wa.me/905431813485">WhatsApp: <b>0543 181 34 85</b></a>
-            <a href="mailto:info@kentseldonusum.com.tr">✉ info@kentseldonusum.com.tr</a>
-        </div>
-    </div>
-</div>
-
+<div class="topbar"><div class="container"><div>📍 İstanbul Geneli Kentsel Dönüşüm ve Kat Karşılığı İnşaat</div><div>WhatsApp: <b>0543 181 34 85</b></div></div></div>
 <header class="header">
-    <div class="container nav">
-        <a class="logo" href="index.html" aria-label="Kentsel Dönüşüm Ana Sayfa">
-            <div class="logo-mark">🏢</div>
-            <div class="logo-text">
-                <strong>Kentsel<span>Dönüşüm</span>.com.tr</strong>
-                <small>İstanbul Kentsel Dönüşüm Hizmetleri</small>
-            </div>
-        </a>
-
-        <nav class="menu" aria-label="Ana Menü">
-            <a class="active" href="index.html">ANA SAYFA</a>
-            <a href="kurumsal.html">KURUMSAL</a>
-            <a href="kentsel-donusum.html">KENTSEL DÖNÜŞÜM</a>
-            <a href="projelerimiz.html">PROJELERİMİZ</a>
-            <a href="hizmetlerimiz.html">HİZMETLERİMİZ</a>
-            <a href="sss.html">SSS</a>
-            <a href="iletisim.html">İLETİŞİM</a>
-        </nav>
-
-        <a class="nav-cta" href="#on-basvuru">ÜCRETSİZ KEŞİF AL</a>
-    </div>
+  <div class="container nav">
+    <a class="brand" href="index.html">Kentsel<span>Dönüşüm</span>.com.tr</a>
+    <nav class="menu">
+      <a href="index.html">Ana Sayfa</a><a href="kurumsal.html">Kurumsal</a><a href="kentsel-donusum.html">Kentsel Dönüşüm</a><a href="projelerimiz.html">Projelerimiz</a><a class="active" href="hizmetlerimiz.html">Hizmetlerimiz</a><a href="sss.html">S.S.S</a><a href="iletisim.html">İletişim</a>
+    </nav>
+  </div>
 </header>
-
-<section class="hero">
-    <div class="container">
-        <div class="hero-content">
-            <h1>Binanız Kentsel Dönüşüme <span>Uygun mu?</span></h1>
-            <p>Ön başvuru formunu doldurun, uzman ekibimiz binanız için ücretsiz ön değerlendirme sürecini başlatsın.</p>
-            <div class="hero-note">Kesin uygunluk; imar durumu, ruhsat, iskan, tapu ve yerinde inceleme sonrasında netleşir.</div>
-            <div class="hero-buttons">
-                <a class="btn btn-orange" href="#on-basvuru">🏗 ÜCRETSİZ ÖN BAŞVURU YAP</a>
-                <a class="btn btn-outline" href="https://wa.me/905431813485?text=Merhaba,%20binam%20için%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum.">☏ WHATSAPP'TAN SOR</a>
-            </div>
-
-            <div class="mobile-menu-buttons" aria-label="Mobil hızlı menü">
-                <a href="index.html">Ana Sayfa</a>
-                <a href="kurumsal.html">Kurumsal</a>
-                <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
-                <a href="projelerimiz.html">Projelerimiz</a>
-                <a href="hizmetlerimiz.html">Hizmetlerimiz</a>
-                <a href="iletisim.html">İletişim</a>
-            </div>
-
-        </div>
-
-        <div class="hero-visual">
-            <div class="analysis-card" id="on-basvuru">
-                <div class="analysis-head">
-                    <h2>Ücretsiz Ön Değerlendirme Formu</h2>
-                    <p>Bilgilerinizi bırakın, ücretsiz keşif için sizi arayalım.</p>
-                </div>
-                <form class="analysis-body" id="basvuruFormu">
-                    <input class="input" id="adsoyad" type="text" placeholder="Ad Soyad" required>
-                    <input class="input" id="telefon" type="tel" placeholder="Telefon Numaranız" required>
-                    <select class="input" id="ilce" required>
-                        <option value="">İlçe Seçiniz</option>
-                        <option>Bahçelievler</option>
-                        <option>Bakırköy</option>
-                        <option>Bağcılar</option>
-                        <option>Güngören</option>
-                        <option>Avcılar</option>
-                        <option>Esenler</option>
-                        <option>Diğer</option>
-                    </select>
-                    <select class="input" id="binaYasi">
-                        <option value="">Bina Yaşı</option>
-                        <option>0 - 10 yıl</option>
-                        <option>11 - 20 yıl</option>
-                        <option>21 - 30 yıl</option>
-                        <option>31 yıl ve üzeri</option>
-                    </select>
-                    <select class="input" id="katSayisi">
-                        <option value="">Kat Sayısı</option>
-                        <option>1 - 3 Kat</option>
-                        <option>4 - 5 Kat</option>
-                        <option>6 - 8 Kat</option>
-                        <option>9 Kat ve üzeri</option>
-                    </select>
-                    <input class="input" id="metrekare" type="text" placeholder="Yaklaşık m² / Arsa m² (Opsiyonel)">
-                    <button class="btn btn-orange" type="submit">BAŞVURUMU GÖNDER ➜</button>
-                    <div class="privacy">🔒 Bilgileriniz ön değerlendirme amacıyla alınır, üçüncü kişilerle paylaşılmaz.</div>
-                </form>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="trust-wrap">
-    <div class="container">
-        <div class="trust-box">
-            <div class="trust-item">
-                <div class="trust-icon">🏢</div>
-                <div>
-                    <h3>4 FİRMA GÜCÜ</h3>
-                    <p>Masfey, Lavinay, Kardelen ve Örnek Yapı güvencesi</p>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-icon">🤝</div>
-                <div>
-                    <h3>SÖZLEŞMELİ ÇALIŞMA</h3>
-                    <p>Süreç noter onaylı sözleşme ile güvence altına alınır</p>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-icon">⛑</div>
-                <div>
-                    <h3>YERİNDE KEŞİF</h3>
-                    <p>Uzman ekibimiz binanızı yerinde inceler</p>
-                </div>
-            </div>
-            <div class="trust-item">
-                <div class="trust-icon">🏅</div>
-                <div>
-                    <h3>ANAHTAR TESLİM</h3>
-                    <p>Proje, ruhsat, inşaat ve teslimat tek elden yürütülür</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-
-<section class="potential-section">
-    <div class="container">
-        <div class="section-title" style="margin-bottom:22px;">
-            <h2>ÖN DEĞERLENDİRME <span>NASIL YAPILIR?</span></h2>
-            <p>Bu bölüm kesin sonuç vermez; binanızla ilgili ilk görüşme ve keşif sürecini başlatır.</p>
-        </div>
-
-        <div class="potential-grid">
-            <div class="potential-card low">
-                <div class="potential-icon">📋</div>
-                <h3>Bilgi Toplama</h3>
-                <p>İlçe, bina yaşı, kat sayısı, yaklaşık metrekare ve iletişim bilgileriniz alınır.</p>
-            </div>
-            <div class="potential-card mid">
-                <div class="potential-icon">🔍</div>
-                <h3>Ön İnceleme</h3>
-                <p>Uzman ekibimiz binanızın dönüşüm süreci için ilk değerlendirmeyi yapar.</p>
-            </div>
-            <div class="potential-card high">
-                <div class="potential-icon">✅</div>
-                <h3>Ücretsiz Keşif</h3>
-                <p>Uygun görülen başvurular için yerinde keşif ve detaylı görüşme planlanır.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="process-section">
-    <div class="container">
-        <h2>KENTSEL DÖNÜŞÜM <span>SÜRECİMİZ</span></h2>
-        <div class="process-grid">
-            <div class="process-item">
-                <div class="process-icon">💬</div>
-                <h3>ÖN GÖRÜŞME</h3>
-                <p>Binanızla ilgili temel bilgileri alıyoruz.</p>
-            </div>
-            <div class="process-item">
-                <div class="process-icon">🔍</div>
-                <h3>YERİNDE KEŞİF</h3>
-                <p>Uzman ekibimiz binanızı yerinde inceler.</p>
-            </div>
-            <div class="process-item">
-                <div class="process-icon">📄</div>
-                <h3>ANALİZ VE RAPOR</h3>
-                <p>İmar, fizibilite ve dönüşüm süreci değerlendirilir.</p>
-            </div>
-            <div class="process-item">
-                <div class="process-icon">📝</div>
-                <h3>SÖZLEŞME</h3>
-                <p>Noter onaylı sözleşme hazırlanır ve imzalanır.</p>
-            </div>
-            <div class="process-item">
-                <div class="process-icon">🏗</div>
-                <h3>PROJE VE RUHSAT</h3>
-                <p>Projeler hazırlanır, ruhsat süreçleri yürütülür.</p>
-            </div>
-            <div class="process-item">
-                <div class="process-icon">🏠</div>
-                <h3>İNŞAAT VE TESLİM</h3>
-                <p>İnşaat tamamlanır, anahtar teslim edilir.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="partners">
-    <div class="container">
-        <div class="partners-text">
-            <h3>ÇÖZÜM ORTAKLARIMIZ</h3>
-            <p>Güçlü iş ortaklığımızla size daha iyi hizmet sunuyoruz.</p>
-        </div>
-
-        <div class="partner-logos">
-            <div class="partner-logo">MASFEY<br><small>İNŞAAT</small></div>
-            <div class="partner-logo">LAVİNAY<br><small>İNŞAAT</small></div>
-            <div class="partner-logo">KARDELEN<br><small>İNŞAAT</small></div>
-            <div class="partner-logo">ÖRNEK YAPI<br><small>İNŞAAT</small></div>
-        </div>
-
-        <a class="call-box" href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20için%20ücretsiz%20bilgi%20almak%20istiyorum.">
-            <div>
-                <div class="phone">☎ 0543 181 34 85</div>
-                <p>Hemen arayın, ücretsiz bilgi alın.</p>
-            </div>
-            <div class="whatsapp-round">☏</div>
-        </a>
-    </div>
-</section>
-
-<a class="fixed-whatsapp" href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum." aria-label="WhatsApp">☏</a>
-
-<script>
-document.getElementById("basvuruFormu").addEventListener("submit", function(e){
-    e.preventDefault();
-
-    var adsoyad = document.getElementById("adsoyad").value.trim();
-    var telefon = document.getElementById("telefon").value.trim();
-    var ilce = document.getElementById("ilce").value;
-    var binaYasi = document.getElementById("binaYasi").value || "Belirtilmedi";
-    var katSayisi = document.getElementById("katSayisi").value || "Belirtilmedi";
-    var metrekare = document.getElementById("metrekare").value.trim() || "Belirtilmedi";
-
-    var mesaj =
-        "Merhaba, kentsel dönüşüm için ücretsiz ön değerlendirme başvurusu yapmak istiyorum.%0A%0A" +
-        "Ad Soyad: " + encodeURIComponent(adsoyad) + "%0A" +
-        "Telefon: " + encodeURIComponent(telefon) + "%0A" +
-        "İlçe: " + encodeURIComponent(ilce) + "%0A" +
-        "Bina Yaşı: " + encodeURIComponent(binaYasi) + "%0A" +
-        "Kat Sayısı: " + encodeURIComponent(katSayisi) + "%0A" +
-        "Yaklaşık m² / Arsa m²: " + encodeURIComponent(metrekare);
-
-    window.open("https://wa.me/905431813485?text=" + mesaj, "_blank");
-});
-</script>
-
+<section class="page-hero"><h1>Hizmetlerimiz</h1><p>Kentsel dönüşüm sürecinde ön değerlendirmeden anahtar teslime kadar profesyonel hizmetler sunuyoruz.</p></section>
+<main class="services">
+  <div class="container grid">
+    <article class="service"><div class="icon">🏚️</div><h2>Kentsel Dönüşüm</h2><p>Riskli ve eski yapıların güvenli, modern yapılara dönüşüm süreci.</p><ul><li>Ön görüşme</li><li>Yerinde keşif</li><li>Malik bilgilendirme</li></ul></article>
+    <article class="service"><div class="icon">🏗️</div><h2>Kat Karşılığı İnşaat</h2><p>Arsa ve bina sahipleri için kat karşılığı proje geliştirme hizmeti.</p><ul><li>İmar inceleme</li><li>Fizibilite</li><li>Teklif hazırlığı</li></ul></article>
+    <article class="service"><div class="icon">🔍</div><h2>Ücretsiz Ön Değerlendirme</h2><p>Binanızın dönüşüm süreci için ilk uygunluk ve keşif planlaması.</p><ul><li>Bina bilgisi alma</li><li>İlçe analizi</li><li>Keşif planı</li></ul></article>
+    <article class="service"><div class="icon">📐</div><h2>Proje ve Ruhsat Takibi</h2><p>Mimari proje, belediye süreci ve ruhsat aşamalarının takibi.</p><ul><li>Proje hazırlığı</li><li>Belediye süreçleri</li><li>Ruhsat takibi</li></ul></article>
+    <article class="service"><div class="icon">📄</div><h2>Sözleşme Süreci</h2><p>Maliklerin haklarını koruyacak şeffaf ve sözleşmeli çalışma modeli.</p><ul><li>Noter onaylı süreç</li><li>Hak paylaşımı</li><li>Teslim şartları</li></ul></article>
+    <article class="service"><div class="icon">🏠</div><h2>Anahtar Teslim İnşaat</h2><p>Yıkımdan teslimata kadar inşaat sürecinin tek elden yürütülmesi.</p><ul><li>Yıkım</li><li>Kaba ve ince inşaat</li><li>Teslim</li></ul></article>
+  </div>
+</main>
+<section class="cta"><h2>Hizmetlerimiz Hakkında Bilgi Alın</h2><p>Binanız için hangi hizmetin uygun olduğunu öğrenin.</p><a class="phone" href="tel:+905431813485">0543 181 34 85</a><div class="cta-buttons"><a class="btn btn-orange" href="https://wa.me/905431813485?text=Merhaba,%20hizmetleriniz%20hakkında%20bilgi%20almak%20istiyorum.">WhatsApp'tan Yaz</a><a class="btn btn-outline" href="iletisim.html">İletişim Formu</a></div></section>
+<footer class="footer">© 2026 KentselDönüşüm.com.tr | Tüm Hakları Saklıdır</footer>
+<a class="fixed-whatsapp" href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum.">WhatsApp</a>
 </body>
 </html>
