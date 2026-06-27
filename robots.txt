@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kentseldönüşüm.com.tr/sitemap.xml
+Sitemap: https://xn--kentseldnm-lcb7ea99k.com.tr/sitemap.xml
