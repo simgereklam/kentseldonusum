@@ -31,3 +31,10 @@ proje.1.png - proje.9.png
 
 Yükleme:
 Zip içindeki tüm dosyaları GitHub ana klasörüne yükleyip eski dosyaların üzerine yazdırın.
+
+
+EK DÜZELTME:
+- Kentsel Dönüşüm sayfasındaki süreç görselleri tıklanınca büyür.
+- Projelerimiz sayfasındaki tüm proje görselleri tıklanınca büyür.
+- Açılan büyütme ekranında sağ/sol ok ve ESC ile kapatma çalışır.
+- Bunun için style.css ve script.js mutlaka eski dosyaların üzerine yazdırılmalıdır.
