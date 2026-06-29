@@ -1,27 +1,19 @@
-KENTSEL DÖNÜŞÜM SEO DÜZELTME PAKETİ
-Hazırlanma tarihi: 2026-06-29
+KENTSELDÖNÜŞÜM.COM.TR TEK TİP MOBİL DÜZELTME PAKETİ
 
-Bu pakette ne var?
-1) hizmetlerimiz.html: Kod artığı temizlenmiş, SEO metinleri güçlendirilmiş hizmet sayfası.
-2) projelerimiz.html: Google'ın boş görmemesi için kategori açıklamaları ve proje metinleri eklenmiş galeri sayfası.
-3) Bölge sayfaları: Bahçelievler, Yenibosna, Bakırköy, Bağcılar, Güngören, Avcılar, Esenler, Küçükçekmece, Zeytinburnu için dolu içerikli sayfalar.
-4) sitemap.xml: Tüm önemli sayfalar eklendi.
-5) robots.txt: Sitemap bildirimi eklendi.
+Bu paket tüm ana sayfaları ve bölge sayfalarını aynı menü, aynı logo ve aynı mobil düzenle hazırlar.
 
-Nasıl yüklenecek?
-- GitHub deposunda ana klasöre gir.
-- Bu paketteki dosyaları aynı isimlerle yükle.
-- Eski dosya varsa Replace / Overwrite yap.
-- Görselleri silme; bu paket sadece HTML, sitemap ve robots dosyalarını değiştirir.
+Düzeltilen ana konular:
+- Her sayfada aynı üst menü var.
+- Menüye Bölgeler sekmesi eklendi.
+- Projelerimiz, Hizmetlerimiz, Kentsel Dönüşüm, S.S.S, İletişim ve bölge sayfalarında Bölgeler kaybolmaz.
+- Mobilde menü yatay kaydırılabilir oldu; eski farklı sistemler tek tipe indirildi.
+- Logo tüm sayfalarda Kentseldönüşüm.com.tr şeklinde yazıldı; D harfi ayrı büyük görünmez.
+- Google kelimesi ve müşteriye kötü görünen yapay açıklamalar kaldırıldı.
+- Sitemap ve robots dosyaları güncellendi.
 
-Yükledikten sonra:
-- Siteyi açıp şu sayfaları kontrol et:
-  /hizmetlerimiz.html
-  /projelerimiz.html
-  /bakirkoy-kentsel-donusum.html
-  /bagcilar-kentsel-donusum.html
-- Search Console > URL Denetleme ile yeni sayfalar için dizine ekleme iste.
-- Search Console > Sitemaps bölümüne sitemap.xml gönder.
-
-Not:
-- .html uzantılı URL'ler Google için sorun değildir. Önemli olan # çapa değil gerçek, taranabilir sayfa linkleri olmasıdır.
+YÜKLEME:
+1) Zip dosyasını bilgisayarda aç.
+2) İçindeki tüm dosyaları GitHub Pages ana klasörüne yükle.
+3) Eski dosyaların üzerine yazdır.
+4) Sadece zip dosyasını GitHub'a yükleme; içindeki dosyaları yükle.
+5) Yükledikten sonra siteyi gizli sekmede / mobilde kontrol et.
