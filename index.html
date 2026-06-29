@@ -122,9 +122,12 @@ a{text-decoration:none;color:inherit}
 }
 .hero-content{max-width:930px}
 .hero h1{
-  font-size:48px;
-  line-height:1.12;
-  margin-bottom:16px;
+  font-size:52px;
+  line-height:1.08;
+  margin-bottom:28px;
+  max-width:980px;
+  text-transform:uppercase;
+  letter-spacing:.2px;
 }
 .hero h1 span{color:var(--turuncu)}
 .hero p{
@@ -456,6 +459,9 @@ a{text-decoration:none;color:inherit}
   }
   .menu a{flex:0 0 auto}
 }
+@media(max-width:768px){
+  .topbar{display:none!important}
+}
 @media(max-width:560px){
   .container{padding:0 16px}
   .topbar .container{
@@ -469,9 +475,13 @@ a{text-decoration:none;color:inherit}
   .menu{font-size:13px}
   .hero{
     background:linear-gradient(135deg,#07182c,#102f52);
-    padding:38px 0 28px;
+    padding:34px 0 28px;
   }
-  .hero h1{font-size:31px}
+  .hero h1{
+    font-size:31px;
+    line-height:1.12;
+    margin-bottom:24px;
+  }
   .hero p{font-size:15px}
   .hero-buttons{display:grid}
   .btn{width:100%}
@@ -543,9 +553,7 @@ a{text-decoration:none;color:inherit}
 
 <section class="hero">
   <div class="container hero-content">
-    <h1>Kentsel Dönüşüme Uygun Binalarınızı Yeniliyoruz</h1>
-    <p>Ön başvuru formunu doldurun, uzman ekibimiz ada/parsel, daire metrekareniz ve yapı bilgilerinize göre ücretsiz ön değerlendirme sürecini başlatsın.</p>
-    <p class="hero-note">Kesin uygunluk; imar durumu, ruhsat, iskan, tapu, ada/parsel ve yerinde inceleme sonrasında netleşir.</p>
+    <h1>KENTSEL DÖNÜŞÜME UYGUN BİNALARINIZI YENİLİYORUZ</h1>
     <div class="hero-buttons">
       <a class="btn btn-orange" href="#basvuru">Ücretsiz Ön Başvuru Yap</a>
       <a class="btn btn-outline" href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum.">WhatsApp'tan Sor</a>
