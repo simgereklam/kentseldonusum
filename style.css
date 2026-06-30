@@ -81,3 +81,44 @@ html{scroll-behavior:smooth}body{font-family:Inter,Arial,Helvetica,sans-serif;ba
     animation:none;
   }
 }
+/* MASFEY İNŞAAT üst başlık küçültme */
+.brand-company,
+.brand-company .brand-text,
+.brand-company .brand-text strong{
+  font-size:20px !important;
+  line-height:1.05 !important;
+  letter-spacing:-0.35px !important;
+}
+
+.brand-company .brand-text em{
+  font-size:10.5px !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  font-weight:700 !important;
+}
+
+@media(max-width:768px){
+  .brand-company,
+  .brand-company .brand-text,
+  .brand-company .brand-text strong{
+    font-size:17px !important;
+    line-height:1.05 !important;
+  }
+
+  .brand-company .brand-text em{
+    font-size:9.5px !important;
+    line-height:1.2 !important;
+  }
+}
+
+@media(max-width:420px){
+  .brand-company,
+  .brand-company .brand-text,
+  .brand-company .brand-text strong{
+    font-size:16px !important;
+  }
+
+  .brand-company .brand-text em{
+    font-size:9px !important;
+  }
+}
