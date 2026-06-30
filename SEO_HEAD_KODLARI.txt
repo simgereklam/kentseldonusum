@@ -1,0 +1,48 @@
+MEVCUT SAYFALAR İÇİN SEO HEAD KODLARI
+====================================
+
+Bunlar mevcut sayfaların <head> bölümünde title/description/canonical olarak kullanılacak kısa kodlardır.
+Tam sayfaları bozmak istemiyorsan sadece bu head bilgilerini değiştir.
+
+ANA SAYFA:
+<title>İstanbul Kentsel Dönüşüm | Ücretsiz Bina Ön Değerlendirme</title>
+<meta name="description" content="İstanbul’da kentsel dönüşüme uygun binalar için ücretsiz ön değerlendirme. Ada/parsel, daire m², bina yaşı ve imar bilgilerine göre güvenilir dönüşüm süreci.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/">
+
+KENTSEL DÖNÜŞÜM:
+<title>Kentsel Dönüşüm Süreci | Binanız Uygun mu Öğrenin</title>
+<meta name="description" content="Riskli yapı tespiti, malik anlaşması, proje, ruhsat, yıkım ve yeni bina yapım süreci. Ücretsiz kentsel dönüşüm ön değerlendirmesi için başvurun.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/kentsel-donusum.html">
+
+PROJELERİMİZ:
+<title>Kentsel Dönüşüm Projelerimiz | İstanbul İnşaat Referansları</title>
+<meta name="description" content="İstanbul’da tamamlanan ve devam eden kentsel dönüşüm, kaba inşaat ve bina yenileme projelerimizi inceleyin. Güvenilir inşaat süreci için iletişime geçin.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/projelerimiz.html">
+
+İLETİŞİM:
+<title>Kentsel Dönüşüm Başvurusu | WhatsApp İletişim</title>
+<meta name="description" content="Binanız kentsel dönüşüme uygun mu? Ada/parsel, bina yaşı ve daire metrekaresi bilgisiyle ücretsiz ön değerlendirme alın. WhatsApp: 0543 181 34 85.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/iletisim.html">
+
+HİZMETLERİMİZ:
+<title>Kentsel Dönüşüm Hizmetleri | Kat Karşılığı İnşaat</title>
+<meta name="description" content="Kentsel dönüşüm, kat karşılığı inşaat, riskli yapı yenileme, imar fizibilite, proje ve ruhsat takibi hizmetleri. İstanbul geneli ücretsiz ön değerlendirme.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/hizmetlerimiz.html">
+
+KURUMSAL:
+<title>Kurumsal | Masfey İnşaat Kentsel Dönüşüm İş Ortaklığı</title>
+<meta name="description" content="Masfey İnşaat, Kardelen İnşaat, Örnek Yapı İnşaat ve Lavinay İnşaat iş ortaklığıyla İstanbul’da güvenilir kentsel dönüşüm süreci.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/kurumsal.html">
+
+S.S.S:
+<title>Kentsel Dönüşüm Sık Sorulan Sorular | Riskli Yapı ve Malik Hakları</title>
+<meta name="description" content="Kentsel dönüşüm, riskli yapı, malik anlaşması, kira yardımı, kat karşılığı inşaat ve bina yenileme süreci hakkında sık sorulan sorular.">
+<link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/sss.html">
+
+INDEX.HTML YÖNLENDİRME:
+Ana sayfanın <head> içine şu kodu ekle:
+<script>
+if (location.pathname.endsWith('/index.html')) {
+  location.replace(location.origin + location.pathname.replace(/index\.html$/, '') + location.search + location.hash);
+}
+</script>

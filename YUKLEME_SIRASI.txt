@@ -1,0 +1,43 @@
+KENTSELDÖNÜŞÜM.COM.TR SEO PAKETİ - BUGÜN YAPILACAK NET İŞLER
+================================================================
+
+1) ZIP içindeki dosyaları GitHub repo ana dizinine yükle:
+   - index.html
+   - basvuru.html
+   - robots.txt
+   - sitemap.xml
+   - CNAME
+   - .nojekyll
+   - bütün ilçe sayfaları: yenibosna, bahcelievler, bakirkoy, bagcilar, gungoren, avcilar, esenler, kucukcekmece, zeytinburnu
+
+2) GitHub'da Commit changes yap.
+
+3) 2-5 dakika bekle, sonra şu adresleri aç:
+   https://xn--kentseldnm-lcb7ea99k.com.tr/
+   https://xn--kentseldnm-lcb7ea99k.com.tr/basvuru.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/sitemap.xml
+   https://xn--kentseldnm-lcb7ea99k.com.tr/robots.txt
+
+4) Google Search Console > Site Haritaları:
+   sitemap.xml gönder.
+
+5) URL Denetimi ile şu adresleri tek tek dizine eklenmesini iste:
+   https://xn--kentseldnm-lcb7ea99k.com.tr/
+   https://xn--kentseldnm-lcb7ea99k.com.tr/basvuru.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/yenibosna-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/bahcelievler-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/bakirkoy-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/bagcilar-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/gungoren-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/avcilar-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/esenler-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/kucukcekmece-kentsel-donusum.html
+   https://xn--kentseldnm-lcb7ea99k.com.tr/zeytinburnu-kentsel-donusum.html
+
+6) Paylaşım için gerçek trafik linkleri:
+   Instagram: https://xn--kentseldnm-lcb7ea99k.com.tr/basvuru.html?utm_source=instagram&utm_medium=post&utm_campaign=kentsel_donusum
+   WhatsApp Grup: https://xn--kentseldnm-lcb7ea99k.com.tr/basvuru.html?utm_source=whatsapp&utm_medium=grup&utm_campaign=kentsel_donusum
+   Facebook: https://xn--kentseldnm-lcb7ea99k.com.tr/basvuru.html?utm_source=facebook&utm_medium=paylasim&utm_campaign=kentsel_donusum
+
+NOT:
+Sahte IP botu yok. Bu paket gerçek Google gösterimi ve gerçek başvuru toplamak için hazırlandı.

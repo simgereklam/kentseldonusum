@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
+
 Sitemap: https://xn--kentseldnm-lcb7ea99k.com.tr/sitemap.xml
