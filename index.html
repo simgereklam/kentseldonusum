@@ -9,12 +9,11 @@
     <link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/">
     
     <style>
-        /* FETSAN GRUP PREMIUM RENK VE TASARIM PALETİ */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f3f4f6; color: #1f2937; line-height: 1.5; }
         .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        /* 1. SADECE MENÜ LİNKLERİ (İSİMSİZ, SAF VE PREMIUM) */
+        /* 1. SAF MENÜ BAR */
         .header { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 18px 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .navwrap { display: flex; justify-content: space-between; align-items: center; }
         .menu { display: flex; gap: 24px; }
@@ -23,22 +22,26 @@
         .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; transition: background 0.2s; }
         .nav-cta:hover { background: #e55f00; }
         
-        /* 2. EN ÜSTE ALINAN DEPREM SLOGAN ALANI (FETSAN MODELİ SOFT GEÇİŞ) */
-        .hero-premium { background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%); padding: 110px 0 60px 0; text-align: center; border-bottom: 1px solid #e5e7eb; }
-        .deprem-mega-tag { background: #fef2f2; color: #ef4444; padding: 12px 26px; border-radius: 30px; display: inline-block; font-weight: 800; font-size: 1.2rem; margin-bottom: 25px; border: 1px solid #fca5a5; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.05); }
-        .hero-premium h1 { font-size: 3.6rem; font-weight: 800; color: #111827; margin-bottom: 25px; line-height: 1.15; letter-spacing: -1.5px; }
-        .hero-premium p { font-size: 1.35rem; color: #4b5563; max-width: 800px; margin: 0 auto 40px auto; line-height: 1.6; }
+        /* 2. FETSAN MODELİ VİDEOLU HERO BÖLÜMÜ */
+        .hero-video-container { position: relative; width: 100%; height: 75vh; min-height: 550px; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; }
+        .hero-video-bg { position: absolute; top: 50%; left: 50%; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: 1; transform: translate(-50%, -50%); object-fit: cover; }
+        .hero-video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 2; } /* Videoyu karartma katmanı */
+        .hero-video-content { position: relative; z-index: 3; max-width: 900px; padding: 0 20px; }
+        
+        .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 12px 26px; border-radius: 30px; display: inline-block; font-weight: 900; font-size: 1.2rem; margin-bottom: 25px; border: 2px solid #fca5a5; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
+        .hero-video-content h1 { font-size: 3.8rem; font-weight: 900; color: #ffffff; margin-bottom: 25px; line-height: 1.15; letter-spacing: -1.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .hero-video-content p { font-size: 1.4rem; color: #e2e8f0; max-width: 800px; margin: 0 auto 40px auto; line-height: 1.6; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .hero-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
         
         .btn { padding: 16px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 1rem; transition: all 0.2s; }
-        .btn-orange { background: #ff6a00; color: #fff; box-shadow: 0 6px 15px rgba(255, 106, 0, 0.2); }
-        .btn-orange:hover { background: #e55f00; transform: translateY(-1px); }
-        .btn-outline { border: 2px solid #25d366; color: #128c7e; background: #ffffff; }
-        .btn-outline:hover { background: #f0fdf4; transform: translateY(-1px); }
+        .btn-orange { background: #ff6a00; color: #fff; box-shadow: 0 6px 20px rgba(255, 106, 0, 0.3); }
+        .btn-orange:hover { background: #e55f00; transform: translateY(-2px); }
+        .btn-outline { border: 2px solid #ffffff; color: #ffffff; background: transparent; backdrop-filter: blur(5px); }
+        .btn-outline:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
         
-        /* 3. ARKA PLAN BEYAZLIĞINI KIRAN FORM KARTI */
-        .daire-hesapla-section { background: #f3f4f6; padding: 50px 0 70px 0; }
-        .hesapla-kart { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 45px; max-width: 850px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04); }
+        /* 3. DÖNÜŞÜM FORMU */
+        .daire-hesapla-section { background: #f3f4f6; padding: 60px 0 80px 0; }
+        .hesapla-kart { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 45px; max-width: 850px; margin: 0 auto; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05); }
         .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-bottom: 25px; text-align: left; }
         .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #374151; font-size: 0.95rem; }
         .form-input-premium { width: 100%; padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font-size: 1rem; outline: none; transition: all 0.2s; color: #111827; }
@@ -46,17 +49,17 @@
         .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 12px rgba(255, 106, 0, 0.15); }
         .btn-submit:hover { background: #e55f00; }
         
-        /* 4. "BİRLEŞİMİN GÜCÜ" PREMİUM SİLVER-GRİ PANEL (BOĞUCU BEYAZLIK VEYA SİYAHLIK YOK) */
+        /* 4. İŞTİRAKLER ALANI (PREMIUM MİNİMAL PLATİN) */
         .power-section { padding: 80px 0; background: #eaeded; text-align: center; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; }
         .power-section h2 { font-size: 2.2rem; font-weight: 800; color: #111827; }
         .power-section p.subtext { color: #4b5563; font-size: 1.15rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
         .power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; margin-top: 40px; }
         .power-card { background: #ffffff; padding: 28px 22px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.01); transition: transform 0.2s; }
-        .power-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.03); }
+        .power-card:hover { transform: translateY(-3px); }
         .power-card h4 { font-size: 1.3rem; color: #111827; margin-bottom: 10px; font-weight: 700; }
         .power-card p { font-size: 0.95rem; color: #6b7280; margin: 0; line-height: 1.6; }
         
-        /* 5. BÖLGELER ŞERİDİ */
+        /* 5. BÖLGELER STRIP */
         .regions-strip { background: #ffffff; padding: 25px 0; border-bottom: 1px solid #e5e7eb; }
         .regions-box { display: flex; align-items: center; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
         .regions-title { font-weight: 700; color: #111827; font-size: 1.05rem; }
@@ -75,13 +78,14 @@
         
         @media (max-width: 900px) {
             .footer-grid { grid-template-columns: 1fr 1fr; }
-            .hero-premium h1 { font-size: 2.8rem; }
+            .hero-video-content h1 { font-size: 2.8rem; }
         }
         @media (max-width: 768px) {
             .navwrap { flex-direction: column; gap: 15px; padding: 10px 0; }
             .menu { flex-wrap: wrap; justify-content: center; gap: 12px; }
             .hesapla-grid-premium { grid-template-columns: 1fr; }
-            .hero-premium h1 { font-size: 2.2rem; }
+            .hero-video-content h1 { font-size: 2.2rem; }
+            .hero-video-container { height: auto; padding: 60px 0; }
             .footer-grid { grid-template-columns: 1fr; }
             .power-grid { grid-template-columns: 1fr; }
         }
@@ -105,8 +109,14 @@
     </div>
 </header>
 
-<section class="hero-premium">
-    <div class="container">
+<section class="hero-video-container">
+    <video autoplay muted loop playsinline class="hero-video-bg">
+        <source src="bina-videosu.mp4" type="video/mp4">
+    </video>
+    
+    <div class="hero-video-overlay"></div>
+    
+    <div class="hero-video-content">
         <div class="deprem-mega-tag">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM. GÜVENLİĞİNİZ BİRİNCİ ÖNCELİĞİMİZ.</div>
         <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
         <p>Depreme dayanıklı, modern ve yüksek değerli yeni yuvanızı yasal güvenceler, noter onaylı sözleşmeler ve güçlü şirket ortaklığımızın tam teminatı altında inşa ediyoruz.</p>
