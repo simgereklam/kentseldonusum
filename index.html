@@ -9,68 +9,69 @@
     <link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/">
     
     <style>
+        /* FETSAN GRUP PREMIUM RENK VE TASARIM PALETİ */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; color: #0f172a; line-height: 1.5; }
+        body { background-color: #f3f4f6; color: #1f2937; line-height: 1.5; }
         .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        /* SAF MENÜ BAR */
-        .header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 20px 0; position: sticky; top: 0; z-index: 1000; }
+        /* 1. SADECE MENÜ LİNKLERİ (İSİMSİZ, SAF VE PREMIUM) */
+        .header { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 18px 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .navwrap { display: flex; justify-content: space-between; align-items: center; }
         .menu { display: flex; gap: 24px; }
-        .menu a { text-decoration: none; color: #475569; font-weight: 600; font-size: 0.95rem; transition: color 0.2s; }
+        .menu a { text-decoration: none; color: #4b5563; font-weight: 600; font-size: 0.95rem; transition: color 0.2s; }
         .menu a:hover, .menu a.active { color: #ff6a00; }
-        .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; transition: transform 0.2s; }
-        .nav-cta:hover { transform: translateY(-1px); }
+        .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; transition: background 0.2s; }
+        .nav-cta:hover { background: #e55f00; }
         
-        /* PREMİUM SOFT GEÇİŞLİ HERO ALANI */
-        .hero-premium { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); padding: 100px 0 60px 0; text-align: center; border-bottom: 1px solid #e2e8f0; }
-        .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 14px 28px; border-radius: 30px; display: inline-block; font-weight: 900; font-size: 1.25rem; margin-bottom: 30px; border: 2px solid #fecaca; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1); }
-        .hero-premium h1 { font-size: 3.8rem; font-weight: 900; color: #0f172a; margin-bottom: 25px; line-height: 1.15; letter-spacing: -2px; }
-        .hero-premium p { font-size: 1.35rem; color: #475569; max-width: 800px; margin: 0 auto 40px auto; line-height: 1.6; }
+        /* 2. EN ÜSTE ALINAN DEPREM SLOGAN ALANI (FETSAN MODELİ SOFT GEÇİŞ) */
+        .hero-premium { background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%); padding: 110px 0 60px 0; text-align: center; border-bottom: 1px solid #e5e7eb; }
+        .deprem-mega-tag { background: #fef2f2; color: #ef4444; padding: 12px 26px; border-radius: 30px; display: inline-block; font-weight: 800; font-size: 1.2rem; margin-bottom: 25px; border: 1px solid #fca5a5; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.05); }
+        .hero-premium h1 { font-size: 3.6rem; font-weight: 800; color: #111827; margin-bottom: 25px; line-height: 1.15; letter-spacing: -1.5px; }
+        .hero-premium p { font-size: 1.35rem; color: #4b5563; max-width: 800px; margin: 0 auto 40px auto; line-height: 1.6; }
         .hero-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
         
         .btn { padding: 16px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 1rem; transition: all 0.2s; }
-        .btn-orange { background: #ff6a00; color: #fff; box-shadow: 0 8px 20px rgba(255, 106, 0, 0.25); }
+        .btn-orange { background: #ff6a00; color: #fff; box-shadow: 0 6px 15px rgba(255, 106, 0, 0.2); }
         .btn-orange:hover { background: #e55f00; transform: translateY(-1px); }
-        .btn-outline { border: 2px solid #25d366; color: #128c7e; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .btn-outline { border: 2px solid #25d366; color: #128c7e; background: #ffffff; }
         .btn-outline:hover { background: #f0fdf4; transform: translateY(-1px); }
         
-        /* HESAPLAMA FORMU (BEYAZ KART GRİ ARKA PLANDA ÖNE ÇIKIYOR) */
-        .daire-hesapla-section { background: #f4f6f9; padding: 60px 0 80px 0; }
-        .hesapla-kart { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 50px; max-width: 850px; margin: 0 auto; box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.06); }
-        .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 30px; text-align: left; }
-        .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #1e293b; font-size: 0.95rem; }
-        .form-input-premium { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 1rem; outline: none; transition: all 0.2s; }
+        /* 3. ARKA PLAN BEYAZLIĞINI KIRAN FORM KARTI */
+        .daire-hesapla-section { background: #f3f4f6; padding: 50px 0 70px 0; }
+        .hesapla-kart { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 45px; max-width: 850px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04); }
+        .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-bottom: 25px; text-align: left; }
+        .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #374151; font-size: 0.95rem; }
+        .form-input-premium { width: 100%; padding: 13px 14px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font-size: 1rem; outline: none; transition: all 0.2s; color: #111827; }
         .form-input-premium:focus { border-color: #ff6a00; box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.1); }
-        .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px rgba(255, 106, 0, 0.2); }
+        .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 12px rgba(255, 106, 0, 0.15); }
         .btn-submit:hover { background: #e55f00; }
         
-        /* MODERN VE KATMANLI İŞTİRAK ALANI */
-        .power-section { padding: 90px 0; background: #eef2f6; text-align: center; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
-        .power-section h2 { font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-top: 5px; }
-        .power-section p.subtext { color: #475569; font-size: 1.15rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
-        .power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 45px; }
-        .power-card { background: #ffffff; padding: 30px 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -10px rgba(0,0,0,0.04); transition: transform 0.2s, box-shadow 0.2s; }
-        .power-card:hover { transform: translateY(-4px); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.08); }
-        .power-card h4 { font-size: 1.35rem; color: #0f172a; margin-bottom: 12px; font-weight: 700; }
-        .power-card p { font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6; }
+        /* 4. "BİRLEŞİMİN GÜCÜ" PREMİUM SİLVER-GRİ PANEL (BOĞUCU BEYAZLIK VEYA SİYAHLIK YOK) */
+        .power-section { padding: 80px 0; background: #eaeded; text-align: center; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; }
+        .power-section h2 { font-size: 2.2rem; font-weight: 800; color: #111827; }
+        .power-section p.subtext { color: #4b5563; font-size: 1.15rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; margin-top: 40px; }
+        .power-card { background: #ffffff; padding: 28px 22px; border-radius: 12px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.01); transition: transform 0.2s; }
+        .power-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.03); }
+        .power-card h4 { font-size: 1.3rem; color: #111827; margin-bottom: 10px; font-weight: 700; }
+        .power-card p { font-size: 0.95rem; color: #6b7280; margin: 0; line-height: 1.6; }
         
-        /* BÖLGELER ŞERİDİ */
-        .regions-strip { background: #ffffff; padding: 30px 0; border-bottom: 1px solid #e2e8f0; }
+        /* 5. BÖLGELER ŞERİDİ */
+        .regions-strip { background: #ffffff; padding: 25px 0; border-bottom: 1px solid #e5e7eb; }
         .regions-box { display: flex; align-items: center; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
-        .regions-title { font-weight: 700; color: #0f172a; font-size: 1.05rem; }
-        .region-chip { display: inline-block; padding: 8px 18px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; color: #475569; text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-        .region-chip:hover { background: #e2e8f0; color: #0f172a; }
+        .regions-title { font-weight: 700; color: #111827; font-size: 1.05rem; }
+        .region-chip { display: inline-block; padding: 8px 18px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 20px; color: #4b5563; text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+        .region-chip:hover { background: #e5e7eb; color: #111827; }
         .region-chip.active { background: #ff6a00; color: #fff; border-color: #ff6a00; }
         
         /* FOOTER */
-        .footer { background: #0f172a; color: #94a3b8; padding: 70px 0 30px 0; font-size: 0.95rem; }
-        .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 40px; border-bottom: 1px solid #1e293b; padding-bottom: 40px; text-align: left; }
+        .footer { background: #111827; color: #9ca3af; padding: 70px 0 30px 0; font-size: 0.95rem; }
+        .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 40px; border-bottom: 1px solid #374151; padding-bottom: 40px; text-align: left; }
         .footer h3 { color: #ffffff; margin-bottom: 20px; font-size: 1.2rem; font-weight: 700; }
-        .footer a { color: #94a3b8; text-decoration: none; display: block; margin-bottom: 12px; transition: color 0.2s; }
+        .footer a { color: #9ca3af; text-decoration: none; display: block; margin-bottom: 12px; transition: color 0.2s; }
         .footer a:hover { color: #ffffff; }
-        .copy { padding-top: 30px; text-align: center; font-size: 0.85rem; color: #64748b; }
-        .float-wa { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: #fff; padding: 14px 26px; border-radius: 30px; font-weight: 700; text-decoration: none; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3); z-index: 999; }
+        .copy { padding-top: 30px; text-align: center; font-size: 0.85rem; color: #6b7280; }
+        .float-wa { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: #fff; padding: 14px 26px; border-radius: 30px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2); z-index: 999; }
         
         @media (max-width: 900px) {
             .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -108,7 +109,7 @@
     <div class="container">
         <div class="deprem-mega-tag">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM. GÜVENLİĞİNİZ BİRİNCİ ÖNCELİĞİMİZ.</div>
         <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
-        <p>Depreme dayanıklı, modern ve yüksek değerli yeni yuvanızı yasal güvenceler, noter onaylı sözleşmeler and güçlü şirket ortaklığımızın tam teminatı altında inşa ediyoruz.</p>
+        <p>Depreme dayanıklı, modern ve yüksek değerli yeni yuvanızı yasal güvenceler, noter onaylı sözleşmeler ve güçlü şirket ortaklığımızın tam teminatı altında inşa ediyoruz.</p>
         <div class="hero-actions">
             <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
             <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif Hattı</a>
@@ -120,8 +121,8 @@
     <div class="container">
         <div class="hesapla-kart">
             <div style="text-align:center; margin-bottom:35px;">
-                <h2 style="font-size:2rem; font-weight:800; color:#0f172a; margin-bottom:10px;">🏢 Binanızdan Kaç Daire Çıkar?</h2>
-                <p style="color:#64748b; font-size:1rem; margin:0;">Mevcut arsa, ada/parsel and dükkan bilgilerini girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
+                <h2 style="font-size:2rem; font-weight:800; color:#111827; margin-bottom:10px;">🏢 Binanızdan Kaç Daire Çıkar?</h2>
+                <p style="color:#4b5563; font-size:1rem; margin:0;">Mevcut arsa, ada/parsel ve dükkan bilgilerinizi girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
             </div>
             <form data-whatsapp-form>
                 <div class="hesapla-grid-premium">
@@ -164,24 +165,24 @@
         <div style="max-width:750px; margin:0 auto;">
             <span style="color:#0284c7; font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Konsorsiyum Güvencesi</span>
             <h2>Birleşimin Gücü: Güçlü Şirket Grubu Yapımız</h2>
-            <p class="subtext">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari and teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
+            <p class="subtext">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari ve teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
         </div>
         <div class="power-grid">
             <div class="power-card">
                 <h4>Masfey İnşaat</h4>
-                <p>Proje yönetimi, teknik koordinasyon and mimari vizyon gücü.</p>
+                <p>Proje yönetimi, teknik koordinasyon ve mimari vizyon gücü.</p>
             </div>
             <div class="power-card">
                 <h4>Kardelen İnşaat</h4>
-                <p>Yüksek mühendislik çözümleri and köklü yapı tecrübesi.</p>
+                <p>Yüksek mühendislik çözümleri ve köklü yapı tecrübesi.</p>
             </div>
             <div class="power-card">
                 <h4>Kumtaş İnşaat</h4>
-                <p>Finansal teminat altyapısı and kesintisiz malzeme tedarik gücü.</p>
+                <p>Finansal teminat altyapısı ve kesintisiz malzeme tedarik gücü.</p>
             </div>
             <div class="power-card">
                 <h4>Örnek Yapı İnşaat</h4>
-                <p>Zamanında anahtar teslim süreç yönetimi and uygulama uzmanlığı.</p>
+                <p>Zamanında anahtar teslim süreç yönetimi ve uygulama uzmanlığı.</p>
             </div>
         </div>
     </div>
@@ -209,7 +210,7 @@
         <div class="footer-grid">
             <div>
                 <h3>Kentseldönüşüm.com.tr</h3>
-                <p>Masfey İnşaat, Kumtaş İnşaat, Kardelen İnşaat and Örnek Yapı İnşaat ortak iştirak yapısıyla İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p>
+                <p>Masfey İnşaat, Kumtaş İnşaat, Kardelen İnşaat ve Örnek Yapı İnşaat ortak iştirak yapısıyla İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p>
             </div>
             <div>
                 <h3>Menü</h3>
