@@ -10,7 +10,7 @@
     
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f8fafc; color: #0f172a; line-height: 1.5; }
+        body { background-color: #f4f6f9; color: #0f172a; line-height: 1.5; }
         .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
         /* SAF MENÜ BAR */
@@ -22,8 +22,8 @@
         .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; transition: transform 0.2s; }
         .nav-cta:hover { transform: translateY(-1px); }
         
-        /* SLOGAN BÖLÜMÜ */
-        .hero-premium { background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%); padding: 100px 0 60px 0; text-align: center; }
+        /* PREMİUM SOFT GEÇİŞLİ HERO ALANI */
+        .hero-premium { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); padding: 100px 0 60px 0; text-align: center; border-bottom: 1px solid #e2e8f0; }
         .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 14px 28px; border-radius: 30px; display: inline-block; font-weight: 900; font-size: 1.25rem; margin-bottom: 30px; border: 2px solid #fecaca; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1); }
         .hero-premium h1 { font-size: 3.8rem; font-weight: 900; color: #0f172a; margin-bottom: 25px; line-height: 1.15; letter-spacing: -2px; }
         .hero-premium p { font-size: 1.35rem; color: #475569; max-width: 800px; margin: 0 auto 40px auto; line-height: 1.6; }
@@ -35,9 +35,9 @@
         .btn-outline { border: 2px solid #25d366; color: #128c7e; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
         .btn-outline:hover { background: #f0fdf4; transform: translateY(-1px); }
         
-        /* HESAPLAMA FORMU */
-        .daire-hesapla-section { background: #f1f5f9; padding: 40px 0 80px 0; }
-        .hesapla-kart { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 50px; max-width: 850px; margin: 0 auto; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05); }
+        /* HESAPLAMA FORMU (BEYAZ KART GRİ ARKA PLANDA ÖNE ÇIKIYOR) */
+        .daire-hesapla-section { background: #f4f6f9; padding: 60px 0 80px 0; }
+        .hesapla-kart { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 50px; max-width: 850px; margin: 0 auto; box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.06); }
         .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 30px; text-align: left; }
         .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #1e293b; font-size: 0.95rem; }
         .form-input-premium { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 1rem; outline: none; transition: all 0.2s; }
@@ -45,13 +45,13 @@
         .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px rgba(255, 106, 0, 0.2); }
         .btn-submit:hover { background: #e55f00; }
         
-        /* MODERN VE AYDINLIK İŞTİRAK ALANI (KOYU DEĞİL SOFT GRİ-MAVİ) */
-        .power-section { padding: 90px 0; background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%); text-align: center; }
+        /* MODERN VE KATMANLI İŞTİRAK ALANI */
+        .power-section { padding: 90px 0; background: #eef2f6; text-align: center; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; }
         .power-section h2 { font-size: 2.2rem; font-weight: 800; color: #0f172a; margin-top: 5px; }
         .power-section p.subtext { color: #475569; font-size: 1.15rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
         .power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 45px; }
-        .power-card { background: #ffffff; padding: 30px 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 20px -10px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .power-card:hover { transform: translateY(-4px); }
+        .power-card { background: #ffffff; padding: 30px 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -10px rgba(0,0,0,0.04); transition: transform 0.2s, box-shadow 0.2s; }
+        .power-card:hover { transform: translateY(-4px); box-shadow: 0 20px 30px -10px rgba(0,0,0,0.08); }
         .power-card h4 { font-size: 1.35rem; color: #0f172a; margin-bottom: 12px; font-weight: 700; }
         .power-card p { font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6; }
         
