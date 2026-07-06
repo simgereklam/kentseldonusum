@@ -22,10 +22,13 @@
         .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; }
         
         /* SADECE BURASI DEĞİŞTİ: YENİ ÜRETTİĞİMİZ GÖRSEL EKLENDİ */
-        .hero-premium { background-image: url('yeni-gorsel.jpg'); background-size: cover; background-position: center; color: #ffffff; padding: 90px 0 70px 0; text-align: center; }
+        .hero-premium { background-image: url('yeni-gorsel.jpg'); background-size: cover; background-position: center; color: #ffffff; min-height:75vh;padding:70px 0 40px;text-align:center;display:flex;align-items:center;position:relative; }
         .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 12px 24px; border-radius: 30px; display: inline-block; font-weight: 800; font-size: 1.15rem; margin-bottom: 25px; border: 1px solid #fecaca; }
         .hero-premium h1 { font-size: 3.6rem; font-weight: 900; color: #ffffff; margin-bottom: 25px; line-height: 1.2; letter-spacing: -1.5px; }
-        .hero-premium p { font-size: 1.3rem; color: #94a3b8; max-width: 800px; margin: 0 auto 35px auto; line-height: 1.6; }
+        .hero-premium::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.45));}
+.hero-premium .container{position:relative;z-index:2;}
+.hero-premium h1{font-size:3.8rem;font-weight:900;color:#fff;margin-bottom:18px;line-height:1.1;}
+.hero-premium p{font-size:1.15rem;color:#fff;max-width:700px;margin:0 auto 25px;line-height:1.5;}
         .hero-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
         
         .btn { padding: 14px 28px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
@@ -104,7 +107,7 @@
     <div class="container">
         <div class="deprem-mega-tag">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM. GÜVENLİĞİNİZ BİRİNCİ ÖNCELİĞİMİZ.</div>
         <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
-        <p>Depreme dayanıklı, modern ve yüksek değerli yeni yuvanızı yasal güvenceler, noter onaylı sözleşmeler and güçlü şirket ortaklığımızın tam teminatı altında inşa ediyoruz.</p>
+        <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
         <div class="hero-actions">
             <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
             <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif Hattı</a>
