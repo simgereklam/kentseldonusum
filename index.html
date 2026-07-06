@@ -5,82 +5,78 @@
     --premium-bg: #f8fafc;
     --premium-dark: #0f172a;
     --premium-orange: #ff6a00;
-    --accent-blue: #0284c7;
   }
   body { background-color: #ffffff; }
   .hero-premium {
     background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
     color: var(--premium-dark);
-    padding: 120px 0 90px 0;
+    padding: 100px 0 70px 0;
     text-align: center;
     border-bottom: 1px solid #e2e8f0;
   }
   .hero-premium h1 {
-    font-size: 3.4rem;
+    font-size: 3.2rem;
     font-weight: 800;
     color: var(--premium-dark);
-    margin-bottom: 25px;
-    line-height: 1.25;
+    margin-bottom: 20px;
+    line-height: 1.2;
     letter-spacing: -1px;
   }
   .hero-premium p {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     color: #475569;
-    max-width: 800px;
-    margin: 0 auto 45px auto;
+    max-width: 750px;
+    margin: 0 auto 35px auto;
     line-height: 1.6;
   }
   .daire-hesapla-section {
     background: #ffffff;
-    padding: 70px 0;
+    padding: 60px 0;
     border-bottom: 1px solid #e2e8f0;
   }
   .hesapla-kart {
     background: var(--premium-bg);
     border: 1px solid #e2e8f0;
-    border-radius: 20px;
-    padding: 45px;
-    max-width: 850px;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 800px;
     margin: 0 auto;
-    box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.05);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
   }
   .hesapla-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 30px;
+    gap: 20px;
+    margin-bottom: 25px;
   }
   .brand-clean {
     font-size: 1.6rem;
     font-weight: 800;
     color: var(--premium-dark);
     text-decoration: none;
-    letter-spacing: -0.5px;
   }
   .brand-clean span { color: var(--premium-orange); }
   
-  /* BİRLEŞİMİN GÜCÜ BÖLÜMÜ */
   .power-section {
-    padding: 80px 0;
-    background: var(--premium-bg);
+    padding: 70px 0;
+    background: #ffffff;
     border-bottom: 1px solid #e2e8f0;
   }
   .power-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 25px;
-    margin-top: 40px;
+    gap: 20px;
+    margin-top: 35px;
   }
   .power-card {
-    background: #ffffff;
-    padding: 30px;
+    background: var(--premium-bg);
+    padding: 25px;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
     text-align: center;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
   }
   .power-card h4 {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     color: var(--premium-dark);
     margin-bottom: 10px;
     font-weight: 700;
@@ -91,16 +87,38 @@
     margin: 0;
   }
   
+  .projects-section-clean {
+    padding: 70px 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .project-large-row-clean {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-top: 35px;
+  }
+  .project-card-clean {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+  }
+  .project-card-clean img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+  }
+  .project-card-clean .body {
+    padding: 20px;
+  }
+  
   @media (max-width: 768px) {
-    .hero-premium h1 { font-size: 2.3rem; }
+    .hero-premium h1 { font-size: 2.2rem; }
     .hesapla-grid { grid-template-columns: 1fr; }
     .power-grid { grid-template-columns: 1fr; }
-  }
-  .project-large-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
+    .project-large-row-clean { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -110,12 +128,12 @@
 
 <section class="hero-premium">
   <div class="container">
-    <div class="badge" style="background:#fee2e2; color:#ef4444; padding:6px 18px; border-radius:20px; display:inline-block; font-weight:700; margin-bottom:25px; letter-spacing: 0.5px;">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
+    <div class="badge" style="background:#fee2e2; color:#ef4444; padding:6px 16px; border-radius:20px; display:inline-block; font-weight:700; margin-bottom:20px;">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
     <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
     <p>Depreme dayanıklı, modern ve yüksek değerli yeni yuvanızı yasal güvenceler, çift taraflı noter sözleşmeleri ve güçlü şirket ortaklığımızın tam teminatı altında inşa ediyoruz.</p>
     <div class="hero-actions" style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
-      <a class="btn btn-orange" href="iletisim.html" style="padding:16px 35px; font-weight:700; border-radius:8px; box-shadow: 0 10px 20px rgba(255, 106, 0, 0.2);">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
-      <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum." style="padding:16px 35px; font-weight:700; border:2px solid #25d366; color:#128c7e; border-radius:8px;">🟢 WhatsApp Hızlı Keşif Hattı</a>
+      <a class="btn btn-orange" href="iletisim.html" style="padding:15px 30px; font-weight:700; border-radius:8px;">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
+      <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum." style="padding:15px 30px; font-weight:700; border:2px solid #25d366; color:#128c7e; border-radius:8px;">🟢 WhatsApp Hızlı Keşif Hattı</a>
     </div>
   </div>
 </section>
@@ -123,33 +141,33 @@
 <section class="daire-hesapla-section">
   <div class="container">
     <div class="hesapla-kart">
-      <div style="text-align:center; margin-bottom:35px;">
-        <h2 style="font-size:2.1rem; font-weight:800; color:var(--premium-dark); margin-bottom:12px;">🏢 Binanızdan Kaç Daire Çıkar?</h2>
-        <p style="color:#64748b; font-size:1.05rem; margin:0;">Mevcut arsa metrekarenizi ve kat sayınızı girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
+      <div style="text-align:center; margin-bottom:30px;">
+        <h2 style="font-size:2rem; font-weight:800; color:var(--premium-dark); margin-bottom:10px;">🏢 Binanızdan Kaç Daire Çıkar?</h2>
+        <p style="color:#64748b; font-size:1rem; margin:0;">Mevcut arsa metrekarenizi ve kat sayınızı girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
       </div>
       <form class="form" style="background:transparent; padding:0; box-shadow:none;" data-whatsapp-form>
         <div class="hesapla-grid">
           <div>
-            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark); font-size:0.95rem;">Toplam Arsa Alanı (m²)</label>
-            <input type="number" name="Arsa Metrekaresi" placeholder="Örn: 450" required style="width:100%; padding:14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
+            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark);">Toplam Arsa Alanı (m²)</label>
+            <input type="number" name="Arsa Metrekaresi" placeholder="Örn: 450" required style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
           </div>
           <div>
-            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark); font-size:0.95rem;">Mevcut Kat Sayısı</label>
-            <input type="number" name="Mevcut Kat Sayısı" placeholder="Örn: 5" required style="width:100%; padding:14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
+            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark);">Mevcut Kat Sayısı</label>
+            <input type="number" name="Mevcut Kat Sayısı" placeholder="Örn: 5" required style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
           </div>
           <div>
-            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark); font-size:0.95rem;">Bulunduğu İlçe</label>
-            <select name="İlçe" required style="width:100%; padding:14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
+            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark);">Bulunduğu İlçe</label>
+            <select name="İlçe" required style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
               <option value="">İlçe seçin</option>
               <option>Yenibosna</option><option>Bahçelievler</option><option>Bakırköy</option><option>Bağcılar</option><option>Güngören</option><option>Avcılar</option><option>Esenler</option><option>Küçükçekmece</option><option>Zeytinburnu</option><option>Diğer</option>
             </select>
           </div>
           <div>
-            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark); font-size:0.95rem;">İletişim Numaranız</label>
-            <input type="tel" name="Telefon" placeholder="05xx xxx xx xx" required style="width:100%; padding:14px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
+            <label style="display:block; font-weight:600; margin-bottom:8px; color:var(--premium-dark);">İletişim Numaranız</label>
+            <input type="tel" name="Telefon" placeholder="05xx xxx xx xx" required style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff;">
           </div>
         </div>
-        <button type="submit" style="width:100%; padding:18px; font-size:1.15rem; font-weight:700; background:var(--premium-orange); color:#fff; border:none; border-radius:8px; cursor:pointer; box-shadow: 0 8px 16px rgba(255, 106, 0, 0.15);">Dönüşüm Modelini Hesapla & WhatsApp'a Aktar</button>
+        <button type="submit" style="width:100%; padding:16px; font-size:1.1rem; font-weight:700; background:var(--premium-orange); color:#fff; border:none; border-radius:8px; cursor:pointer;">Dönüşüm Modelini Hesapla & WhatsApp'a Aktar</button>
       </form>
     </div>
   </div>
@@ -157,10 +175,10 @@
 
 <section class="power-section">
   <div class="container">
-    <div style="text-align:center; max-width:700px; margin:0 auto 20px auto;">
-      <span style="color:var(--accent-blue); font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Konsorsiyum Güvencesi</span>
-      <h2 style="font-size:2.2rem; font-weight:800; color:var(--premium-dark); margin-top:5px;">Birleşimin Gücü: Güçlü Şirket Grubu Yapımız</h2>
-      <p style="color:#64748b; font-size:1.1rem; margin-top:10px;">Tek bir firma yerine, sektörün öncüsü 4 dev inşaat markasının ortak mali ve teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
+    <div style="text-align:center; max-width:700px; margin:0 auto;">
+      <span style="color:#0284c7; font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Konsorsiyum Güvencesi</span>
+      <h2 style="font-size:2.1rem; font-weight:800; color:var(--premium-dark); margin-top:5px;">Birleşimin Gücü: Güçlü Şirket Grubu Yapımız</h2>
+      <p style="color:#64748b; font-size:1.1rem; margin-top:10px;">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari iştirak gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
     </div>
     <div class="power-grid">
       <div class="power-card">
@@ -185,14 +203,18 @@
 
 <div class="regions-strip"><div class="container"><div class="regions-box"><div class="regions-title">📍 Bölgelerimiz</div><a class="region-chip active" href="yenibosna-kentsel-donusum.html">Yenibosna</a><a class="region-chip " href="bahcelievler-kentsel-donusum.html">Bahçelievler</a><a class="region-chip " href="bakirkoy-kentsel-donusum.html">Bakırköy</a><a class="region-chip " href="bagcilar-kentsel-donusum.html">Bağcılar</a><a class="region-chip " href="gungoren-kentsel-donusum.html">Güngören</a><a class="region-chip " href="avcilar-kentsel-donusum.html">Avcılar</a><a class="region-chip " href="esenler-kentsel-donusum.html">Esenler</a><a class="region-chip " href="kucukcekmece-kentsel-donusum.html">Küçükçekmece</a><a class="region-chip " href="zeytinburnu-kentsel-donusum.html">Zeytinburnu</a></div></div></div>
 
-<section class="section"><div class="container split"><div class="process-panel"><h2>Dönüşüm <span class="accent">Süreci</span></h2><div class="process-steps"><div class="step-card"><div class="step-no">1</div><img src="kentsel.1.png" alt="Risk Analizi" loading="lazy" decoding="async"><b>Risk Analizi</b></div><div class="step-card"><div class="step-no">2</div><img src="kentsel.3.png" alt="Güvenli Yıkım" loading="lazy" decoding="async"><b>Güvenli Yıkım</b></div><div class="step-card"><div class="step-no">3</div><img src="kentsel.5.png" alt="Sağlam Temel" loading="lazy" decoding="async"><b>Sağlam Temel</b></div><div class="step-card"><div class="step-no">4</div><img src="kentsel.6.png" alt="Kaba İnşaat" loading="lazy" decoding="async"><b>Kaba İnşaat</b></div><div class="step-card"><div class="step-no">5</div><img src="kentsel.8.png" alt="Modern Mimari" loading="lazy" decoding="async"><b>Modern Mimari</b></div><div class="step-card"><div class="step-no">6</div><img src="kentsel.9.png" alt="Anahtar Teslim" loading="lazy" decoding="async"><b>Anahtar Teslim</b></div></div></div>
-
-<div class="projects-preview"><div class="section-head" style="margin-bottom:14px"><h2>Öne Çıkan Projelerimiz</h2><a class="link-arrow" href="projelerimiz.html">Tümünü Gör →</a></div>
-<div class="project-large-row">
-  <div class="project-card"><img src="tamam.1.jpg" alt="Yenibosna Modern" loading="lazy" decoding="async"><div class="body"><span class="tag">Yenibosna</span><h3>Yenibosna Modern</h3><a href="projelerimiz.html">Detayları Gör →</a></div></div>
-  <div class="project-card"><img src="tamam.2.jpg" alt="Bahçelievler Proje" loading="lazy" decoding="async"><div class="body"><span class="tag">Bahçelievler</span><h3>Bahçelievler Proje</h3><a href="projelerimiz.html">Detayları Gör →</a></div></div>
-  <div class="project-card"><img src="proje.1.png" alt="Bakırköy Yaşam" loading="lazy" decoding="async"><div class="body"><span class="tag">Bakırköy</span><h3>Bakırköy Yaşam</h3><a href="projelerimiz.html">Detayları Gör →</a></div></div>
-</div>
-</div></div></section>
+<section class="projects-section-clean">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:2.1rem; font-weight:800; color:var(--premium-dark); margin:0;">Öne Çıkan Projelerimiz</h2>
+      <a href="projelerimiz.html" style="color:var(--premium-orange); font-weight:700; text-decoration:none;">Tümünü Gör →</a>
+    </div>
+    <div class="project-large-row-clean">
+      <div class="project-card-clean"><img src="tamam.1.jpg" alt="Yenibosna Modern" loading="lazy"><div class="body"><span class="tag" style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:4px; font-size:0.85rem; font-weight:600;">Yenibosna</span><h3 style="font-size:1.3rem; margin:10px 0; color:var(--premium-dark);">Yenibosna Modern</h3><a href="projelerimiz.html" style="color:var(--premium-orange); text-decoration:none; font-weight:600;">Detayları Gör →</a></div></div>
+      <div class="project-card-clean"><img src="tamam.2.jpg" alt="Bahçelievler Proje" loading="lazy"><div class="body"><span class="tag" style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:4px; font-size:0.85rem; font-weight:600;">Bahçelievler</span><h3 style="font-size:1.3rem; margin:10px 0; color:var(--premium-dark);">Bahçelievler Proje</h3><a href="projelerimiz.html" style="color:var(--premium-orange); text-decoration:none; font-weight:600;">Detayları Gör →</a></div></div>
+      <div class="project-card-clean"><img src="proje.1.png" alt="Bakırköy Yaşam" loading="lazy"><div class="body"><span class="tag" style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:4px; font-size:0.85rem; font-weight:600;">Bakırköy</span><h3 style="font-size:1.3rem; margin:10px 0; color:var(--premium-dark);">Bakırköy Yaşam</h3><a href="projelerimiz.html" style="color:var(--premium-orange); text-decoration:none; font-weight:600;">Detayları Gör →</a></div></div>
+    </div>
+  </div>
+</section>
 
 <footer class="footer"><div class="container footer-grid"><div><h3>Kentseldönüşüm.com.tr</h3><p>Masfey İnşaat, Kumtaş İnşaat, Kardelen İnşaat ve Örnek Yapı İnşaat ortak iştirak yapısıyla İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p></div><div><h3>Menü</h3><a href="index.html">Ana Sayfa</a><a href="kurumsal.html">Kurumsal</a><a href="kentsel-donusum.html">Kentsel Dönüşüm</a><a href="projelerimiz.html">Projelerimiz</a><a href="hizmetlerimiz.html">Hizmetlerimiz</a><a href="bolgeler.html">Bölgeler</a></div><div><h3>Bölgeler</h3><a href="yenibosna-kentsel-donusum.html">Yenibosna</a><a href="bahcelievler-kentsel-donusum.html">Bahçelievler</a><a href="bakirkoy-kentsel-donusum.html">Bakırköy</a><a href="bagcilar-kentsel-donusum.html">Bağcılar</a><a href="gungoren-kentsel-donusum.html">Güngören</a><a href="avcilar-kentsel-donusum.html">Avcılar</a><a href="esenler-kentsel-donusum.html">Esenler</a><a href="kucukcekmece-kentsel-donusum.html">Küçükçekmece</a><a href="zeytinburnu-kentsel-donusum.html">Zeytinburnu</a></div><div><h3>İletişim</h3><p>Telefon / WhatsApp:</p><p><strong>0543 181 34 85</strong></p><p>İstanbul</p></div></div><div class="container copy">© 2026 Kentseldönüşüm.com.tr - Tüm Hakları Saklıdır.</div></footer><a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a><script src="script.js"></script></body></html>
