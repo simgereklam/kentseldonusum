@@ -22,10 +22,10 @@
         .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; transition: background 0.2s; }
         .nav-cta:hover { background: #e55f00; }
         
-        /* 2. FETSAN MODELİ VİDEOLU HERO BÖLÜMÜ */
+        /* 2. ARKA PLANI VİDEOLU HERO BÖLÜMÜ (GÜÇLENDİRİLDİ) */
         .hero-video-container { position: relative; width: 100%; height: 75vh; min-height: 550px; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; }
-        .hero-video-bg { position: absolute; top: 50%; left: 50%; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: 1; transform: translate(-50%, -50%); object-fit: cover; }
-        .hero-video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 2; } /* Videoyu karartma katmanı */
+        .hero-video-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; object-fit: cover; pointer-events: none; }
+        .hero-video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.65); z-index: 2; }
         .hero-video-content { position: relative; z-index: 3; max-width: 900px; padding: 0 20px; }
         
         .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 12px 26px; border-radius: 30px; display: inline-block; font-weight: 900; font-size: 1.2rem; margin-bottom: 25px; border: 2px solid #fca5a5; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
@@ -40,7 +40,7 @@
         .btn-outline:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
         
         /* 3. DÖNÜŞÜM FORMU */
-        .daire-hesapla-section { background: #f3f4f6; padding: 60px 0 80px 0; }
+        .daire-hesapla-section { background: #f3f4f6; padding: 60px 0; border-bottom: 1px solid #e5e7eb; }
         .hesapla-kart { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 45px; max-width: 850px; margin: 0 auto; box-shadow: 0 20px 40px -15px rgba(0,0,0,0.05); }
         .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; margin-bottom: 25px; text-align: left; }
         .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #374151; font-size: 0.95rem; }
@@ -49,7 +49,7 @@
         .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 12px rgba(255, 106, 0, 0.15); }
         .btn-submit:hover { background: #e55f00; }
         
-        /* 4. İŞTİRAKLER ALANI (PREMIUM MİNİMAL PLATİN) */
+        /* 4. İŞTİRAKLER ALANI */
         .power-section { padding: 80px 0; background: #eaeded; text-align: center; border-top: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; }
         .power-section h2 { font-size: 2.2rem; font-weight: 800; color: #111827; }
         .power-section p.subtext { color: #4b5563; font-size: 1.15rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
@@ -110,7 +110,7 @@
 </header>
 
 <section class="hero-video-container">
-    <video autoplay muted loop playsinline class="hero-video-bg">
+    <video autoplay loop muted playsinline webkit-playsinline class="hero-video-bg">
         <source src="bina-videosu.mp4" type="video/mp4">
     </video>
     
