@@ -13,67 +13,77 @@
         body { background-color: #ffffff; color: #0f172a; line-height: 1.5; }
         .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        /* TERTEMİZ SAF MENÜ */
-        .header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 15px 0; position: sticky; top: 0; z-index: 1000; }
+        /* SAF MENÜ BAR */
+        .header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 20px 0; position: sticky; top: 0; z-index: 1000; }
         .navwrap { display: flex; justify-content: space-between; align-items: center; }
-        .menu { display: flex; gap: 20px; }
-        .menu a { text-decoration: none; color: #334155; font-weight: 600; font-size: 0.95rem; transition: color 0.2s; }
+        .menu { display: flex; gap: 24px; }
+        .menu a { text-decoration: none; color: #475569; font-weight: 600; font-size: 0.95rem; transition: color 0.2s; }
         .menu a:hover, .menu a.active { color: #ff6a00; }
-        .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 20px; border-radius: 6px; font-weight: 700; text-decoration: none; }
+        .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; transition: transform 0.2s; }
+        .nav-cta:hover { transform: translateY(-1px); }
         
-        /* EN ÜSTE ALINAN SLOGAN BÖLÜMÜ */
-        .hero-premium { background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%); padding: 100px 0 60px 0; text-align: center; border-bottom: 1px solid #e2e8f0; }
-        .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 14px 28px; border-radius: 30px; display: inline-block; font-weight: 900; font-size: 1.4rem; margin-bottom: 30px; border: 2px solid #fecaca; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1); }
+        /* SLOGAN BÖLÜMÜ (HAFİF GRİ GEÇİŞLİ BAŞLANGIÇ) */
+        .hero-premium { background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%); padding: 100px 0 60px 0; text-align: center; }
+        .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 14px 28px; border-radius: 30px; display: inline-block; font-weight: 900; font-size: 1.25rem; margin-bottom: 30px; border: 2px solid #fecaca; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1); }
         .hero-premium h1 { font-size: 3.8rem; font-weight: 900; color: #0f172a; margin-bottom: 25px; line-height: 1.15; letter-spacing: -2px; }
         .hero-premium p { font-size: 1.35rem; color: #475569; max-width: 800px; margin: 0 auto 40px auto; line-height: 1.6; }
         .hero-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
         
         .btn { padding: 16px 32px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 1rem; transition: all 0.2s; }
-        .btn-orange { background: #ff6a00; color: #fff; box-shadow: 0 10px 15px -3px rgba(255, 106, 0, 0.3); }
-        .btn-outline { border: 2px solid #25d366; color: #128c7e; background: #ffffff; }
+        .btn-orange { background: #ff6a00; color: #fff; box-shadow: 0 8px 20px rgba(255, 106, 0, 0.25); }
+        .btn-orange:hover { background: #e55f00; transform: translateY(-1px); }
+        .btn-outline { border: 2px solid #25d366; color: #128c7e; background: #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .btn-outline:hover { background: #f0fdf4; transform: translateY(-1px); }
         
-        /* HESAPLAMA FORMU BÖLÜMÜ */
-        .daire-hesapla-section { background: #ffffff; padding: 60px 0; border-bottom: 1px solid #e2e8f0; }
-        .hesapla-kart { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 45px; max-width: 850px; margin: 0 auto; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
-        .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; text-align: left; }
-        .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #0f172a; font-size: 0.95rem; }
-        .form-input-premium { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 1rem; outline: none; }
-        .form-input-premium:focus { border-color: #ff6a00; }
-        .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        /* HESAPLAMA FORMU (DAHA PREMİUM GÖLGELİ VE DIŞA VURAN TASARIM) */
+        .daire-hesapla-section { background: #ffffff; padding: 40px 0 80px 0; }
+        .hesapla-kart { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 50px; max-width: 850px; margin: 0 auto; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.08); }
+        .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 30px; text-align: left; }
+        .form-label-premium { display: block; font-weight: 700; margin-bottom: 8px; color: #1e293b; font-size: 0.95rem; }
+        .form-input-premium { width: 100%; padding: 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 1rem; outline: none; transition: all 0.2s; }
+        .form-input-premium:focus { border-color: #ff6a00; box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.1); }
+        .btn-submit { width: 100%; padding: 18px; font-size: 1.15rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 8px 20px rgba(255, 106, 0, 0.2); }
+        .btn-submit:hover { background: #e55f00; box-shadow: 0 12px 24px rgba(255, 106, 0, 0.3); }
         
-        /* BİRLEŞİMİN GÜCÜ: İŞTİRAKLERİMİZ */
-        .power-section { padding: 70px 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; text-align: center; }
-        .power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 35px; }
-        .power-card { background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
-        .power-card h4 { font-size: 1.25rem; color: #0f172a; margin-bottom: 10px; font-weight: 700; }
-        .power-card p { font-size: 0.95rem; color: #64748b; margin: 0; }
+        /* 4. BİRLEŞİMİN GÜCÜ (BEYAZ SIKICILIĞINI KIRAN KOYU LACİVERT PREMİUM BÖLÜM) */
+        .power-section { padding: 90px 0; background: #0f172a; color: #ffffff; text-align: center; }
+        .power-section h2 { font-size: 2.3rem; font-weight: 800; color: #ffffff; margin-top: 5px; }
+        .power-section p.subtext { color: #94a3b8; font-size: 1.15rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
+        .power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-top: 45px; }
+        .power-card { background: rgba(255, 255, 255, 0.03); padding: 30px 25px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.08); transition: transform 0.2s; }
+        .power-card:hover { transform: translateY(-4px); background: rgba(255, 255, 255, 0.05); }
+        .power-card h4 { font-size: 1.35rem; color: #ffffff; margin-bottom: 12px; font-weight: 700; }
+        .power-card p { font-size: 0.95rem; color: #94a3b8; margin: 0; line-height: 1.6; }
         
         /* BÖLGELER ŞERİDİ */
-        .regions-strip { background: #f8fafc; padding: 20px 0; border-bottom: 1px solid #e2e8f0; }
+        .regions-strip { background: #ffffff; padding: 30px 0; border-bottom: 1px solid #e2e8f0; }
         .regions-box { display: flex; align-items: center; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
-        .regions-title { font-weight: 700; color: #0f172a; }
-        .region-chip { display: inline-block; padding: 8px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; color: #334155; text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+        .regions-title { font-weight: 700; color: #0f172a; font-size: 1.05rem; }
+        .region-chip { display: inline-block; padding: 8px 18px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; color: #475569; text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+        .region-chip:hover { background: #e2e8f0; color: #0f172a; }
         .region-chip.active { background: #ff6a00; color: #fff; border-color: #ff6a00; }
         
         /* FOOTER */
-        .footer { background: #0f172a; color: #94a3b8; padding: 60px 0 30px 0; font-size: 0.95rem; }
-        .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 40px; border-bottom: 1px solid #334155; padding-bottom: 40px; text-align: left; }
-        .footer h3 { color: #ffffff; margin-bottom: 20px; font-size: 1.2rem; }
-        .footer a { color: #94a3b8; text-decoration: none; display: block; margin-bottom: 10px; }
+        .footer { background: #0b0f19; color: #94a3b8; padding: 70px 0 30px 0; font-size: 0.95rem; }
+        .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 40px; border-bottom: 1px solid #1e293b; padding-bottom: 40px; text-align: left; }
+        .footer h3 { color: #ffffff; margin-bottom: 20px; font-size: 1.2rem; font-weight: 700; }
+        .footer a { color: #94a3b8; text-decoration: none; display: block; margin-bottom: 12px; transition: color 0.2s; }
         .footer a:hover { color: #ffffff; }
-        .copy { padding-top: 30px; text-align: center; font-size: 0.85rem; }
-        .float-wa { position: fixed; bottom: 20px; right: 20px; background: #25d366; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 999; }
+        .copy { padding-top: 30px; text-align: center; font-size: 0.85rem; color: #64748b; }
+        .float-wa { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: #fff; padding: 14px 26px; border-radius: 30px; font-weight: 700; text-decoration: none; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3); z-index: 999; transition: all 0.2s; }
+        .float-wa:hover { transform: scale(1.03); }
         
         @media (max-width: 900px) {
             .footer-grid { grid-template-columns: 1fr 1fr; }
             .hero-premium h1 { font-size: 2.8rem; }
         }
         @media (max-width: 768px) {
-            .navwrap { flex-direction: column; gap: 15px; }
+            .navwrap { flex-direction: column; gap: 15px; padding: 10px 0; }
             .menu { flex-wrap: wrap; justify-content: center; gap: 12px; }
             .hesapla-grid-premium { grid-template-columns: 1fr; }
             .hero-premium h1 { font-size: 2.2rem; }
             .footer-grid { grid-template-columns: 1fr; }
+            .power-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -110,7 +120,7 @@
 <section class="daire-hesapla-section">
     <div class="container">
         <div class="hesapla-kart">
-            <div style="text-align:center; margin-bottom:30px;">
+            <div style="text-align:center; margin-bottom:35px;">
                 <h2 style="font-size:2rem; font-weight:800; color:#0f172a; margin-bottom:10px;">🏢 Binanızdan Kaç Daire Çıkar?</h2>
                 <p style="color:#64748b; font-size:1rem; margin:0;">Mevcut arsa, ada/parsel ve dükkan bilgilerinizi girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
             </div>
@@ -152,10 +162,10 @@
 
 <section class="power-section">
     <div class="container">
-        <div style="max-width:700px; margin:0 auto;">
-            <span style="color:#0284c7; font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Konsorsiyum Güvencesi</span>
-            <h2 style="font-size:2.1rem; font-weight:800; color:#0f172a; margin-top:5px;">Birleşimin Gücü: Güçlü Şirket Grubu Yapımız</h2>
-            <p style="color:#64748b; font-size:1.1rem; margin-top:10px;">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari ve teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
+        <div style="max-width:750px; margin:0 auto;">
+            <span style="color:#38bdf8; font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Konsorsiyum Güvencesi</span>
+            <h2>Birleşimin Gücü: Güçlü Şirket Grubu Yapımız</h2>
+            <p class="subtext">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari ve teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
         </div>
         <div class="power-grid">
             <div class="power-card">
