@@ -9,12 +9,11 @@
     <link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/kurumsal.html">
     
     <style>
-        /* TERTEMİZ VE MODERN KURUMSAL SFA ŞABLON CSS */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #ffffff; color: #0f172a; line-height: 1.5; }
         .container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px; }
         
-        /* 1. SAF MENÜ BAR (YAZISIZ VE LOGOSUZ - SADECE MENÜ) */
+        /* 1. SAF MENÜ BAR (YAZISIZ VE LOGOSUZ) */
         .header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 20px 0; position: sticky; top: 0; z-index: 1000; }
         .navwrap { display: flex; justify-content: space-between; align-items: center; }
         .menu { display: flex; gap: 24px; }
@@ -22,44 +21,44 @@
         .menu a:hover, .menu a.active { color: #ff6a00; }
         .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; }
         
-        /* 2. GÖRSEL ARKA PLANLI KURUMSAL HERO ALANI (TAMAM.2.JPG) */
+        /* 2. DAHA GÖRÜNÜR YAPILAN RESİMLİ HERO ALANI (TAMAM.2.JPG) */
         .page-hero { 
-            background-image: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url('tamam.2.jpg'); 
+            background-image: linear-gradient(rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.5)), url('tamam.2.jpg'); 
             background-size: cover; 
             background-position: center; 
             color: #ffffff; 
-            padding: 100px 0 80px 0; 
+            padding: 110px 0 90px 0; 
             text-align: center; 
         }
-        .kicker { color: #38bdf8; font-weight: 800; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1.5px; margin-bottom: 15px; }
-        .page-hero h1 { font-size: 3.5rem; font-weight: 900; color: #ffffff; margin-bottom: 20px; line-height: 1.2; letter-spacing: -1px; }
-        .page-hero p { font-size: 1.3rem; color: #cbd5e1; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+        .kicker { color: #ffffff; background: rgba(255, 106, 0, 0.85); padding: 4px 14px; border-radius: 20px; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; display: inline-block; margin-bottom: 15px; }
+        .page-hero h1 { font-size: 3.5rem; font-weight: 900; color: #ffffff; margin-bottom: 20px; line-height: 1.2; letter-spacing: -1px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .page-hero p { font-size: 1.35rem; color: #ffffff; max-width: 800px; margin: 0 auto; line-height: 1.6; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
         
-        /* GENEL BÖLÜM VE KART DÜZENLERİ */
+        /* SEKSİYON VE KART TASARIMLARI */
         .section { padding: 80px 0; background-color: #f8fafc; }
         .section.white { background-color: #ffffff; }
         
         .grid { display: grid; gap: 25px; margin-top: 40px; }
         .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+        .grid-6 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
         
-        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 35px 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); text-align: left; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 35px 30px; text-align: left; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); }
         .section.white .card { background: #f8fafc; }
-        .card h3 { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin-bottom: 15px; }
-        .card p { color: #475569; font-size: 0.98rem; line-height: 1.6; }
+        .card h3 { font-size: 1.3rem; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
+        .card p { color: #475569; font-size: 0.95rem; line-height: 1.6; }
         
         .section-title { text-align: center; max-width: 700px; margin: 0 auto; }
         .section-title h2 { font-size: 2.2rem; font-weight: 900; color: #0f172a; }
         .section-title p { color: #64748b; font-size: 1.1rem; margin-top: 10px; }
         
-        /* KURUMSAL FORM ALANI */
+        /* FORM DÜZENİ */
         .form-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 50px; max-width: 800px; margin: 0 auto; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); }
         .form { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 30px; text-align: left; }
-        .form input, .form select, .form textarea { width: 100%; padding: 13px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 0.95rem; color: #0f172a; outline: none; transition: border-color 0.2s; }
+        .form input, .form select, .form textarea { width: 100%; padding: 13px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-size: 0.95rem; color: #0f172a; outline: none; }
         .form input:focus, .form select:focus, .form textarea:focus { border-color: #ff6a00; }
         .form textarea { grid-column: span 2; height: 120px; resize: none; }
-        .form button { grid-column: span 2; width: 100%; padding: 16px; font-size: 1.1rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-        .form button:hover { background: #e55f00; }
+        .form button { grid-column: span 2; width: 100%; padding: 16px; font-size: 1.1rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
         
         /* FOOTER */
         .footer { background: #0f172a; color: #94a3b8; padding: 70px 0 30px 0; font-size: 0.95rem; border-top: 1px solid #1e293b; }
@@ -68,7 +67,7 @@
         .footer a { color: #94a3b8; text-decoration: none; display: block; margin-bottom: 12px; }
         .footer a:hover { color: #ffffff; }
         .copy { padding-top: 30px; text-align: center; font-size: 0.85rem; color: #64748b; }
-        .float-wa { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 700; text-decoration: none; z-index: 999; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); }
+        .float-wa { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 700; text-decoration: none; z-index: 999; }
         
         @media (max-width: 900px) {
             .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -133,7 +132,7 @@
             <h2>İş Ortaklarımız</h2>
             <p>Kentsel dönüşüm ve inşaat süreçlerinde farklı uzmanlıkları bir araya getiren yapı.</p>
         </div>
-        <div class="grid grid-4">
+        <div class="grid grid-6">
             <div class="card">
                 <h3>Masfey İnşaat</h3>
                 <p>Koordinasyon, dönüşüm modeli, malik görüşmeleri ve proje geliştirme.</p>
@@ -149,6 +148,14 @@
             <div class="card">
                 <h3>Örnek Yapı İnşaat</h3>
                 <p>Kat karşılığı inşaat, kaba-ince işler ve anahtar teslim süreç desteği.</p>
+            </div>
+            <div class="card">
+                <h3>Korkut Mobilya</h3>
+                <p>Mobilya çözüm ortağımız; iç mekan mobilya uygulamaları ve dekorasyon süreçleri.</p>
+            </div>
+            <div class="card">
+                <h3>Enes Çatı</h3>
+                <p>Çatı ve dış cephe kaplama; izolasyon çözümleri ve estetik dış cephe uygulamaları.</p>
             </div>
         </div>
     </div>
