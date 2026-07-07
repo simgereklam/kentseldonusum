@@ -32,11 +32,8 @@ a{text-decoration:none;color:inherit}
 button,input,select,textarea{font:inherit}
 .container{max-width:1180px;margin:auto;padding:0 20px}
 .header{background:#06172a;color:white;position:sticky;top:0;z-index:999;border-bottom:1px solid rgba(255,255,255,.09)}
-.nav{min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-.brand{display:flex;flex-direction:column;color:white;min-width:260px}
-.brand strong{font-size:23px;line-height:1.05;font-weight:900}
-.brand span{font-size:11px;color:#cbd5e1;margin-top:4px}
-.menu{display:flex;gap:14px;align-items:center;font-size:13px;font-weight:800}
+.nav{min-height:78px;display:flex;align-items:center;justify-content:flex-end;gap:20px} /* justify-content değiştirildi, logo silindiği için linkler sağa yaslanmasın diye, istersen center yapabilirsin */
+.menu{display:flex;gap:14px;align-items:center;font-size:13px;font-weight:800; margin-right: auto;} /* margin-right: auto eklendi ki linkler sola yaslansın */
 .menu a{white-space:nowrap;opacity:.92}
 .menu a:hover,.menu a.active{color:var(--turuncu);opacity:1}
 .menu .basvuru-link{background:var(--turuncu);padding:10px 14px;border-radius:999px;color:white;opacity:1}
@@ -46,6 +43,16 @@ button,input,select,textarea{font:inherit}
 .btn-orange{background:var(--turuncu);color:#fff;box-shadow:0 14px 30px rgba(255,107,0,.24)}
 .btn-outline{border-color:rgba(255,255,255,.58);color:#fff;background:rgba(255,255,255,.05)}
 .btn-dark{background:var(--lacivert);color:white}
+
+/* SENİN KURALLARINA GÖRE GÜNCELLENEN AYDINLIK HERO KISMI */
+.page-hero {
+    background-image: linear-gradient(rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0.4)), url('hero-bg.png') !important;
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 54px 0;
+}
+
 .hero{
   color:white;position:relative;overflow:hidden;
   background:
@@ -98,7 +105,6 @@ textarea{grid-column:1/-1;min-height:76px;resize:vertical}
 .area-card .visual-card{min-height:145px;border-radius:18px 18px 0 0;box-shadow:none;border:0}
 .area-card .body{padding:18px}
 .process-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.process-card{padding:18px}.process-card b{width:40px;height:40px;border-radius:12px;background:#fff1e6;color:var(--turuncu);display:grid;place-items:center;margin-bottom:12px}
-.page-hero{background:linear-gradient(120deg,rgba(7,24,44,.96),rgba(7,24,44,.82)),url('hero-bg.png'),linear-gradient(135deg,#07182c,#123a63);background-size:cover;background-position:center;color:white;padding:54px 0}
 .page-hero small{color:#cbd5e1}.page-hero h1{font-size:39px;line-height:1.1;margin-top:10px;max-width:850px}.page-hero h1 span{color:var(--turuncu)}.page-hero p{max-width:780px;color:#dbeafe;margin-top:14px}
 .faq-list{display:grid;gap:12px;max-width:920px;margin:auto}.faq-item{padding:18px}.faq-item h3{font-size:18px;margin-bottom:8px}.faq-item p{color:var(--gri);font-size:14px}
 .cta{background:linear-gradient(135deg,#07182c,#123a63);color:white;text-align:center;padding:62px 20px}.cta h2{font-size:32px;margin-bottom:10px}.cta p{color:#dbeafe;max-width:720px;margin:0 auto 16px}.phone{font-size:32px;color:var(--turuncu);font-weight:900;margin-bottom:18px}
@@ -117,10 +123,22 @@ textarea{grid-column:1/-1;min-height:76px;resize:vertical}
 }
 </style>
 </head><body><header class="header"><div class="container nav">
-<a class="brand" href="index.html"><strong>Kentsel Dönüşüm İnşaat Grubu</strong><span>Masfey İnşaat • Kardelen İnşaat • Örnek Yapı İnşaat • Lavinay İnşaat</span></a>
+
 <button class="menu-toggle" type="button" aria-label="Menüyü aç/kapat" aria-expanded="false">Menü</button>
-<nav class="menu" aria-label="Ana Menü"><a class="" href="index.html">Ana Sayfa</a><a class="" href="kurumsal.html">Kurumsal</a><a class="" href="kentsel-donusum.html">Kentsel Dönüşüm</a><a class="" href="projelerimiz.html">Projelerimiz</a><a class="" href="hizmetlerimiz.html">Hizmetlerimiz</a><a class="active" href="bolgelerimiz.html">Bölgelerimiz</a><a class="" href="sss.html">S.S.S</a><a class="" href="iletisim.html">İletişim</a><a class="basvuru-link" href="basvuru.html">Başvuru</a></nav>
-</div></header><main><section class="page-hero"><div class="container"><small>Ana Sayfa / Bölgelerimiz</small><h1>İstanbul kentsel dönüşüm hizmet bölgelerimiz.</h1><p>Her bölge için ayrı sayfa, ayrı SEO başlığı ve ayrı başvuru yönlendirmesi.</p></div></section>
+<nav class="menu" aria-label="Ana Menü">
+    <a class="" href="index.html">Ana Sayfa</a>
+    <a class="" href="kurumsal.html">Kurumsal</a>
+    <a class="" href="kentsel-donusum.html">Kentsel Dönüşüm</a>
+    <a class="" href="projelerimiz.html">Projelerimiz</a>
+    <a class="" href="hizmetlerimiz.html">Hizmetlerimiz</a>
+    <a class="active" href="bolgelerimiz.html">Bölgelerimiz</a>
+    <a class="" href="sss.html">S.S.S</a>
+    <a class="" href="iletisim.html">İletişim</a>
+    <a class="basvuru-link" href="basvuru.html">Başvuru</a>
+</nav>
+</div></header>
+
+<main><section class="page-hero"><div class="container"><small>Ana Sayfa / Bölgelerimiz</small><h1>İstanbul kentsel dönüşüm hizmet bölgelerimiz.</h1><p>Her bölge için ayrı sayfa, ayrı SEO başlığı ve ayrı başvuru yönlendirmesi.</p></div></section>
 <section id="bolgeler" class="section krem"><div class="container">
 <div class="section-title"><small>Bölgelerimiz</small><h2>İstanbul kentsel dönüşüm hizmet bölgelerimiz.</h2><p>Binanızın bulunduğu ilçe ve mahalleye göre ada/parsel, imar durumu, mevcut daire m² ve kat karşılığı inşaat uygunluğu ön değerlendirmeye alınır.</p></div>
 <div class="area-grid">
