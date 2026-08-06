@@ -42,35 +42,36 @@
             transform: translate(-50%, -50%);
             min-width: 100%;
             min-height: 100%;
-            width: auto;
-            height: auto;
+            width: 100%;
+            height: 100%;
             z-index: 1;
             object-fit: cover;
+            pointer-events: none;
         }
 
-        /* Yazıların Okunması İçin Karartma Perdesi */
+        /* Karartma perdesi kaldırıldı (şeffaf yapıldı) */
         .hero-premium::before {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(rgba(0,0,0,.6), rgba(0,0,0,.45));
+            background: transparent;
             z-index: 2;
         }
 
         .hero-premium .container { position: relative; z-index: 3; }
         
-        .deprem-mega-tag { background: #fee2e2; color: #ef4444; padding: 12px 24px; border-radius: 30px; display: inline-block; font-weight: 800; font-size: 1.15rem; margin-bottom: 25px; border: 1px solid #fecaca; }
-        .hero-premium h1 { font-size: 3.8rem; font-weight: 900; color: #fff; margin-bottom: 18px; line-height: 1.1; letter-spacing: -1.5px; }
-        .hero-premium p { font-size: 1.15rem; color: #fff; max-width: 700px; margin: 0 auto 25px; line-height: 1.5; }
+        .deprem-mega-tag { background: rgba(254, 226, 226, 0.9); color: #ef4444; padding: 12px 24px; border-radius: 30px; display: inline-block; font-weight: 800; font-size: 1.15rem; margin-bottom: 25px; border: 1px solid #fecaca; backdrop-filter: blur(4px); }
+        .hero-premium h1 { font-size: 3.8rem; font-weight: 900; color: #fff; margin-bottom: 18px; line-height: 1.1; letter-spacing: -1.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+        .hero-premium p { font-size: 1.15rem; color: #fff; max-width: 700px; margin: 0 auto 25px; line-height: 1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
         .hero-actions { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
         
         .btn { padding: 14px 28px; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 0.95rem; transition: background 0.2s; }
         .btn-orange { background: #ff6a00; color: #fff; }
         .btn-orange:hover { background: #e55f00; }
-        .btn-outline { border: 2px solid #25d366; color: #25d366; background: transparent; }
-        .btn-outline:hover { background: rgba(37, 211, 102, 0.1); }
+        .btn-outline { border: 2px solid #25d366; color: #25d366; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); }
+        .btn-outline:hover { background: rgba(37, 211, 102, 0.2); }
         
-        /* HESAPLAMA FORMU GRİ ARKA PLAN ALANI (DOKUNULMADI) */
+        /* HESAPLAMA FORMU GRİ ARKA PLAN ALANI */
         .daire-hesapla-section { background-color: #f8fafc; padding: 70px 0; }
         .hesapla-kart { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 45px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
         .hesapla-grid-premium { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; text-align: left; }
@@ -79,7 +80,7 @@
         .form-input-premium:focus { border-color: #ff6a00; }
         .btn-submit { width: 100%; padding: 16px; font-size: 1.1rem; font-weight: 700; background: #ff6a00; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
         
-        /* BİRLEŞİMİN GÜCÜ (DOKUNULMADI) */
+        /* BİRLEŞİMİN GÜCÜ */
         .power-section { padding: 80px 0; background-color: #eef2f6; text-align: center; }
         .power-section h2 { font-size: 2.1rem; font-weight: 800; color: #0f172a; }
         .power-section p.subtext { color: #475569; font-size: 1.1rem; margin-top: 10px; max-width: 700px; margin-left: auto; margin-right: auto; }
@@ -88,14 +89,14 @@
         .power-card h4 { font-size: 1.25rem; color: #0f172a; margin-bottom: 10px; font-weight: 700; }
         .power-card p { font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6; }
         
-        /* BÖLGELER STRIP (DOKUNULMADI) */
+        /* BÖLGELER STRIP */
         .regions-strip { background: #ffffff; padding: 25px 0; border-bottom: 1px solid #e2e8f0; }
         .regions-box { display: flex; align-items: center; gap: 15px; overflow-x: auto; white-space: nowrap; padding-bottom: 5px; }
         .regions-title { font-weight: 700; color: #0f172a; font-size: 1rem; }
         .region-chip { display: inline-block; padding: 8px 18px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 20px; color: #475569; text-decoration: none; font-size: 0.9rem; font-weight: 600; }
         .region-chip.active { background: #ff6a00; color: #fff; border-color: #ff6a00; }
         
-        /* FOOTER (DOKUNULMADI) */
+        /* FOOTER */
         .footer { background: #0f172a; color: #94a3b8; padding: 60px 0 30px 0; font-size: 0.95rem; }
         .footer-grid { display: grid; grid-template-columns: 2fr repeat(3, 1fr); gap: 40px; border-bottom: 1px solid #1e293b; padding-bottom: 40px; text-align: left; }
         .footer h3 { color: #ffffff; margin-bottom: 20px; font-size: 1.15rem; font-weight: 700; }
@@ -115,8 +116,7 @@
             .hero-premium h1 { font-size: 2.2rem; }
             .footer-grid { grid-template-columns: 1fr; }
             .power-grid { grid-template-columns: 1fr; }
-            /* Mobilde tasarımı ve performansı korumak için video gizlenir */
-            .hero-video-bg { display: none; }
+            /* Mobilde videonun gizlenmesi (display: none) kaldırıldı, mobilde de oynayacak */
         }
     </style>
 </head>
@@ -160,7 +160,7 @@
         <div class="hesapla-kart">
             <div style="text-align:center; margin-bottom:35px;">
                 <h2 style="font-size:2rem; font-weight:800; color:#0f172a; margin-bottom:10px;">🏢 Binanızdan Kaç Daire Çıkar?</h2>
-                <p style="color:#64748b; font-size:1rem; margin:0;">Mevcut arsa, ada/parsel and dükkan bilgilerini girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
+                <p style="color:#64748b; font-size:1rem; margin:0;">Mevcut arsa, ada/parsel ve dükkan bilgilerini girerek kentsel dönüşüm potansiyelini anında öğrenin.</p>
             </div>
             <form data-whatsapp-form>
                 <div class="hesapla-grid-premium">
@@ -203,24 +203,24 @@
         <div style="max-width:750px; margin:0 auto;">
             <span style="color:#0284c7; font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Konsorsiyum Güvencesi</span>
             <h2>Birleşimin Gücü: Güçlü Şirket Grubu Yapımız</h2>
-            <p class="subtext">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari and teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
+            <p class="subtext">Tek bir yüklenici firma yerine; 4 büyük inşaat markasının ortak mali, idari ve teknik gücüyle projenizi sıfır riskle tamamlıyoruz.</p>
         </div>
         <div class="power-grid">
             <div class="power-card">
                 <h4>Masfey İnşaat</h4>
-                <p>Proje yönetimi, teknik koordinasyon and mimari vizyon gücü.</p>
+                <p>Proje yönetimi, teknik koordinasyon ve mimari vizyon gücü.</p>
             </div>
             <div class="power-card">
                 <h4>Kardelen İnşaat</h4>
-                <p>Yüksek mühendislik çözümleri and köklü yapı tecrübesi.</p>
+                <p>Yüksek mühendislik çözümleri ve köklü yapı tecrübesi.</p>
             </div>
             <div class="power-card">
                 <h4>Kumtaş İnşaat</h4>
-                <p>Finansal teminat altyapısı and kesintisiz malzeme tedarik gücü.</p>
+                <p>Finansal teminat altyapısı ve kesintisiz malzeme tedarik gücü.</p>
             </div>
             <div class="power-card">
                 <h4>Örnek Yapı İnşaat</h4>
-                <p>Zamanında anahtar teslim süreç yönetimi and uygulama uzmanlığı.</p>
+                <p>Zamanında anahtar teslim süreç yönetimi ve uygulama uzmanlığı.</p>
             </div>
         </div>
     </div>
@@ -248,7 +248,7 @@
         <div class="footer-grid">
             <div>
                 <h3>Kentseldönüşüm.com.tr</h3>
-                <p>Masfey İnşaat, Kumtaş İnşaat, Kardelen İnşaat and Örnek Yapı İnşaat ortak iştirak yapısıyla İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p>
+                <p>Masfey İnşaat, Kumtaş İnşaat, Kardelen İnşaat ve Örnek Yapı İnşaat ortak iştirak yapısıyla İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p>
             </div>
             <div>
                 <h3>Menü</h3>
