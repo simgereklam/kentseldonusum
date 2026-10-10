@@ -49,7 +49,6 @@
             pointer-events: none;
         }
 
-        /* Karartma perdesi kaldırıldı (şeffaf yapıldı) */
         .hero-premium::before {
             content: "";
             position: absolute;
@@ -116,7 +115,6 @@
             .hero-premium h1 { font-size: 2.2rem; }
             .footer-grid { grid-template-columns: 1fr; }
             .power-grid { grid-template-columns: 1fr; }
-            /* Mobilde videonun gizlenmesi (display: none) kaldırıldı, mobilde de oynayacak */
         }
     </style>
 </head>
@@ -139,8 +137,9 @@
 </header>
 
 <section class="hero-premium">
+    <!-- Güncellenen Arka Plan Videosu -->
     <video class="hero-video-bg" autoplay muted loop playsinline>
-        <source src="whatsapp-video.mp4" type="video/mp4">
+        <source src="kentsel-donusum.mp4" type="video/mp4">
         Tarayıcınız video etiketini desteklemiyor.
     </video>
 
@@ -248,7 +247,7 @@
         <div class="footer-grid">
             <div>
                 <h3>Kentseldönüşüm.com.tr</h3>
-                <p> Kumtaş İnşaat İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p>
+                <p>Masfey İnşaat, Kumtaş İnşaat, Kardelen İnşaat ve Örnek Yapı İnşaat ortak iştirak yapısıyla İstanbul genelinde güvenli kentsel dönüşüm süreçleri.</p>
             </div>
             <div>
                 <h3>Menü</h3>
@@ -274,6 +273,19 @@
 </footer>
 
 <a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
-<script src="script.js"></script>
+
+<!-- Form verilerini WhatsApp'a aktaran script -->
+<script>
+    document.querySelector('form[data-whatsapp-form]').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        let text = "Merhaba, web siteniz üzerinden kentsel dönüşüm potansiyel hesaplama talebi:\n";
+        for (let [key, value] of formData.entries()) {
+            if(value) text += `- ${key}: ${value}\n`;
+        }
+        const encodedText = encodeURIComponent(text);
+        window.open(`https://wa.me/905431813485?text=${encodedText}`, '_blank');
+    });
+</script>
 </body>
 </html>
