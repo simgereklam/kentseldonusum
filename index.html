@@ -35,7 +35,7 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO & VİDEO ARKA PLAN YAPISI (Masaüstü şeffaf cam tasarımı korundu) */
+        /* HERO & VİDEO ARKA PLAN YAPISI */
         .hero {
             position: relative;
             color: white;
@@ -67,6 +67,7 @@
 
         .hero .container { position: relative; z-index: 3; }
         
+        /* Masaüstünde şeffaf cam tasarım */
         .hero-content { 
             max-width: 850px; 
             margin: 0 auto;
@@ -129,7 +130,7 @@
 
         @media(max-width:1180px){.hero-trust{grid-template-columns:repeat(2,1fr);gap:15px}.trust-mini{border-right:0}}
         @media(max-width:980px){
-            .navwrap{height:auto;align-items:center;flex-direction:column;padding:18px 0 12px;gap:8px} /* Üst menü boşluğu artırılarak başlık aşağı alındı */
+            .navwrap{height:auto;align-items:center;flex-direction:column;padding:18px 0 12px;gap:8px}
             .brand-company{align-items:center;text-align:center}
             .menu{width:100%;overflow-x:auto;gap:18px;padding-bottom:6px;justify-content:center}
             .menu::-webkit-scrollbar{display:none}
@@ -138,11 +139,31 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE SADECE GÖSTERDİĞİN 4'LÜ KUTULAR GİZLENDİ, DİĞER ŞEFFAF TASARIM AYNEN KORUNDU */
+        /* MOBİLDE KUTU ARKA PLANI, GÖLGESİ VE ÇERÇEVESİ KOMPLE KALDIRILDI (ŞEFFAF VE UFAK YAPILDI) */
         @media(max-width:640px){
-            .container{padding:0 16px}
-            .hero-content{padding:25px 15px}
-            .hero-trust { display: none !important; } /* Sadece mobilde o güven kutuları gizlendi */
+            .container{padding:0 14px}
+            .hero { padding: 20px 0; min-height: auto; }
+            
+            /* Ana içerik kutusu mobilde tamamen şeffaf, gölgesiz ve ufak boyutta */
+            .hero-content {
+                padding: 15px 8px;
+                background: transparent !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                max-width: 100%;
+            }
+            .hero h1 { font-size: 22px; letter-spacing: -0.8px; margin-bottom: 10px; }
+            .hero p { font-size: 13.5px; margin-bottom: 15px; }
+            
+            .badge { font-size: 10.5px; padding: 5px 10px; margin-bottom: 8px; background: rgba(6, 24, 44, 0.75) !important; }
+            .hero-actions { flex-direction: column; gap: 8px; }
+            .btn { width: 100%; min-height: 42px; font-size: 13px; padding: 0 14px; }
+            
+            /* Güven kutuları mobilde gizlendi */
+            .hero-trust { display: none !important; }
+            
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
         }
