@@ -22,6 +22,17 @@
     
     <link rel="stylesheet" href="style.css">
     
+    <style>
+        /* İletişim sayfası özel ek düzenlemeler */
+        .contact-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
+        .contact-box { background: white; border: 1px solid var(--line); border-radius: 20px; padding: 28px; box-shadow: var(--shadow); text-align: center; }
+        .contact-box h3 { color: var(--navy); margin-bottom: 12px; font-size: 18px; }
+        .contact-box p, .contact-box a { color: var(--text); font-size: 15px; font-weight: 700; line-height: 1.6; }
+        .contact-box a:hover { color: var(--orange); }
+        .map-container { width: 100%; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); margin-top: 40px; }
+        @media(max-width: 980px) { .contact-info-grid { grid-template-columns: 1fr; } }
+    </style>
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -98,66 +109,64 @@
 </section>
 
 <section class="section white">
-    <div class="container content-layout">
-        <div>
-            <div class="form-card">
-                <div class="section-title" style="text-align:left;margin-bottom:18px">
-                    <div class="kicker">Ücretsiz Ön Değerlendirme</div>
-                    <h2>Binanız İçin Bilgi Gönderin</h2>
-                    <p>İlçe, mahalle, ada/parsel ve daire metrekare bilgilerini yazın; dönüşüm modeli için ön değerlendirme yapalım.</p>
-                </div>
-                <form class="form" data-whatsapp-form>
-                    <input name="Ad Soyad" placeholder="Ad Soyad" required>
-                    <input name="Telefon" placeholder="Telefon" required>
-                    <select name="İlçe">
-                        <option value="">İlçe seçin</option>
-                        <option>Yenibosna</option>
-                        <option>Bahçelievler</option>
-                        <option>Bakırköy</option>
-                        <option>Bağcılar</option>
-                        <option>Güngören</option>
-                        <option>Avcılar</option>
-                        <option>Esenler</option>
-                        <option>Küçükçekmece</option>
-                        <option>Zeytinburnu</option>
-                        <option>Diğer</option>
-                    </select>
-                    <input name="Mahalle" placeholder="Mahalle">
-                    <input name="Ada Parsel" placeholder="Ada / Parsel">
-                    <input name="Daire m²" placeholder="Daire m²">
-                    <textarea name="Mesaj" placeholder="Bina yaşı, kat sayısı, daire sayısı veya merak ettiğiniz konu"></textarea>
-                    <button type="submit">WhatsApp ile Ön Değerlendirme Gönder</button>
-                </form>
+    <div class="container">
+        
+        <!-- ÜST BİLGİ KUTULARI (Adres, Telefon, E-posta görünür ve net) -->
+        <div class="contact-info-grid">
+            <div class="contact-box">
+                <h3>📍 Merkez Adresimiz</h3>
+                <p>Kocasinan Merkez Mahallesi<br>Mahmutbey Caddesi No: 245/A<br>Bahçelievler / İstanbul</p>
+            </div>
+            <div class="contact-box">
+                <h3>📞 Telefon Hatlarımız</h3>
+                <p>Sabit: <a href="tel:02129555599">0 212 955 5599</a><br>WhatsApp/Mobil: <a href="tel:05431813485">0543 181 34 85</a></p>
+            </div>
+            <div class="contact-box">
+                <h3>✉️ E-Posta & Hızlı Hat</h3>
+                <p><a href="mailto:info@kumtas.com.tr">info@kumtas.com.tr</a></p>
+                <a href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum." style="display:inline-block;margin-top:10px;background:var(--green);color:white;padding:8px 16px;border-radius:10px;font-size:14px;font-weight:950;">🟢 WhatsApp'tan Yaz</a>
             </div>
         </div>
-        
-        <aside class="sidebox">
-            <h3>Kumtaş İnşaat İletişim</h3>
-            
-            <p style="margin-bottom:10px;"><strong>Merkez Adres:</strong><br>
-            Kocasinan Merkez Mahallesi Mahmutbey Caddesi No:245/A Bahçelievler / İstanbul</p>
-            
-            <p style="margin-bottom:10px;"><strong>Sabit Telefon:</strong><br>
-            <a href="tel:02129555599" style="color:var(--orange);font-weight:950;">0 212 955 5599</a></p>
-            
-            <p style="margin-bottom:10px;"><strong>WhatsApp / Mobil:</strong><br>
-            <a href="tel:+905431813485" style="color:var(--orange);font-weight:950;">0543 181 34 85</a></p>
-            
-            <p style="margin-bottom:15px;"><strong>E-posta:</strong><br>
-            <a href="mailto:info@kumtas.com.tr" style="color:var(--orange);font-weight:950;">info@kumtas.com.tr</a></p>
-            
-            <a href="https://wa.me/905431813485?text=Merhaba,%20kentsel%20dönüşüm%20hakkında%20bilgi%20almak%20istiyorum." style="display:block;background:var(--green);color:white;text-align:center;padding:12px;border-radius:10px;font-weight:950;">🟢 WhatsApp’tan Doğrudan Yaz</a>
-            
-            <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
-            
-            <h3>Konum & Harita</h3>
-            <p style="font-size:13px;margin-bottom:10px;">Ofisimize gelerek çayımızı/kahvemizi içebilir, binanızın kentsel dönüşüm detaylarını yüz yüze görüşebilirsiniz.</p>
-            
-            <!-- Google Haritalar (Kocasinan Merkez Mah. Mahmutbey Cad. No:245/A Bahçelievler/İstanbul) -->
-            <div style="border-radius:12px; overflow:hidden; border:1px solid var(--line); margin-top:10px;">
-                <iframe title="Kumtaş İnşaat Konum Haritası" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3009.6!2d28.825!3d41.005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zTWFobXV0YmV5IENkLiBObzoyNDUsIEJhZMOnY2nswLEvQmFow6dlbGlldmVyLcSwc3RhbmJ1bA!5e0!3m2!1str!2str!4v1700000000000!5m2!1str!2str" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+        <!-- FORM ALANI -->
+        <div class="form-card" style="max-width: 900px; margin: 0 auto;">
+            <div style="text-align:center;margin-bottom:24px">
+                <span class="kicker">Ücretsiz Ön Değerlendirme</span>
+                <h2>Binanız İçin Bilgi Gönderin</h2>
+                <p style="color:var(--muted)">İlçe, mahalle, ada/parsel ve daire metrekare bilgilerini yazın; dönüşüm modeli için ön değerlendirme yapalım.</p>
             </div>
-        </aside>
+            <form class="form" data-whatsapp-form>
+                <input name="Ad Soyad" placeholder="Ad Soyad" required>
+                <input name="Telefon" placeholder="Telefon" required>
+                <select name="İlçe">
+                    <option value="">İlçe seçin</option>
+                    <option>Yenibosna</option>
+                    <option>Bahçelievler</option>
+                    <option>Bakırköy</option>
+                    <option>Bağcılar</option>
+                    <option>Güngören</option>
+                    <option>Avcılar</option>
+                    <option>Esenler</option>
+                    <option>Küçükçekmece</option>
+                    <option>Zeytinburnu</option>
+                    <option>Diğer</option>
+                </select>
+                <input name="Mahalle" placeholder="Mahalle">
+                <input name="Ada Parsel" placeholder="Ada / Parsel">
+                <input name="Daire m²" placeholder="Daire m²">
+                <textarea name="Mesaj" placeholder="Bina yaşı, kat sayısı, daire sayısı veya merak ettiğiniz konu"></textarea>
+                <button type="submit">WhatsApp ile Ön Değerlendirme Gönder</button>
+            </form>
+        </div>
+
+        <!-- BÜYÜK DEV HARİTA ALANI -->
+        <div class="map-container">
+            <div style="background:var(--navy); color:white; padding:16px 24px; font-weight:950; font-size:18px;">
+                📍 Kumtaş İnşaat Ofis Konumu (Bahçelievler / İstanbul)
+            </div>
+            <iframe title="Kumtaş İnşaat Konum Haritası" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3009.6!2d28.825!3d41.005!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zTWFobXV0YmV5IENkLiBObzoyNDUsIEJhZMOnY2nswLEvQmFow6dlbGlldbGVyLcSwc3RhbmJ1b!5e0!3m2!1str!2str!4v1700000000000!5m2!1str!2str" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+
     </div>
 </section>
 
