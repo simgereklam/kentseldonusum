@@ -139,25 +139,25 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE AÇIKLAMA VE GÜVEN KUTULARI GİZLENDİ, ALAN TERTEMİZ YAPILDI */
+        /* MOBİLDE AÇIKLAMA VE GÜVEN KUTULARI TAMAMEN ŞEFFAF / GİZLİ */
         @media(max-width:640px){
             .container{padding:0 12px}
             .hero { padding: 25px 0; min-height: auto; }
             .hero-content {
                 padding: 22px 14px;
                 border-radius: 18px;
-                background: rgba(6, 24, 44, 0.85);
+                background: rgba(6, 24, 44, 0.75);
             }
             .hero h1 { font-size: 24px; letter-spacing: -1px; margin-bottom: 12px; }
             
-            /* MOBİLDE AÇIKLAMA PARAGRAFI GİZLENİYOR */
+            /* Mobilde paragraf tamamen kaldırıldı/şeffaflaştırıldı */
             .hero-desc { display: none !important; }
             
             .badge { font-size: 11px; padding: 7px 11px; margin-bottom: 10px; }
             .hero-actions { flex-direction: column; gap: 9px; }
             .btn { width: 100%; min-height: 46px; font-size: 14px; padding: 0 16px; }
             
-            /* MOBİLDE GÜVEN KUTULARI GİZLENİYOR */
+            /* Mobilde güven kutuları tamamen kaldırıldı/şeffaflaştırıldı */
             .hero-trust { display: none !important; }
             
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
