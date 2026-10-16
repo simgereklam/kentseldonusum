@@ -35,7 +35,7 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO & VİDEO ARKA PLAN YAPISI (Karartı tamamen kaldırıldı, netlik artırıldı) */
+        /* HERO & VİDEO ARKA PLAN YAPISI (Netlik artırılmış sürüm) */
         .hero {
             position: relative;
             color: white;
@@ -61,14 +61,12 @@
             z-index: 1;
             object-fit: cover;
             pointer-events: none;
-            filter: contrast(1.05) saturate(1.1); /* Videonun renk ve netliğini en üst düzeye çıkarır */
+            filter: contrast(1.15) saturate(1.12) brightness(0.98);
+            -webkit-filter: contrast(1.15) saturate(1.12) brightness(0.98);
         }
-
-        /* Karartma filtresi (::before) tamamen silindi, video %100 net görünecek */
 
         .hero .container { position: relative; z-index: 3; }
         
-        /* Yazıların arkasındaki şık, netliği bozmayan modern cam panel */
         .hero-content { 
             max-width: 850px; 
             margin: 0 auto;
