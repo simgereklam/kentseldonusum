@@ -35,7 +35,7 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO & VİDEO ARKA PLAN YAPISI (Zemin kutu hem masaüstünde hem mobilde tamamen şeffaf yapıldı) */
+        /* HERO & VİDEO ARKA PLAN YAPISI (Video netliği ve donanımsal keskinlik üst düzeyde) */
         .hero {
             position: relative;
             color: white;
@@ -53,7 +53,7 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) translateZ(0);
             min-width: 100%;
             min-height: 100%;
             width: 100%;
@@ -61,13 +61,16 @@
             z-index: 1;
             object-fit: cover;
             pointer-events: none;
-            filter: contrast(1.15) saturate(1.12) brightness(1.02);
-            -webkit-filter: contrast(1.15) saturate(1.12) brightness(1.02);
+            /* Donanımsal netleştirme filtreleri */
+            filter: contrast(1.25) saturate(1.2) brightness(1.05);
+            -webkit-filter: contrast(1.25) saturate(1.2) brightness(1.05);
+            image-rendering: -webkit-optimize-contrast;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
 
         .hero .container { position: relative; z-index: 3; }
         
-        /* Hem masaüstünde hem mobilde ana kutu arka planı tamamen şeffaf ve gölgesiz */
         .hero-content { 
             max-width: 850px; 
             margin: 0 auto;
@@ -172,9 +175,9 @@
     </div>
 </header>
 
-<!-- BANNER / HERO VİDEO BÖLÜMÜ -->
+<!-- BANNER / VİDEO BÖLÜMÜ -->
 <section class="hero">
-    <video class="hero-video-bg" autoplay muted loop playsinline>
+    <video class="hero-video-bg" autoplay muted loop playsinline style="transform: translate(-50%, -50%) translateZ(0); backface-visibility: hidden;">
         <source src="kentsel-donusum.mp4" type="video/mp4">
         Tarayıcınız video etiketini desteklemiyor.
     </video>
