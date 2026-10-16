@@ -28,43 +28,68 @@
         .menu a:hover, .menu a.active { color: #ff6a00; }
         .nav-cta { background: #ff6a00; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-weight: 700; text-decoration: none; }
         
-        /* HERO & VİDEO ARKA PLAN AYARLARI */
+        /* HERO & BANNER ALANI */
         .hero-premium { 
             position: relative; 
             color: #ffffff; 
             min-height: 75vh; 
-            padding: 70px 0 40px; 
+            padding: 70px 0 50px; 
             text-align: center; 
             display: flex; 
             align-items: center; 
+            justify-content: center;
             overflow: hidden;
-            background-color: #0f172a;
-        }
-
-        .hero-video-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            min-width: 100%;
-            min-height: 100%;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            object-fit: cover;
-            pointer-events: none;
-        }
-
-        .hero-premium::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: transparent;
-            z-index: 2;
+            background: linear-gradient(rgba(11, 18, 32, 0.85), rgba(11, 18, 32, 0.92)), #0f172a;
+            background-size: cover;
+            background-position: center;
         }
 
         .hero-premium .container { position: relative; z-index: 3; }
         
+        /* CSS TASARIM LOGO (GÖRSEL OLMADAN ŞIK BRANDING) */
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 15px;
+            background: #ffffff;
+            padding: 14px 28px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            border-bottom: 4px solid #ff6a00;
+        }
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: #0f2b48;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            letter-spacing: -1px;
+        }
+        .brand-text {
+            text-align: left;
+        }
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #0f2b48;
+            line-height: 1;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .brand-subtitle {
+            font-size: 0.78rem;
+            color: #64748b;
+            font-weight: 700;
+            margin-top: 4px;
+            letter-spacing: 0.2px;
+        }
+
         .deprem-mega-tag { background: rgba(254, 226, 226, 0.9); color: #ef4444; padding: 12px 24px; border-radius: 30px; display: inline-block; font-weight: 800; font-size: 1.15rem; margin-bottom: 25px; border: 1px solid #fecaca; backdrop-filter: blur(4px); }
         .hero-premium h1 { font-size: 3.8rem; font-weight: 900; color: #fff; margin-bottom: 18px; line-height: 1.1; letter-spacing: -1.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
         .hero-premium p { font-size: 1.15rem; color: #fff; max-width: 700px; margin: 0 auto 25px; line-height: 1.5; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
@@ -120,6 +145,9 @@
             .hesapla-grid-premium { grid-template-columns: 1fr; }
             .hero-premium h1 { font-size: 2.2rem; }
             .footer-grid { grid-template-columns: 1fr; }
+            .brand-badge { padding: 10px 18px; gap: 10px; }
+            .brand-title { font-size: 1.2rem; }
+            .brand-subtitle { font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -142,12 +170,16 @@
 </header>
 
 <section class="hero-premium">
-    <video class="hero-video-bg" autoplay muted loop playsinline>
-        <source src="kentsel-donusum.mp4" type="video/mp4">
-        Tarayıcınız video etiketini desteklemiyor.
-    </video>
-
     <div class="container">
+        <!-- Görsel Dosyası Gerektirmeyen Kod Tabanlı Şık Kumtaş İnşaat Logosu -->
+        <div class="brand-badge">
+            <div class="brand-icon">K</div>
+            <div class="brand-text">
+                <div class="brand-title">Kumtaş İnşaat</div>
+                <div class="brand-subtitle">Güvenle Yükselen Yaşam Alanları</div>
+            </div>
+        </div>
+        
         <div class="deprem-mega-tag">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM. GÜVENLİĞİNİZ BİRİNCİ ÖNCELİĞİMİZ.</div>
         <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
         <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
@@ -205,7 +237,7 @@
     <div class="container">
         <div style="max-width:750px; margin:0 auto;">
             <span style="color:#0284c7; font-weight:700; font-size:0.9rem; letter-spacing:1px; text-transform:uppercase;">Güvenli Yapı Güvencesi</span>
-            <h2>Kumtaş İnşaat İle Güvenli Geleçek</h2>
+            <h2>Kumtaş İnşaat İle Güvenli Gelecek</h2>
             <p class="subtext">Mali, idari ve teknik gücümüzle projenizi sıfır riskle, zamanında ve en yüksek kalite standartlarında tamamlıyoruz.</p>
         </div>
         <div class="power-grid">
