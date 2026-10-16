@@ -87,7 +87,7 @@
         .btn-orange{background:var(--orange);color:white;box-shadow:0 10px 24px rgba(255,107,0,.30)}
         .btn-outline{background:rgba(6,24,44,.6);border-color:rgba(255,255,255,.56);color:white}
         
-        /* Masaüstünde görünen güven kutuları */
+        /* Masaüstü güven kutuları */
         .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:35px;max-width:900px;margin-left:auto;margin-right:auto;background:rgba(6,24,44,0.85);padding:18px;border-radius:16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2)}
         .trust-mini{padding:0 15px 0 0;margin-right:15px;border-right:1px solid rgba(255,255,255,.26);display:flex;gap:10px;align-items:flex-start;text-align:left}
         .trust-mini:last-child{border-right:0;margin-right:0;padding-right:0}
@@ -139,22 +139,25 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE GÜVEN KUTULARI TAMAMEN GİZLENDİ VE ALAN SADELEŞTİRİLDİ */
+        /* MOBİLDE AÇIKLAMA VE GÜVEN KUTULARI GİZLENDİ, ALAN TERTEMİZ YAPILDI */
         @media(max-width:640px){
             .container{padding:0 12px}
-            .hero { padding: 30px 0; min-height: auto; }
+            .hero { padding: 25px 0; min-height: auto; }
             .hero-content {
-                padding: 24px 16px;
+                padding: 22px 14px;
                 border-radius: 18px;
                 background: rgba(6, 24, 44, 0.85);
             }
-            .hero h1 { font-size: 24px; letter-spacing: -1px; margin-bottom: 10px; }
-            .hero p { font-size: 13.5px; margin-bottom: 20px; line-height: 1.45; }
+            .hero h1 { font-size: 24px; letter-spacing: -1px; margin-bottom: 12px; }
+            
+            /* MOBİLDE AÇIKLAMA PARAGRAFI GİZLENİYOR */
+            .hero-desc { display: none !important; }
+            
             .badge { font-size: 11px; padding: 7px 11px; margin-bottom: 10px; }
             .hero-actions { flex-direction: column; gap: 9px; }
             .btn { width: 100%; min-height: 46px; font-size: 14px; padding: 0 16px; }
             
-            /* Mobilde alt kutular gizleniyor */
+            /* MOBİLDE GÜVEN KUTULARI GİZLENİYOR */
             .hero-trust { display: none !important; }
             
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
@@ -197,7 +200,7 @@
         <div class="hero-content">
             <div class="badge">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
-            <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
+            <p class="hero-desc">Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
             <div class="hero-actions">
                 <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
                 <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif Hattı</a>
