@@ -35,7 +35,7 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO & VİDEO ARKA PLAN YAPISI */
+        /* HERO & VİDEO ARKA PLAN YAPISI (Zemin kutu hem masaüstünde hem mobilde tamamen şeffaf yapıldı) */
         .hero {
             position: relative;
             color: white;
@@ -67,17 +67,16 @@
 
         .hero .container { position: relative; z-index: 3; }
         
-        /* Masaüstünde şeffaf cam kutu tasarımı aynen korunuyor */
+        /* Hem masaüstünde hem mobilde ana kutu arka planı tamamen şeffaf ve gölgesiz */
         .hero-content { 
             max-width: 850px; 
             margin: 0 auto;
-            background: rgba(6, 24, 44, 0.65);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 45px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 20px;
         }
 
         .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);background:rgba(6,24,44,.85);border-radius:12px;padding:11px 16px;font-size:13px;font-weight:950;letter-spacing:.2px;margin-bottom:18px}
@@ -139,17 +138,9 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE ARKADAKİ BÜYÜK KUTU ZEMİNİ, ÇERÇEVESİ VE GÖLGESİ TAMAMEN KALDIRILDI */
+        /* MOBİLDE AÇIKLAMA YAZISI VE 4'LÜ KUTULAR GİZLENDİ */
         @media(max-width:640px){
             .container{padding:0 16px}
-            .hero-content{
-                padding: 10px 5px !important;
-                background: transparent !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                border: none !important;
-                box-shadow: none !important;
-            }
             .hero p { display: none !important; }
             .hero-trust { display: none !important; }
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
