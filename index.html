@@ -139,26 +139,45 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE AÇIKLAMA VE GÜVEN KUTULARI TAMAMEN ŞEFFAF / GİZLİ */
+        /* MOBİLDE ANA KUTU VE ARKA PLANLAR TAMAMEN ŞEFFAF YAPILDI */
         @media(max-width:640px){
             .container{padding:0 12px}
-            .hero { padding: 25px 0; min-height: auto; }
+            .hero { padding: 30px 0; min-height: auto; }
+            
+            /* Ana içerik kutusu mobilde tamamen şeffaf yapıldı */
             .hero-content {
-                padding: 22px 14px;
-                border-radius: 18px;
-                background: rgba(6, 24, 44, 0.75);
+                padding: 20px 10px;
+                background: transparent !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                border: none !important;
+                box-shadow: none !important;
             }
             .hero h1 { font-size: 24px; letter-spacing: -1px; margin-bottom: 12px; }
+            .hero p { font-size: 14px; margin-bottom: 18px; }
             
-            /* Mobilde paragraf tamamen kaldırıldı/şeffaflaştırıldı */
-            .hero-desc { display: none !important; }
-            
-            .badge { font-size: 11px; padding: 7px 11px; margin-bottom: 10px; }
+            .badge { font-size: 11px; padding: 6px 10px; margin-bottom: 10px; background: rgba(6, 24, 44, 0.6) !important; }
             .hero-actions { flex-direction: column; gap: 9px; }
             .btn { width: 100%; min-height: 46px; font-size: 14px; padding: 0 16px; }
             
-            /* Mobilde güven kutuları tamamen kaldırıldı/şeffaflaştırıldı */
-            .hero-trust { display: none !important; }
+            /* Güven kutularının arka planı ve çerçevesi mobilde şeffaflaştırıldı */
+            .hero-trust { 
+                background: transparent !important; 
+                border: none !important; 
+                backdrop-filter: none !important;
+                box-shadow: none !important;
+                margin-top: 25px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 0;
+            }
+            .trust-mini {
+                background: rgba(6, 24, 44, 0.55);
+                backdrop-filter: blur(6px);
+                padding: 10px;
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+            }
             
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
@@ -200,7 +219,7 @@
         <div class="hero-content">
             <div class="badge">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
-            <p class="hero-desc">Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
+            <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
             <div class="hero-actions">
                 <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
                 <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif Hattı</a>
