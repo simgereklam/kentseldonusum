@@ -261,7 +261,22 @@
   },
   {
     "kategori": "tamamlanmis",
+    "src": "tamam.4.png",
+    "baslik": "Tamamlanan Proje 4"
+  },
+  {
+    "kategori": "tamamlanmis",
+    "src": "tamam.5.png",
+    "baslik": "Tamamlanan Proje 5"
+  },
+  {
+    "kategori": "tamamlanmis",
     "src": "tamam.6.jpg",
+    "baslik": "Tamamlanan Proje 6"
+  },
+  {
+    "kategori": "tamamlanmis",
+    "src": "tamam.6.png",
     "baslik": "Tamamlanan Proje 6"
   },
   {
