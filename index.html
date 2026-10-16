@@ -13,7 +13,7 @@
     <meta property="og:description" content="Kumtaş İnşaat güvencesiyle İstanbul genelinde güvenli kentsel dönüşüm, kat karşılığı inşaat ve riskli bina yenileme çözümleri.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://xn--kentseldnm-lcb7ea99k.com.tr/">
-    <meta name="theme-color" content="#ff6b00">
+    <meta name="theme-color" content="#ff6a00">
     
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
@@ -34,48 +34,45 @@
         .menu a:hover,.menu a.active{opacity:1;color:white;border-bottom-color:var(--orange)}
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
-        .mobile-hint{display:none}
 
-        /* BANNER / HERO BÖLÜMÜ (Logonun görünür ve şeffaf olması için koyuluk azaltıldı) */
+        /* BANNER / HERO BÖLÜMÜ (Arka plan karartması tamamen kaldırıldı) */
         .hero{
             position:relative;
-            color:white;
             overflow:hidden;
-            /* Arka plan karartması hafifletildi ki logon net görünsün */
-            background:linear-gradient(rgba(6,24,44,0.35), rgba(6,24,44,0.55)), url('kumtas-banner.jpg');
+            background-image: url('kumtas-banner.jpg');
             background-size:cover;
             background-position:center;
-            padding:80px 0;
+            padding:90px 0;
         }
         .hero-container{max-width:1280px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr;gap:40px;align-items:center;text-align:center}
         
-        /* Yazıların arkasına şık şeffaf cam panel eklendi, böylece logo arkada şeffaf görünürken yazılar kusursuz okunur */
+        /* Arka tarafın tamamen görünmesi için şeffaf hafif panel */
         .hero-content{
             max-width:850px;
             margin:0 auto;
-            background: rgba(6, 24, 44, 0.45);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 40px;
             border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
         }
 
-        .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);background:rgba(6,24,44,.75);border-radius:12px;padding:11px 16px;font-size:13px;font-weight:950;letter-spacing:.2px;margin-bottom:18px}
-        .hero h1{font-size:clamp(34px,4.2vw,54px);line-height:1.1;letter-spacing:-1.8px;margin-bottom:18px;text-shadow:0 4px 12px rgba(0,0,0,.8)}
-        .hero p{font-size:clamp(17px,1.5vw,20px);color:#e8eef7;max-width:720px;margin:0 auto 28px;text-shadow:0 2px 6px rgba(0,0,0,.8);font-weight:500}
+        .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid #fca5a5;background:rgba(254, 226, 226, 0.95);color:#dc2626;border-radius:12px;padding:11px 16px;font-size:13px;font-weight:950;letter-spacing:.2px;margin-bottom:18px}
+        .hero h1{font-size:clamp(32px,4vw,50px);line-height:1.15;letter-spacing:-1.5px;margin-bottom:18px;color:#0f172a;font-weight:900}
+        .hero p{font-size:clamp(16px,1.4vw,19px);color:#334155;max-width:720px;margin:0 auto 28px;font-weight:700}
         .hero-actions,.btn-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
         .btn{min-height:56px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;padding:0 24px;font-weight:950;border:2px solid transparent;text-align:center}
         .btn-orange{background:var(--orange);color:white;box-shadow:0 12px 28px rgba(255,107,0,.30)}
-        .btn-outline{background:rgba(6,24,44,.6);border-color:rgba(255,255,255,.56);color:white}
+        .btn-outline{background:rgba(255,255,255,.9);border-color:#16a34a;color:#15803d}
         
-        .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:46px;max-width:900px;margin-left:auto;margin-right:auto;background:rgba(6,24,44,0.75);padding:20px;border-radius:16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15)}
-        .trust-mini{padding:0 20px 0 0;margin-right:20px;border-right:1px solid rgba(255,255,255,.26);display:flex;gap:12px;align-items:flex-start;text-align:left}
+        .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:35px;max-width:900px;margin-left:auto;margin-right:auto;background:rgba(255,255,255,0.85);padding:20px;border-radius:16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.9)}
+        .trust-mini{padding:0 20px 0 0;margin-right:20px;border-right:1px solid rgba(0,0,0,.12);display:flex;gap:12px;align-items:flex-start;text-align:left}
         .trust-mini:last-child{border-right:0}
         .trust-mini .ico,.service-card .ico,.why-card .ico{width:38px;height:38px;border:2px solid var(--orange);color:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto}
-        .trust-mini b{display:block;color:white;font-size:15px}
-        .trust-mini span{color:#cbd5e1;font-size:13px}
+        .trust-mini b{display:block;color:#0f172a;font-size:15px}
+        .trust-mini span{color:#475569;font-size:13px;font-weight:600}
         
         .section{padding:68px 0}
         .section.white{background:white}
