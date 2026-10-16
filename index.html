@@ -67,7 +67,6 @@
 
         .hero .container { position: relative; z-index: 3; }
         
-        /* Masaüstünde şeffaf cam tasarım */
         .hero-content { 
             max-width: 850px; 
             margin: 0 auto;
@@ -139,31 +138,12 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE KUTU ARKA PLANI, GÖLGESİ VE ÇERÇEVESİ KOMPLE KALDIRILDI (ŞEFFAF VE UFAK YAPILDI) */
+        /* MOBİLDE SADECE O AÇIKLAMA YAZISI GİZLENDİ */
         @media(max-width:640px){
-            .container{padding:0 14px}
-            .hero { padding: 20px 0; min-height: auto; }
-            
-            /* Ana içerik kutusu mobilde tamamen şeffaf, gölgesiz ve ufak boyutta */
-            .hero-content {
-                padding: 15px 8px;
-                background: transparent !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                border: none !important;
-                box-shadow: none !important;
-                max-width: 100%;
-            }
-            .hero h1 { font-size: 22px; letter-spacing: -0.8px; margin-bottom: 10px; }
-            .hero p { font-size: 13.5px; margin-bottom: 15px; }
-            
-            .badge { font-size: 10.5px; padding: 5px 10px; margin-bottom: 8px; background: rgba(6, 24, 44, 0.75) !important; }
-            .hero-actions { flex-direction: column; gap: 8px; }
-            .btn { width: 100%; min-height: 42px; font-size: 13px; padding: 0 14px; }
-            
-            /* Güven kutuları mobilde gizlendi */
+            .container{padding:0 16px}
+            .hero-content{padding:25px 15px}
+            .hero p { display: none !important; } /* Sadece mobilde o açıklama paragrafı gizlendi[cite: 8] */
             .hero-trust { display: none !important; }
-            
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
         }
@@ -287,7 +267,7 @@
             <a class="region-chip" href="gungoren-kentsel-donusum.html">Güngören</a>
             <a class="region-chip" href="avcilar-kentsel-donusum.html">Avcılar</a>
             <a class="region-chip" href="esenler-kentsel-donusum.html">Esenler</a>
-            <a class="region-chip" href="kucukcekmece-kentsel-donusum.html">Küçükçekmece</a>
+            <a class="region-chip" href="kucukcekmece-kentsel-donusum.html">Güngören</a>
             <a class="region-chip" href="zeytinburnu-kentsel-donusum.html">Zeytinburnu</a>
         </div>
     </div>
