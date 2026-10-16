@@ -13,7 +13,7 @@
     <meta property="og:description" content="Kumtaş İnşaat güvencesiyle İstanbul genelinde güvenli kentsel dönüşüm, kat karşılığı inşaat ve riskli bina yenileme çözümleri.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://xn--kentseldnm-lcb7ea99k.com.tr/">
-    <meta name="theme-color" content="#ff6a00">
+    <meta name="theme-color" content="#ff6b00">
     
     <style>
         *{box-sizing:border-box;margin:0;padding:0}
@@ -35,22 +35,23 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* BANNER / HERO BÖLÜMÜ (Arka plan karartması tamamen kaldırıldı) */
+        /* BANNER / HERO BÖLÜMÜ */
         .hero{
             position:relative;
             overflow:hidden;
             background-image: url('kumtas-banner.jpg');
             background-size:cover;
             background-position:center;
+            background-repeat:no-repeat;
             padding:90px 0;
+            background-color:#ffffff;
         }
         .hero-container{max-width:1280px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:1fr;gap:40px;align-items:center;text-align:center}
         
-        /* Arka tarafın tamamen görünmesi için şeffaf hafif panel */
         .hero-content{
             max-width:850px;
             margin:0 auto;
-            background: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.72);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             padding: 40px;
@@ -109,7 +110,24 @@
 
         @media(max-width:1180px){.hero-trust{grid-template-columns:repeat(2,1fr);gap:15px}.trust-mini{border-right:0}}
         @media(max-width:980px){.navwrap{height:auto;align-items:flex-start;flex-direction:column;padding:14px 0 11px;gap:10px}.menu{width:100%;overflow-x:auto;gap:18px;padding-bottom:6px}.menu::-webkit-scrollbar{display:none}.menu a{padding:6px 0 9px;flex:0 0 auto}.nav-cta{display:none}.footer-grid{grid-template-columns:1fr 1fr}}
-        @media(max-width:640px){.container{padding:0 16px}.hero-content{padding:25px 15px}.hero-trust{grid-template-columns:1fr}.grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}.form{grid-template-columns:1fr}}
+        
+        /* MOBİL CİHAZ ÖZEL UYARLAMASI (MOBİLDE LOGONUN NET VE TAM GÖRÜNMESİ İÇİN) */
+        @media(max-width:768px){
+            .hero {
+                padding: 30px 0 20px 0;
+                background-size: contain; /* Görselin kırpılmadan mobilde tam oturmasını sağlar */
+                background-position: top center;
+            }
+            .hero-content {
+                padding: 20px 15px;
+                background: rgba(255, 255, 255, 0.88); /* Mobilde okunabilirlik için hafif beyaz ton */
+                margin-top: 130px; /* Görseldeki dev logo üstte rahatça görünsün diye içeriği aşağı kaydırır */
+            }
+            .container{padding:0 16px}
+            .hero-trust{grid-template-columns:1fr; background: rgba(255,255,255,0.92);}
+            .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
+            .form{grid-template-columns:1fr}
+        }
     </style>
 </head>
 <body>
