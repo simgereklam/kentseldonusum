@@ -24,10 +24,10 @@
         .navwrap{height:76px;display:flex;align-items:center;justify-content:space-between;gap:22px}
         
         /* Marka / Firma İsmi Stili */
-        .brand-company{display:flex;gap:0;align-items:flex-start;line-height:1.12;min-width:auto;font-size:0;letter-spacing:0}
+        .brand-company{display:flex;gap:0;align-items:flex-start;line-height:1.12;min-width:310px;font-size:0;letter-spacing:0}
         .brand-company .brand-text{display:flex;flex-direction:column;color:white;min-width:0}
         .brand-company .brand-text strong{font-size:20px!important;font-weight:950;letter-spacing:-.35px!important;color:white;white-space:nowrap;line-height:1.05!important}
-        .brand-company .brand-text em{font-style:normal;color:#cbd5e1;font-size:10.5px!important;font-weight:700!important;line-height:1.25!important;margin-top:2px;white-space:normal}
+        .brand-company .brand-text em{font-style:normal;color:#cbd5e1;font-size:10.5px!important;font-weight:700!important;line-height:1.25!important;margin-top:4px;max-width:365px;white-space:normal}
 
         .menu{display:flex;align-items:center;gap:22px;color:white;font-size:14px;font-weight:850;white-space:nowrap}
         .menu a{opacity:.9;padding:28px 0 22px;border-bottom:4px solid transparent}
@@ -35,12 +35,12 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO & VİDEO ARKA PLAN YAPISI */
+        /* HERO & VİDEO ARKA PLAN YAPISI (Masaüstü şeffaf cam tasarımı korundu) */
         .hero {
             position: relative;
             color: white;
             min-height: 75vh;
-            padding: 50px 0;
+            padding: 90px 0;
             text-align: center;
             display: flex;
             align-items: center;
@@ -65,35 +65,34 @@
             -webkit-filter: contrast(1.15) saturate(1.12) brightness(0.98);
         }
 
-        .hero .container { position: relative; z-index: 3; width: 100%; }
+        .hero .container { position: relative; z-index: 3; }
         
         .hero-content { 
             max-width: 850px; 
             margin: 0 auto;
-            background: rgba(6, 24, 44, 0.75);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 38px;
+            background: rgba(6, 24, 44, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 45px;
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.25);
             box-shadow: 0 20px 50px rgba(0,0,0,0.4);
         }
 
-        .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);background:rgba(6,24,44,.85);border-radius:12px;padding:9px 14px;font-size:12px;font-weight:950;letter-spacing:.2px;margin-bottom:14px}
-        .hero h1{font-size:clamp(28px,3.8vw,48px);line-height:1.15;letter-spacing:-1.5px;margin-bottom:14px;text-shadow:0 4px 12px rgba(0,0,0,.8)}
-        .hero p{font-size:clamp(15px,1.3vw,19px);color:#e8eef7;max-width:700px;margin:0 auto 22px;text-shadow:0 2px 6px rgba(0,0,0,.8);font-weight:500}
-        .hero-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
-        .btn{min-height:50px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;padding:0 22px;font-weight:950;border:2px solid transparent;text-align:center;font-size:0.95rem}
-        .btn-orange{background:var(--orange);color:white;box-shadow:0 10px 24px rgba(255,107,0,.30)}
+        .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);background:rgba(6,24,44,.85);border-radius:12px;padding:11px 16px;font-size:13px;font-weight:950;letter-spacing:.2px;margin-bottom:18px}
+        .hero h1{font-size:clamp(34px,4.2vw,54px);line-height:1.1;letter-spacing:-1.8px;margin-bottom:18px;text-shadow:0 4px 12px rgba(0,0,0,.8)}
+        .hero p{font-size:clamp(17px,1.5vw,20px);color:#e8eef7;max-width:720px;margin:0 auto 28px;text-shadow:0 2px 6px rgba(0,0,0,.8);font-weight:500}
+        .hero-actions,.btn-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+        .btn{min-height:56px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;padding:0 24px;font-weight:950;border:2px solid transparent;text-align:center}
+        .btn-orange{background:var(--orange);color:white;box-shadow:0 12px 28px rgba(255,107,0,.30)}
         .btn-outline{background:rgba(6,24,44,.6);border-color:rgba(255,255,255,.56);color:white}
         
-        /* Masaüstü güven kutuları */
-        .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:35px;max-width:900px;margin-left:auto;margin-right:auto;background:rgba(6,24,44,0.85);padding:18px;border-radius:16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2)}
-        .trust-mini{padding:0 15px 0 0;margin-right:15px;border-right:1px solid rgba(255,255,255,.26);display:flex;gap:10px;align-items:flex-start;text-align:left}
-        .trust-mini:last-child{border-right:0;margin-right:0;padding-right:0}
-        .trust-mini .ico{width:34px;height:34px;border:2px solid var(--orange);color:var(--orange);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto;font-size:13px}
-        .trust-mini b{display:block;color:white;font-size:13.5px}
-        .trust-mini span{color:#cbd5e1;font-size:11.5px}
+        .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:46px;max-width:900px;margin-left:auto;margin-right:auto;background:rgba(6,24,44,0.85);padding:20px;border-radius:16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2)}
+        .trust-mini{padding:0 20px 0 0;margin-right:20px;border-right:1px solid rgba(255,255,255,.26);display:flex;gap:12px;align-items:flex-start;text-align:left}
+        .trust-mini:last-child{border-right:0}
+        .trust-mini .ico,.service-card .ico,.why-card .ico{width:38px;height:38px;border:2px solid var(--orange);color:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto}
+        .trust-mini b{display:block;color:white;font-size:15px}
+        .trust-mini span{color:#cbd5e1;font-size:13px}
         
         .section{padding:68px 0}
         .section.white{background:white}
@@ -128,35 +127,22 @@
         .copy{text-align:center;border-top:1px solid rgba(255,255,255,.08);padding-top:18px;margin-top:28px;font-size:13px;color:#8ea0b8}
         .float-wa{position:fixed;right:20px;bottom:20px;z-index:120;background:var(--green);color:white;border-radius:999px;padding:14px 20px;font-weight:950;box-shadow:0 18px 36px rgba(24,183,95,.32)}
 
-        @media(max-width:1180px){.hero-trust{grid-template-columns:repeat(2,1fr);gap:12px}.trust-mini{border-right:0;margin-right:0}}
+        @media(max-width:1180px){.hero-trust{grid-template-columns:repeat(2,1fr);gap:15px}.trust-mini{border-right:0}}
         @media(max-width:980px){
-            .navwrap{height:auto;align-items:center;flex-direction:column;padding:16px 0 12px;gap:8px} /* Üst menü boşluğu artırılarak yazı aşağıya alındı */
-            .brand-company{align-items:center;text-align:center;margin-top:4px}
-            .menu{width:100%;overflow-x:auto;gap:16px;padding-bottom:6px;justify-content:center}
+            .navwrap{height:auto;align-items:center;flex-direction:column;padding:18px 0 12px;gap:8px} /* Üst menü boşluğu artırılarak başlık aşağı alındı */
+            .brand-company{align-items:center;text-align:center}
+            .menu{width:100%;overflow-x:auto;gap:18px;padding-bottom:6px;justify-content:center}
             .menu::-webkit-scrollbar{display:none}
-            .menu a{padding:6px 0 8px}
+            .menu a{padding:6px 0 9px}
             .nav-cta{display:none}
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİLDE GÖSTERDİĞİN 4'LÜ GÜVEN ALANI TAMAMEN KALDIRILDI */
+        /* MOBİLDE SADECE GÖSTERDİĞİN 4'LÜ KUTULAR GİZLENDİ, DİĞER ŞEFFAF TASARIM AYNEN KORUNDU */
         @media(max-width:640px){
-            .container{padding:0 12px}
-            .hero { padding: 30px 0; min-height: auto; }
-            .hero-content {
-                padding: 24px 16px;
-                border-radius: 18px;
-                background: rgba(6, 24, 44, 0.82);
-            }
-            .hero h1 { font-size: 24px; letter-spacing: -1px; margin-bottom: 12px; }
-            .hero p { font-size: 14px; margin-bottom: 20px; }
-            .badge { font-size: 11px; padding: 7px 11px; margin-bottom: 10px; }
-            .hero-actions { flex-direction: column; gap: 9px; }
-            .btn { width: 100%; min-height: 46px; font-size: 14px; padding: 0 16px; }
-            
-            /* Sadece mobilde o güven kutuları gizlendi */
-            .hero-trust { display: none !important; }
-            
+            .container{padding:0 16px}
+            .hero-content{padding:25px 15px}
+            .hero-trust { display: none !important; } /* Sadece mobilde o güven kutuları gizlendi */
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
         }
