@@ -35,53 +35,41 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO YENİ (VIDEOSUZ & PREMİUM GÖRSEL ARKA PLANLI) */
+        /* HERO - TÜM EKRANI KAPLAYAN DEVASA GÖRSEL ŞÖLEN YAPISI */
         .hero {
             position: relative;
             color: white;
-            min-height: 70vh;
-            padding: 80px 0;
+            min-height: 85vh;
+            padding: 100px 0;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #030a14 0%, #081a2e 50%, #030a14 100%);
-            border-bottom: 4px solid var(--orange);
+            /* Dev görsel arka planı kaplıyor ve sinematik karartma uygulanıyor */
+            background: linear-gradient(rgba(3, 10, 20, 0.55), rgba(3, 10, 20, 0.75)), url('kumtas-logo.jpg') center/cover no-repeat;
+            border-bottom: 5px solid var(--orange);
         }
 
         .hero .container { position: relative; z-index: 3; }
         
         .hero-content { 
-            max-width: 820px; 
+            max-width: 900px; 
             margin: 0 auto;
-            padding: 15px;
+            padding: 20px;
         }
 
-        /* HERO LOGO GÖRSELİ */
-        .hero-logo {
-            max-width: 520px;
-            width: 90%;
-            margin: 0 auto 25px auto;
-            filter: drop-shadow(0 12px 24px rgba(0,0,0,0.6));
-            border-radius: 12px;
-            transition: transform 0.3s ease;
-        }
-        .hero-logo:hover {
-            transform: scale(1.02);
-        }
-
-        .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);background:rgba(6,24,44,.85);border-radius:12px;padding:10px 15px;font-size:12.5px;font-weight:950;letter-spacing:.2px;margin-bottom:14px}
-        .hero h1{font-size:clamp(32px,3.8vw,50px);line-height:1.1;letter-spacing:-1.5px;margin-bottom:16px;text-shadow:0 4px 12px rgba(0,0,0,.8)}
-        .hero p{font-size:clamp(16px,1.4vw,19px);color:#e8eef7;max-width:680px;margin:0 auto 24px;text-shadow:0 2px 6px rgba(0,0,0,.8);font-weight:500}
-        .hero-actions,.btn-row{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
-        .btn{min-height:54px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;padding:0 22px;font-weight:950;border:2px solid transparent;text-align:center}
-        .btn-orange{background:var(--orange);color:white;box-shadow:0 12px 28px rgba(255,107,0,.30)}
-        .btn-outline{background:rgba(6,24,44,.6);border-color:rgba(255,255,255,.56);color:white}
+        .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.2);background:rgba(6,24,44,.85);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:950;letter-spacing:.2px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,0.5)}
+        .hero h1{font-size:clamp(36px,4.2vw,56px);line-height:1.1;letter-spacing:-1.5px;margin-bottom:20px;text-shadow:0 4px 18px rgba(0,0,0,.9);font-weight:950}
+        .hero p{font-size:clamp(17px,1.6vw,21px);color:#f1f5f9;max-width:750px;margin:0 auto 30px;text-shadow:0 2px 10px rgba(0,0,0,.9);font-weight:600;line-height:1.6}
+        .hero-actions,.btn-row{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+        .btn{min-height:58px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;padding:0 26px;font-weight:950;border:2px solid transparent;text-align:center;font-size:16px}
+        .btn-orange{background:var(--orange);color:white;box-shadow:0 12px 28px rgba(255,107,0,.35)}
+        .btn-outline{background:rgba(6,24,44,.75);border-color:rgba(255,255,255,.6);color:white;backdrop-filter:blur(5px)}
         
-        .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:40px;max-width:850px;margin-left:auto;margin-right:auto;background:rgba(6,24,44,0.85);padding:18px;border-radius:16px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2)}
+        .hero-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:45px;max-width:900px;margin-left:auto;margin-right:auto;background:rgba(6,24,44,0.88);padding:20px;border-radius:18px;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);box-shadow:0 20px 40px rgba(0,0,0,0.5)}
         .trust-mini{padding:0 18px 0 0;margin-right:18px;border-right:1px solid rgba(255,255,255,.26);display:flex;gap:12px;align-items:flex-start;text-align:left}
         .trust-mini:last-child{border-right:0}
-        .trust-mini .ico,.service-card .ico,.why-card .ico{width:38px;height:38px;border:2px solid var(--orange);color:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto}
+        .trust-mini .ico,.service-card .ico,.why-card .ico{width:40px;height:40px;border:2px solid var(--orange);color:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto;font-size:18px}
         .trust-mini b{display:block;color:white;font-size:15px}
         .trust-mini span{color:#cbd5e1;font-size:13px}
         
@@ -131,7 +119,6 @@
         
         @media(max-width:640px){
             .container{padding:0 16px}
-            .hero-logo { max-width: 320px; }
             .hero p { display: none !important; }
             .hero-trust { display: none !important; }
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
@@ -163,17 +150,15 @@
     </div>
 </header>
 
-<!-- BANNER / KUMTAŞ LOGO BÖLÜMÜ -->
+<!-- BANNER / TÜM EKRANI KAPLAYAN DEVASA GÖRSEL HERO BÖLÜMÜ -->
 <section class="hero">
     <div class="container">
         <div class="hero-content">
             
-            <!-- KUMTAŞ İNŞAAT KURUMSAL LOGO GÖRSELİ -->
-            <img src="kumtas-logo.jpg" alt="Kumtaş İnşaat Logo" class="hero-logo">
-
             <div class="badge">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
             <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
+            
             <div class="hero-actions">
                 <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
                 <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif Hattı</a>
@@ -197,6 +182,7 @@
                     <div><b>İstanbul Geneli</b><span>Uzman Kadro</span></div>
                 </div>
             </div>
+
         </div>
     </div>
 </section>
