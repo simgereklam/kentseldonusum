@@ -35,20 +35,19 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO - LOGOYU ORTADA TERTEMİZ BIRAKAN BANNER ALANI */
+        /* HERO BANNER ALANI */
         .hero {
             position: relative;
             color: white;
-            min-height: 92vh; /* Görsel alanını daha yüksek tutup üst ve alt boşlukları genişlettik */
+            min-height: 92vh;
             padding: 40px 0 20px 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            background: url('kumtas-logo.jpg') center/cover no-repeat;
+            background: #030a14 url('kumtas-logo.jpg') center/cover no-repeat;
             border-bottom: 5px solid var(--orange);
         }
 
-        /* 1. ÜST BOŞLUĞA YERLEŞEN YAZILAR VE BAŞLIK */
         .hero-top-area {
             text-align: center;
             max-width: 950px;
@@ -68,13 +67,11 @@
         .hero h1{font-size:clamp(28px,3.2vw,44px);line-height:1.15;letter-spacing:-1px;margin-bottom:8px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
         .hero p{font-size:clamp(15px,1.2vw,18px);color:#ffffff;max-width:800px;margin:0 auto;text-shadow:0 2px 10px rgba(0,0,0,1);font-weight:600;line-height:1.4}
         
-        /* 2. ORTA BOŞ ALAN (LOGONUN ÜSTÜ %100 BOMBOŞ BIRAKILDI) */
         .hero-middle-spacer {
             flex-grow: 1;
-            min-height: 280px; /* Logo için tam görünür pürüzsüz alan */
+            min-height: 280px;
         }
 
-        /* 3. ALT BOŞLUĞA YERLEŞEN BUTONLAR VE 4'LÜ KUTU */
         .hero-bottom-area {
             width: 100%;
             display: flex;
@@ -162,10 +159,49 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
+        /* MOBİL UYUM (SADECE TELEFONLARDA LOGOYU TAM SIĞDIRIP UFAK GÖSTERİR) */
+        @media(max-width:768px){
+            .hero {
+                min-height: 70vh;
+                background-size: contain; /* Mobilde görsel kasanın içine tam sığar, devleşip taşmaz */
+                background-position: center center;
+                padding: 20px 0;
+            }
+            .hero-middle-spacer {
+                min-height: 180px; /* Mobilde ortadaki logo alanını küçülttük */
+            }
+            .hero h1 {
+                font-size: 22px;
+            }
+            .hero p {
+                font-size: 13px;
+                display: block !important;
+            }
+            .hero-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            .btn {
+                width: 100%;
+                font-size: 13px;
+                min-height: 42px;
+            }
+            .hero-trust-bottom {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+            .trust-mini {
+                border-right: 0;
+                margin-right: 0;
+                padding: 0;
+            }
+            .trust-mini b { font-size: 12px; }
+            .trust-mini span { font-size: 10px; }
+        }
+
         @media(max-width:640px){
             .container{padding:0 16px}
-            .hero p { display: none !important; }
-            .hero-trust-bottom { display: none !important; }
             .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
         }
@@ -195,21 +231,20 @@
     </div>
 </header>
 
-<!-- BANNER / KUMTAŞ LOGOSUNU ORTADA TERTEMİZ BIRAKAN MÜKEMMEL YERLEŞİM -->
 <section class="hero">
     <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
         
-        <!-- 1. LOGONUN ÜSTÜNDEKİ BOŞLUĞA YERLEŞEN BAŞLIK VE SLOGAN -->
+        <!-- 1. ÜST ALAN (BAŞLIK VE SLOGAN) -->
         <div class="hero-top-area">
             <div class="badge">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
             <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
         </div>
 
-        <!-- 2. TAMAMEN BOMBOŞ BIRAKILAN ORTA ALAN (LOGONUN ÖNÜ SIRF GÖRSEL) -->
+        <!-- 2. ORTA ALAN (LOGONUN MOBİL VE MASAÜSTÜNDE ORANTILI DURDUĞU BOŞLUK) -->
         <div class="hero-middle-spacer"></div>
 
-        <!-- 3. LOGONUN ALTINDAKİ BOŞLUĞA YERLEŞEN BUTONLAR VE 4'LÜ ŞEFFAF KUTU -->
+        <!-- 3. ALT ALAN (BUTONLAR VE 4'LÜ KUTU) -->
         <div class="hero-bottom-area">
             <div class="hero-actions">
                 <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
@@ -327,7 +362,7 @@
                 <p>info@kumtas.com.tr</p>
             </div>
         </div>
-        <div class="copy"> KUMTAŞ İNŞAAT LTD.ŞTİ Kentseldönüşüm.com.tr - Tüm Hakları Saklıdır.</div>
+        <div class="copy">© 2026 Kentseldönüşüm.com.tr - Tüm Hakları Saklıdır.</div>
     </div>
 </footer>
 
