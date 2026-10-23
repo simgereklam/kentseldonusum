@@ -35,7 +35,7 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO BANNER ALANI */
+        /* HERO BANNER ALANI (MASAÜSTÜ) */
         .hero {
             position: relative;
             color: white;
@@ -159,25 +159,24 @@
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİL UYUM (SADECE TELEFONLARDA TAM SAYFA DEVASA BAKIŞ) */
+        /* MOBİL DÜZELTME (LOGOYU EKRANA TAM TAMINA SIĞDIRIR, KESMEZ) */
         @media(max-width:768px){
             .hero {
-                min-height: 85vh; /* Mobilde de tıpkı masaüstü gibi tam ekran yüksekliği veriyoruz */
-                background-size: cover; /* Resmi küçültüp kutuya hapsetmiyoruz, tüm ekranı dolduruyor */
-                background-position: center center;
-                padding: 30px 0 15px 0;
+                min-height: auto;
+                padding: 25px 0 15px 0;
+                background-size: contain !important; /* Görselin tamamı ekrana girer, kesilmez */
+                background-position: center 45% !important;
             }
             .hero-middle-spacer {
-                min-height: 200px; /* Logo alanının mobilde de geniş ve ferah kalması için */
+                min-height: 140px; /* Görsel alanını orantılı küçültüp taşmayı önlüyoruz */
             }
             .hero h1 {
-                font-size: 24px;
+                font-size: 20px;
                 padding: 0 10px;
             }
             .hero p {
-                font-size: 14px;
+                font-size: 13px;
                 padding: 0 10px;
-                display: block !important;
             }
             .hero-actions {
                 flex-direction: column;
@@ -186,8 +185,8 @@
             }
             .btn {
                 width: 100%;
-                font-size: 14px;
-                min-height: 48px;
+                font-size: 13px;
+                min-height: 44px;
             }
             .hero-trust-bottom {
                 grid-template-columns: repeat(2, 1fr);
@@ -236,7 +235,7 @@
 </header>
 
 <section class="hero">
-    <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
+    <div class="container" style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">
         
         <!-- 1. ÜST ALAN (BAŞLIK VE SLOGAN) -->
         <div class="hero-top-area">
@@ -300,4 +299,89 @@
                     <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Bulunduğu İlçe</label>
                     <select name="İlçe" required>
                         <option value="">İlçe seçin</option>
-                        <option>Yenibosna</option><option>Bahçelievler</option><option>Bakırköy</option><option>Bağcılar</option><option>Güngören</option><option>Avcılar</option><option>Esenler</option><option>Küçükçekmece</option><option>Zeytinburnu</option><option
+                        <option>Yenibosna</option><option>Bahçelievler</option><option>Bakırköy</option><option>Bağcılar</option><option>Güngören</option><option>Avcılar</option><option>Esenler</option><option>Küçükçekmece</option><option>Zeytinburnu</option><option>Diğer</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Ada / Parsel Bilgisi</label>
+                    <input type="text" name="Ada Parsel" placeholder="Örn: Ada 124 Parsel 6">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Mevcut Dükkan Sayısı (Varsa)</label>
+                    <input type="number" name="Dükkan Sayısı" placeholder="Örn: 2">
+                </div>
+                <div>
+                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">İletişim Numaranız</label>
+                    <input type="tel" name="Telefon" placeholder="05xx xxx xx xx" required>
+                </div>
+                <button type="submit">Dönüşüm Modelini Hesapla & WhatsApp'a Aktar</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<!-- BÖLGELER STRIP -->
+<div class="regions-strip">
+    <div class="container">
+        <div class="regions-box">
+            <div class="regions-title">📍 Bölgelerimiz</div>
+            <a class="region-chip active" href="yenibosna-kentsel-donusum.html">Yenibosna</a>
+            <a class="region-chip" href="bahcelievler-kentsel-donusum.html">Bahçelievler</a>
+            <a class="region-chip" href="bakirkoy-kentsel-donusum.html">Bakırköy</a>
+            <a class="region-chip" href="bagcilar-kentsel-donusum.html">Bağcılar</a>
+            <a class="region-chip" href="gungoren-kentsel-donusum.html">Güngören</a>
+            <a class="region-chip" href="avcilar-kentsel-donusum.html">Avcılar</a>
+            <a class="region-chip" href="esenler-kentsel-donusum.html">Esenler</a>
+            <a class="region-chip" href="kucukcekmece-kentsel-donusum.html">Küçükçekmece</a>
+            <a class="region-chip" href="zeytinburnu-kentsel-donusum.html">Zeytinburnu</a>
+        </div>
+    </div>
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <h3>Kentseldönüşüm.com.tr</h3>
+                <p>Kumtaş İnşaat güvencesiyle İstanbul genelinde güvenli, planlı ve garantili kentsel dönüşüm süreçleri.</p>
+            </div>
+            <div>
+                <h3>Menü</h3>
+                <a href="index.html">Ana Sayfa</a>
+                <a href="kurumsal.html">Kurumsal</a>
+                <a href="kentsel-donusum.html">Kentsel Dönüşüm</a>
+                <a href="projelerimiz.html">Projelerimiz</a>
+            </div>
+            <div>
+                <h3>Bölgeler</h3>
+                <a href="yenibosna-kentsel-donusum.html">Yenibosna</a>
+                <a href="bahcelievler-kentsel-donusum.html">Bahçelievler</a>
+                <a href="bakirkoy-kentsel-donusum.html">Bakırköy</a>
+            </div>
+            <div>
+                <h3>İletişim</h3>
+                <p><strong>0 212 955 5599</strong></p>
+                <p><strong>0543 181 34 85</strong></p>
+                <p>info@kumtas.com.tr</p>
+            </div>
+        </div>
+        <div class="copy">© 2026 Kentseldönüşüm.com.tr - Tüm Hakları Saklıdır.</div>
+    </div>
+</footer>
+
+<a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
+
+<script>
+    document.querySelector('form[data-whatsapp-form]').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        let text = "Merhaba, web siteniz üzerinden kentsel dönüşüm potansiyel hesaplama talebi:\n";
+        for (let [key, value] of formData.entries()) {
+            if(value) text += `- ${key}: ${value}\n`;
+        }
+        const encodedText = encodeURIComponent(text);
+        window.location.href = `https://wa.me/905431813485?text=${encodedText}`;
+    });
+</script>
+</body>
+</html>
