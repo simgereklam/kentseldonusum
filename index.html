@@ -35,12 +35,12 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO - BANNER YENİ DUZEN */
+        /* HERO - LOGOYU ORTADA TERTEMİZ BIRAKAN BANNER ALANI */
         .hero {
             position: relative;
             color: white;
-            min-height: 85vh;
-            padding: 50px 0 30px 0;
+            min-height: 92vh; /* Görsel alanını daha yüksek tutup üst ve alt boşlukları genişlettik */
+            padding: 40px 0 20px 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -48,46 +48,47 @@
             border-bottom: 5px solid var(--orange);
         }
 
-        .hero-top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            margin-bottom: 30px;
-        }
-
-        /* SAĞ ÜST KÖŞEYE ALINAN BUTONLAR */
-        .hero-actions-top {
-            display: flex;
-            gap: 12px;
-            margin-left: auto;
-        }
-
-        .hero-center-content {
+        /* 1. ÜST BOŞLUĞA YERLEŞEN YAZILAR VE BAŞLIK */
+        .hero-top-area {
             text-align: center;
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
-            padding: 20px 0;
         }
 
         .badge{
             display:inline-flex;align-items:center;gap:9px;
             border:1px solid rgba(255,255,255,.4);
-            background: rgba(255, 255, 255, 0.1) !important;
+            background: rgba(0, 0, 0, 0.45) !important;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            border-radius:12px;padding:10px 18px;font-size:13px;font-weight:950;letter-spacing:.2px;margin-bottom:20px;
+            border-radius:12px;padding:6px 14px;font-size:12px;font-weight:950;letter-spacing:.2px;margin-bottom:12px;
             box-shadow:0 8px 32px rgba(0,0,0,0.3);
         }
         
-        .hero h1{font-size:clamp(36px,4.2vw,56px);line-height:1.1;letter-spacing:-1.5px;margin-bottom:20px;text-shadow:0 4px 18px rgba(0,0,0,1);font-weight:950}
-        .hero p{font-size:clamp(17px,1.6vw,21px);color:#ffffff;max-width:750px;margin:0 auto;text-shadow:0 2px 12px rgba(0,0,0,1);font-weight:700;line-height:1.6}
+        .hero h1{font-size:clamp(28px,3.2vw,44px);line-height:1.15;letter-spacing:-1px;margin-bottom:8px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
+        .hero p{font-size:clamp(15px,1.2vw,18px);color:#ffffff;max-width:800px;margin:0 auto;text-shadow:0 2px 10px rgba(0,0,0,1);font-weight:600;line-height:1.4}
         
-        .btn{min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:0 20px;font-weight:950;border:2px solid transparent;text-align:center;font-size:14px}
+        /* 2. ORTA BOŞ ALAN (LOGONUN ÜSTÜ %100 BOMBOŞ BIRAKILDI) */
+        .hero-middle-spacer {
+            flex-grow: 1;
+            min-height: 280px; /* Logo için tam görünür pürüzsüz alan */
+        }
+
+        /* 3. ALT BOŞLUĞA YERLEŞEN BUTONLAR VE 4'LÜ KUTU */
+        .hero-bottom-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .hero-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+        .btn{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:0 22px;font-weight:950;border:2px solid transparent;text-align:center;font-size:14px}
         .btn-orange{background:var(--orange);color:white;box-shadow:0 12px 28px rgba(255,107,0,.45)}
         
         .btn-outline{
-            background: rgba(255, 255, 255, 0.15) !important;
+            background: rgba(0, 0, 0, 0.45) !important;
             border-color: rgba(255, 255, 255, 0.6);
             color: white;
             backdrop-filter: blur(10px);
@@ -95,28 +96,27 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
         
-        /* BANNER'IN TAM EN ALTINA YERLEŞEN 4'LÜ ŞEFFAF KUTU */
         .hero-trust-bottom{
             width: 100%;
             max-width: 1000px;
-            margin: 40px auto 0 auto;
+            margin: 0 auto;
             display:grid;
             grid-template-columns:repeat(4,1fr);
             gap:0;
-            background: rgba(255, 255, 255, 0.08) !important;
-            padding:18px 24px;
+            background: rgba(0, 0, 0, 0.5) !important;
+            padding:14px 18px;
             border-radius:18px;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border:1px solid rgba(255,255,255,.35);
-            box-shadow:0 20px 50px rgba(0,0,0,0.4);
+            box-shadow:0 20px 50px rgba(0,0,0,0.6);
         }
         
-        .trust-mini{padding:0 18px 0 0;margin-right:18px;border-right:1px solid rgba(255,255,255,.3);display:flex;gap:12px;align-items:center;text-align:left}
+        .trust-mini{padding:0 14px 0 0;margin-right:14px;border-right:1px solid rgba(255,255,255,.3);display:flex;gap:10px;align-items:center;text-align:left}
         .trust-mini:last-child{border-right:0}
-        .trust-mini .ico{width:40px;height:40px;border:2px solid var(--orange);color:var(--orange);background:rgba(0,0,0,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto;font-size:18px}
-        .trust-mini b{display:block;color:white;font-size:15px;text-shadow:0 2px 6px rgba(0,0,0,0.8)}
-        .trust-mini span{color:#f1f5f9;font-size:13px;text-shadow:0 2px 6px rgba(0,0,0,0.8);font-weight:600}
+        .trust-mini .ico{width:36px;height:36px;border:2px solid var(--orange);color:var(--orange);background:rgba(0,0,0,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto;font-size:15px}
+        .trust-mini b{display:block;color:white;font-size:13.5px;text-shadow:0 2px 6px rgba(0,0,0,0.9)}
+        .trust-mini span{color:#f1f5f9;font-size:11.5px;text-shadow:0 2px 6px rgba(0,0,0,0.9);font-weight:600}
         
         .section{padding:68px 0}
         .section.white{background:white}
@@ -160,8 +160,6 @@
             .menu a{padding:6px 0 9px}
             .nav-cta{display:none}
             .footer-grid{grid-template-columns:1fr 1fr}
-            .hero-actions-top{margin: 0 auto; flex-wrap: wrap; justify-content: center;}
-            .hero-top-bar{flex-direction: column; gap: 15px;}
         }
         
         @media(max-width:640px){
@@ -197,42 +195,44 @@
     </div>
 </header>
 
-<!-- BANNER / YENİ DÜZEN HERO BÖLÜMÜ -->
+<!-- BANNER / KUMTAŞ LOGOSUNU ORTADA TERTEMİZ BIRAKAN MÜKEMMEL YERLEŞİM -->
 <section class="hero">
-    <div class="container" style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">
+    <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
         
-        <!-- ÜST ŞERİT / SAĞ ÜST KÖŞE BUTONLARI -->
-        <div class="hero-top-bar">
+        <!-- 1. LOGONUN ÜSTÜNDEKİ BOŞLUĞA YERLEŞEN BAŞLIK VE SLOGAN -->
+        <div class="hero-top-area">
             <div class="badge">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
-            <div class="hero-actions-top">
-                <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
-                <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif</a>
-            </div>
-        </div>
-
-        <!-- ORTA ORTALANMIŞ ANA YAZI VE SLOGAN -->
-        <div class="hero-center-content">
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
             <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
         </div>
 
-        <!-- BANNER'IN TAM EN ALTINA KOYULAN 4'LÜ ŞEFFAF KUTU -->
-        <div class="hero-trust-bottom">
-            <div class="trust-mini">
-                <div class="ico">21</div>
-                <div><b>Yıllık Tecrübe</b><span>Taahhüt Güvencesi</span></div>
+        <!-- 2. TAMAMEN BOMBOŞ BIRAKILAN ORTA ALAN (LOGONUN ÖNÜ SIRF GÖRSEL) -->
+        <div class="hero-middle-spacer"></div>
+
+        <!-- 3. LOGONUN ALTINDAKİ BOŞLUĞA YERLEŞEN BUTONLAR VE 4'LÜ ŞEFFAF KUTU -->
+        <div class="hero-bottom-area">
+            <div class="hero-actions">
+                <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
+                <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif</a>
             </div>
-            <div class="trust-mini">
-                <div class="ico">✓</div>
-                <div><b>Noter Onaylı</b><span>Şeffaf Sözleşme</span></div>
-            </div>
-            <div class="trust-mini">
-                <div class="ico">🛡️</div>
-                <div><b>Teminatlı</b><span>Güvenli Süreç</span></div>
-            </div>
-            <div class="trust-mini">
-                <div class="ico">📍</div>
-                <div><b>İstanbul Geneli</b><span>Uzman Kadro</span></div>
+
+            <div class="hero-trust-bottom">
+                <div class="trust-mini">
+                    <div class="ico">21</div>
+                    <div><b>Yıllık Tecrübe</b><span>Taahhüt Güvencesi</span></div>
+                </div>
+                <div class="trust-mini">
+                    <div class="ico">✓</div>
+                    <div><b>Noter Onaylı</b><span>Şeffaf Sözleşme</span></div>
+                </div>
+                <div class="trust-mini">
+                    <div class="ico">🛡️</div>
+                    <div><b>Teminatlı</b><span>Güvenli Süreç</span></div>
+                </div>
+                <div class="trust-mini">
+                    <div class="ico">📍</div>
+                    <div><b>İstanbul Geneli</b><span>Uzman Kadro</span></div>
+                </div>
             </div>
         </div>
 
