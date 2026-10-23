@@ -156,21 +156,22 @@
 
         @media(max-width:1180px){.hero-trust-bottom{grid-template-columns:repeat(2,1fr);gap:15px}.trust-mini{border-right:0}}
         @media(max-width:980px){
-            .navwrap{height:auto;align-items:center;flex-direction:column;padding:22px 0 14px;gap:8px}
-            .brand-company{align-items:center;text-align:center}
-            .menu{width:100%;overflow-x:auto;gap:18px;padding-bottom:6px;justify-content:center}
+            .navwrap{height:auto;align-items:center;flex-direction:column;padding:12px 0 10px;gap:8px}
+            /* MOBİLDE ÜSTTEKİ GÖZ YORAN "KUMTAŞ İNŞAAT" YAZISINI GİZLEDİK */
+            .brand-company{display:none !important;}
+            .menu{width:100%;overflow-x:auto;gap:18px;padding:4px 0;justify-content:center}
             .menu::-webkit-scrollbar{display:none}
             .menu a{padding:6px 0 9px}
             .nav-cta{display:none}
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİL ÖZEL AYARLAR: KUTU İÇİNDEKİ LOGO KOCAMAN VE NET YAPILDI */
+        /* MOBİL ÖZEL AYARLAR */
         @media(max-width:768px){
             .hero {
-                background: #030a14 !important; /* Mobilde arka plan siyah, resim kutusunun içine geçiyor */
+                background: #030a14 !important;
                 min-height: auto;
-                padding: 20px 0;
+                padding: 24px 0 20px 0;
             }
             .hero-middle-spacer {
                 display: none;
@@ -178,7 +179,7 @@
             .mobile-logo-box {
                 display: block;
                 width: 100%;
-                margin: 15px 0;
+                margin: 18px 0;
                 border: 1px solid rgba(255,255,255,0.25);
                 border-radius: 16px;
                 overflow: hidden;
@@ -187,7 +188,7 @@
             }
             .mobile-logo-box img {
                 width: 100%;
-                height: 220px; /* Görsel kutu içinde kocaman parlasın */
+                height: 220px;
                 object-fit: cover;
                 display: block;
             }
