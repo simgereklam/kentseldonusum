@@ -40,7 +40,7 @@
             position: relative;
             color: white;
             min-height: 90vh;
-            padding: 40px 0 20px 0;
+            padding: 40px 0 40px 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -87,13 +87,13 @@
 
         .hero h1{font-size:clamp(28px,3.2vw,44px);line-height:1.15;letter-spacing:-1px;margin-bottom:12px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
         
-        /* İstediğin Büyük ve Mavi Kurumsal Firma İsmi (Görseldeki bölgenin yerine eklendi) */
+        /* Büyük ve Beyaz Kurumsal Firma İsmi (Üst Kısımda) */
         .hero-company-title {
-            font-size: clamp(26px, 2.8vw, 40px);
+            font-size: clamp(32px, 3.8vw, 52px);
             font-weight: 950;
-            color: #38bdf8; /* Parlak ve şık kurumsal mavi */
-            text-shadow: 0 4px 18px rgba(0,0,0,0.95);
-            margin-bottom: 12px;
+            color: #ffffff;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.95);
+            margin-bottom: 16px;
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
@@ -102,7 +102,7 @@
         
         .hero-middle-spacer {
             flex-grow: 1;
-            min-height: 240px;
+            min-height: 320px;
         }
 
         .hero-bottom-area {
@@ -113,41 +113,6 @@
             gap: 16px;
         }
 
-        .hero-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
-        .btn{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:0 22px;font-weight:950;border:2px solid transparent;text-align:center;font-size:14px}
-        .btn-orange{background:var(--orange);color:white;box-shadow:0 12px 28px rgba(255,107,0,.45)}
-        
-        .btn-outline{
-            background: rgba(0, 0, 0, 0.45) !important;
-            border-color: rgba(255, 255, 255, 0.6);
-            color: white;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        
-        .hero-trust-bottom{
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-            display:grid;
-            grid-template-columns:repeat(4,1fr);
-            gap:0;
-            background: rgba(0, 0, 0, 0.6) !important;
-            padding:14px 18px;
-            border-radius:18px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border:1px solid rgba(255,255,255,.35);
-            box-shadow:0 20px 50px rgba(0,0,0,0.6);
-        }
-        
-        .trust-mini{padding:0 14px 0 0;margin-right:14px;border-right:1px solid rgba(255,255,255,.3);display:flex;gap:10px;align-items:center;text-align:left}
-        .trust-mini:last-child{border-right:0}
-        .trust-mini .ico{width:36px;height:36px;border:2px solid var(--orange);color:var(--orange);background:rgba(0,0,0,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:950;flex:0 0 auto;font-size:15px}
-        .trust-mini b{display:block;color:white;font-size:13.5px;text-shadow:0 2px 6px rgba(0,0,0,0.9)}
-        .trust-mini span{color:#f1f5f9;font-size:11.5px;text-shadow:0 2px 6px rgba(0,0,0,0.9);font-weight:600}
-        
         .section{padding:68px 0}
         .section.white{background:white}
         .section.navy{background:var(--navy);color:white}
@@ -181,7 +146,6 @@
         .copy{text-align:center;border-top:1px solid rgba(255,255,255,.08);padding-top:18px;margin-top:28px;font-size:13px;color:#8ea0b8}
         .float-wa{position:fixed;right:20px;bottom:20px;z-index:120;background:var(--green);color:white;border-radius:999px;padding:14px 20px;font-weight:950;box-shadow:0 18px 36px rgba(24,183,95,.32)}
 
-        @media(max-width:1180px){.hero-trust-bottom{grid-template-columns:repeat(2,1fr);gap:15px}.trust-mini{border-right:0}}
         @media(max-width:980px){
             .navwrap{height:auto;align-items:center;flex-direction:column;padding:12px 0 10px;gap:8px}
             .brand-company{display:none !important;}
@@ -195,7 +159,7 @@
         @media(max-width:768px){
             .hero {
                 min-height: auto;
-                padding: 24px 0 20px 0;
+                padding: 24px 0 24px 0;
             }
             .hero-middle-spacer {
                 display: none;
@@ -205,35 +169,12 @@
                 padding: 0 5px;
             }
             .hero-company-title {
-                font-size: 22px;
+                font-size: 26px;
             }
             .hero p {
                 font-size: 13.5px;
                 padding: 0 5px;
             }
-            .hero-actions {
-                flex-direction: column;
-                width: 100%;
-                padding: 0 5px;
-            }
-            .btn {
-                width: 100%;
-                font-size: 14px;
-                min-height: 48px;
-            }
-            .hero-trust-bottom {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-                padding: 12px;
-                width: 100%;
-            }
-            .trust-mini {
-                border-right: 0;
-                margin-right: 0;
-                padding: 0;
-            }
-            .trust-mini b { font-size: 12px; }
-            .trust-mini span { font-size: 10px; }
         }
 
         @media(max-width:640px){
@@ -278,7 +219,7 @@
 
     <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
         
-        <!-- 1. ÜST ALAN (KUMTAŞ İNŞAAT LTD ŞTİ BAŞLIĞI VE ANA SLOGAN) -->
+        <!-- ÜST ALAN: BÜYÜK BEYAZ KUMTAŞ İNŞAAT LTD ŞTİ BAŞLIĞI VE SLOGAN -->
         <div class="hero-top-area">
             <div class="hero-company-title">KUMTAŞ İNŞAAT LTD ŞTİ</div>
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
@@ -288,32 +229,8 @@
         <!-- MASAÜSTÜ İÇİN VİDEO ORTA ALAN BOŞLUĞU -->
         <div class="hero-middle-spacer"></div>
 
-        <!-- 3. ALT ALAN (BUTONLAR VE 4'LÜ KUTU) -->
-        <div class="hero-bottom-area">
-            <div class="hero-actions">
-                <a class="btn btn-orange" href="iletisim.html">🏠 Ücretsiz Risk Ön Değerlendirmesi</a>
-                <a class="btn btn-outline" href="https://wa.me/905431813485?text=Binamızın kentsel dönüşüm süreci için bilgi almak istiyorum.">🟢 WhatsApp Hızlı Keşif</a>
-            </div>
-
-            <div class="hero-trust-bottom">
-                <div class="trust-mini">
-                    <div class="ico">21</div>
-                    <div><b>Yıllık Tecrübe</b><span>Taahhüt Güvencesi</span></div>
-                </div>
-                <div class="trust-mini">
-                    <div class="ico">✓</div>
-                    <div><b>Noter Onaylı</b><span>Şeffaf Sözleşme</span></div>
-                </div>
-                <div class="trust-mini">
-                    <div class="ico">🛡️</div>
-                    <div><b>Teminatlı</b><span>Güvenli Süreç</span></div>
-                </div>
-                <div class="trust-mini">
-                    <div class="ico">📍</div>
-                    <div><b>İstanbul Geneli</b><span>Uzman Kadro</span></div>
-                </div>
-            </div>
-        </div>
+        <!-- ALT ALAN BOŞLUĞU -->
+        <div class="hero-bottom-area"></div>
 
     </div>
 </section>
