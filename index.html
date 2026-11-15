@@ -49,7 +49,39 @@
             background: #030a14;
         }
 
-        /* Arka Plan Video Stili (Piksel bozulmasını önleyen tam ekran yapı) */
+        /* 2 Saniyelik Açılış Logo Perdesi (Intro) */
+        .hero-logo-intro {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #030a14;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+        }
+        .hero-logo-intro.fade-out {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .intro-logo-img {
+            max-width: 320px;
+            width: 80%;
+            border-radius: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            animation: pulseLogo 1.5s infinite alternate;
+        }
+        @keyframes pulseLogo {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.03); }
+        }
+
+        /* Arka Plan Video Stili */
         .hero-video-bg {
             position: absolute;
             top: 50%;
@@ -64,7 +96,6 @@
             pointer-events: none;
         }
 
-        /* Karartma perdesi tamamen kaldırıldı (Video orijinal renkleriyle parlar) */
         .hero-overlay {
             position: absolute;
             top: 0;
@@ -75,7 +106,6 @@
             z-index: 2;
         }
 
-        /* Hero içeriği videonun ve overlay katmanının üzerinde yer almalı */
         .hero .container {
             position: relative;
             z-index: 3;
@@ -265,13 +295,17 @@
 </header>
 
 <section class="hero">
+    <!-- 2 SANİYELİK AÇILIŞ LOGO EKRANI (INTRO) -->
+    <div class="hero-logo-intro" id="heroIntro">
+        <img src="kumtas-logo.jpg" alt="Kumtaş İnşaat Logo" class="intro-logo-img">
+    </div>
+
     <!-- ARKA PLAN DÖNGÜ VİDEOSU -->
     <video autoplay muted loop playsinline class="hero-video-bg">
         <source src="kumtas-donusum.mp4" type="video/mp4">
         Tarayıcınız video etiketini desteklemiyor.
     </video>
     
-    <!-- KARARTMA PERDESİ TAMAMEN KALDIRILDI -->
     <div class="hero-overlay"></div>
 
     <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
@@ -411,6 +445,16 @@
 <a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
 
 <script>
+    // 2 Saniye (2000 milisaniye) sonra logoyu yavaşça kapatıp videoyu ortaya çıkaran script
+    window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const intro = document.getElementById('heroIntro');
+            if(intro) {
+                intro.classList.add('fade-out');
+            }
+        }, 2000); // 2 saniye bekleme süresi
+    });
+
     document.querySelector('form[data-whatsapp-form]').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
