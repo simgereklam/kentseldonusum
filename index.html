@@ -50,7 +50,7 @@
             background: #030a14;
         }
 
-        /* İLK AÇILIŞTA BÜYÜK GÖRÜNÜP KAYBOLAN LOGO PERDESİ */
+        /* İLK AÇILIŞTA EKRANI KAPLAYAN DEV LOGO PERDESİ */
         .hero-logo-intro {
             position: absolute;
             top: 0;
@@ -70,19 +70,19 @@
             pointer-events: none;
         }
 
-        /* Büyük Logo Stili ve Hafif Büyüme Efekti */
+        /* Devasa Logo Konteyneri ve Sinematik Büyüme Efekti */
         .intro-logo-box {
-            width: min(420px, 80vw);
+            width: min(750px, 90vw);
             padding: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: scaleUpLogo 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: giantLogoZoom 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes scaleUpLogo {
+        @keyframes giantLogoZoom {
             0% {
-                transform: scale(0.7);
+                transform: scale(0.6);
                 opacity: 0;
             }
             30% {
@@ -90,12 +90,12 @@
                 opacity: 1;
             }
             85% {
-                transform: scale(1.03);
+                transform: scale(1.04);
                 opacity: 1;
             }
             100% {
-                transform: scale(1.05);
-                opacity: 0; /* Süre sonunda yavaşça sönmeye başlar */
+                transform: scale(1.08);
+                opacity: 0;
             }
         }
 
@@ -103,7 +103,7 @@
             width: 100%;
             height: auto;
             display: block;
-            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.8));
+            filter: drop-shadow(0 15px 40px rgba(0,0,0,0.95));
         }
 
         /* Arka Plan Video Stili */
@@ -224,6 +224,9 @@
                 height: calc(100dvh - 54px);
                 padding: 16px 0 32px 0;
             }
+            .intro-logo-box {
+                width: 90vw;
+            }
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
@@ -282,7 +285,7 @@
 </header>
 
 <section class="hero">
-    <!-- İLK AÇILIŞTA BÜYÜK GÖRÜNÜP KAYBOLAN LOGO -->
+    <!-- İLK AÇILIŞTA EKRANI KAPLAYAN DEV LOGO -->
     <div class="hero-logo-intro" id="heroIntro">
         <div class="intro-logo-box">
             <img src="kumtas-logo.jpg" alt="Kumtaş İnşaat Logo" class="intro-logo-img">
@@ -411,7 +414,7 @@
 <a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
 
 <script>
-    // Logo 2 saniye ekranda görünüp şık bir şekilde kaybolur, arkasından video başlar
+    // Dev logo 2 saniye ekranda görünüp şık bir şekilde kaybolur, arkasından video başlar
     window.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
             const intro = document.getElementById('heroIntro');
