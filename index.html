@@ -35,12 +35,13 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO - VİDEO ARKA PLAN ENTEGRASYONU */
+        /* HERO - VİDEO ARKA PLAN ENTEGRASYONU (TAVANA SIFIRLANMIŞ) */
         .hero {
             position: relative;
             color: white;
-            min-height: 90vh;
-            padding: 24px 0 35px 0;
+            height: calc(100vh - 76px);
+            min-height: 600px;
+            padding: 8px 0 28px 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -77,28 +78,33 @@
         .hero .container {
             position: relative;
             z-index: 3;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        /* ÜST ALAN: MAVİ VE BÜYÜK KUMTAŞ İNŞAAT LTD ŞTİ (Daha yukarı taşındı) */
+        /* ÜST ALAN: MENÜNÜN HEMEN ALTINA SIFIRLANDI */
         .hero-top-area {
             text-align: center;
             max-width: 950px;
             margin: 0 auto;
-            padding-top: 10px;
+            padding-top: 0;
         }
 
         .hero-company-title {
-            font-size: clamp(32px, 3.8vw, 50px);
+            font-size: clamp(32px, 3.8vw, 52px);
             font-weight: 950;
-            color: #38bdf8; /* Parlak Kurumsal Mavi */
+            color: #38bdf8;
             text-shadow: 0 4px 20px rgba(0,0,0,0.95);
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            line-height: 1.1;
         }
 
         .hero-middle-spacer {
             flex-grow: 1;
-            min-height: 260px;
         }
 
         /* ALT ALAN: SLOGAN VE AÇIKLAMA */
@@ -107,11 +113,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             text-align: center;
             max-width: 950px;
             margin: 0 auto;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
         }
 
         .hero h1{font-size:clamp(28px,3.2vw,44px);line-height:1.15;letter-spacing:-1px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
@@ -163,11 +169,12 @@
         
         @media(max-width:768px){
             .hero {
-                min-height: auto;
-                padding: 20px 0 20px 0;
+                height: auto;
+                min-height: 420px;
+                padding: 14px 0 20px 0;
             }
             .hero-middle-spacer {
-                display: none;
+                min-height: 180px;
             }
             .hero-company-title {
                 font-size: 26px;
@@ -222,14 +229,14 @@
     
     <div class="hero-overlay"></div>
 
-    <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
+    <div class="container">
         
-        <!-- ÜST ALAN: MAVİ VE BÜYÜK KUMTAŞ İNŞAAT LTD ŞTİ (Yukarı taşındı) -->
+        <!-- ÜST ALAN: MENÜNÜN HEMEN ALTINA SIFIRLANMIŞ MAVİ KUMTAŞ İNŞAAT LTD ŞTİ -->
         <div class="hero-top-area">
             <div class="hero-company-title">KUMTAŞ İNŞAAT LTD ŞTİ</div>
         </div>
 
-        <!-- MASAÜSTÜ İÇİN VİDEO ORTA ALAN BOŞLUĞU -->
+        <!-- ORTA BOŞLUK: ŞANTİYE VİDEOSUNU TAM AÇIK BIRAKIR -->
         <div class="hero-middle-spacer"></div>
 
         <!-- ALT ALAN: SLOGAN VE AÇIKLAMA -->
