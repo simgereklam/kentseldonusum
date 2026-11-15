@@ -35,13 +35,13 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO - VİDEO ARKA PLAN ENTEGRASYONU */
+        /* HERO - MASAÜSTÜ, TABLET VE MOBİLDE %100 TAM EKRAN */
         .hero {
             position: relative;
             color: white;
             height: calc(100vh - 76px);
-            min-height: 600px;
-            padding: 12px 0 28px 0;
+            height: calc(100dvh - 76px);
+            padding: 14px 0 28px 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -56,10 +56,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
+            width: 100%;
+            height: 100%;
             z-index: 1;
             object-fit: cover;
             pointer-events: none;
@@ -90,13 +88,13 @@
             text-align: center;
             max-width: 950px;
             margin: 0 auto;
-            padding-top: 5px;
+            padding-top: 4px;
         }
 
         .hero-company-title {
-            font-size: clamp(26px, 3.8vw, 52px);
+            font-size: clamp(24px, 3.8vw, 52px);
             font-weight: 950;
-            color: #38bdf8; /* Parlak Kurumsal Mavi */
+            color: #38bdf8;
             text-shadow: 0 4px 20px rgba(0,0,0,0.95);
             letter-spacing: 0.5px;
             text-transform: uppercase;
@@ -113,7 +111,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             text-align: center;
             max-width: 950px;
             margin: 0 auto;
@@ -122,7 +120,7 @@
 
         .hero h1{font-size:clamp(22px,3.2vw,44px);line-height:1.2;letter-spacing:-1px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
         
-        .hero p{font-size:clamp(13px,1.2vw,18px);color:#ffffff;max-width:800px;margin:0 auto;text-shadow:0 2px 10px rgba(0,0,0,1);font-weight:600;line-height:1.4}
+        .hero p{font-size:clamp(14px,1.2vw,18px);color:#ffffff;max-width:800px;margin:0 auto;text-shadow:0 2px 10px rgba(0,0,0,1);font-weight:600;line-height:1.4}
 
         .section{padding:68px 0}
         .section.white{background:white}
@@ -157,42 +155,42 @@
         .copy{text-align:center;border-top:1px solid rgba(255,255,255,.08);padding-top:18px;margin-top:28px;font-size:13px;color:#8ea0b8}
         .float-wa{position:fixed;right:20px;bottom:20px;z-index:120;background:var(--green);color:white;border-radius:999px;padding:14px 20px;font-weight:950;box-shadow:0 18px 36px rgba(24,183,95,.32)}
 
+        /* TABLET VE MOBİL MENÜ + TAM EKRAN AYARI */
         @media(max-width:980px){
-            .navwrap{height:auto;align-items:center;flex-direction:column;padding:12px 0 10px;gap:8px}
+            .navwrap{height:54px;align-items:center;flex-direction:row;padding:0 12px;gap:8px}
             .brand-company{display:none !important;}
-            .menu{width:100%;overflow-x:auto;gap:18px;padding:4px 0;justify-content:center}
+            .menu{width:100%;overflow-x:auto;gap:16px;padding:0;justify-content:flex-start}
             .menu::-webkit-scrollbar{display:none}
-            .menu a{padding:6px 0 9px}
+            .menu a{padding:15px 0 13px;font-size:13.5px}
             .nav-cta{display:none}
+            .hero {
+                height: calc(100vh - 54px);
+                height: calc(100dvh - 54px);
+                padding: 16px 0 32px 0;
+            }
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
-        /* MOBİL UYUMLULUK OPTİMİZASYONU */
+        /* TELEFON EKRAN OPTİMİZASYONU */
         @media(max-width:768px){
             .hero {
-                height: auto;
-                min-height: 480px;
-                padding: 10px 0 16px 0;
-            }
-            .hero-top-area {
-                padding-top: 2px;
-            }
-            .hero-middle-spacer {
-                min-height: 130px;
+                height: calc(100vh - 54px);
+                height: calc(100dvh - 54px);
+                padding: 14px 0 36px 0;
             }
             .hero-company-title {
-                font-size: 20px; /*Mobilde taşmayı önleyen ideal boyut*/
+                font-size: 22px;
                 letter-spacing: 0.3px;
             }
             .hero h1 {
-                font-size: 18px;
-                padding: 0 4px;
+                font-size: 21px;
+                padding: 0 6px;
                 line-height: 1.25;
             }
             .hero p {
-                font-size: 12px;
-                padding: 0 6px;
-                line-height: 1.35;
+                font-size: 13.5px;
+                padding: 0 8px;
+                line-height: 1.4;
             }
         }
 
@@ -243,7 +241,7 @@
             <div class="hero-company-title">KUMTAŞ İNŞAAT LTD ŞTİ</div>
         </div>
 
-        <!-- MASAÜSTÜ İÇİN VİDEO ORTA ALAN BOŞLUĞU -->
+        <!-- ORTA BOŞLUK: ŞANTİYE VİDEOSUNU TAM AÇIK BIRAKIR -->
         <div class="hero-middle-spacer"></div>
 
         <!-- ALT ALAN: SLOGAN VE AÇIKLAMA -->
