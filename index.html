@@ -50,7 +50,7 @@
             background: #030a14;
         }
 
-        /* İLK AÇILIŞTA EKRANI KAPLAYAN DEV LOGO PERDESİ */
+        /* İLK AÇILIŞTA EKRANI KAPLAYAN ORJİNAL DEV BOYUTLU LOGO PERDESİ */
         .hero-logo-intro {
             position: absolute;
             top: 0;
@@ -70,19 +70,19 @@
             pointer-events: none;
         }
 
-        /* Devasa Logo Konteyneri ve Sinematik Büyüme Efekti */
+        /* Orijinal Tam Boyutlu Görkemli Logo Konteyneri */
         .intro-logo-box {
-            width: min(750px, 90vw);
-            padding: 20px;
+            width: min(1000px, 94vw);
+            padding: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: giantLogoZoom 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: originalGiantZoom 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        @keyframes giantLogoZoom {
+        @keyframes originalGiantZoom {
             0% {
-                transform: scale(0.6);
+                transform: scale(0.5);
                 opacity: 0;
             }
             30% {
@@ -90,11 +90,11 @@
                 opacity: 1;
             }
             85% {
-                transform: scale(1.04);
+                transform: scale(1.03);
                 opacity: 1;
             }
             100% {
-                transform: scale(1.08);
+                transform: scale(1.06);
                 opacity: 0;
             }
         }
@@ -103,7 +103,7 @@
             width: 100%;
             height: auto;
             display: block;
-            filter: drop-shadow(0 15px 40px rgba(0,0,0,0.95));
+            filter: drop-shadow(0 20px 50px rgba(0,0,0,0.98));
         }
 
         /* Arka Plan Video Stili */
@@ -225,7 +225,7 @@
                 padding: 16px 0 32px 0;
             }
             .intro-logo-box {
-                width: 90vw;
+                width: 95vw;
             }
             .footer-grid{grid-template-columns:1fr 1fr}
         }
@@ -285,7 +285,7 @@
 </header>
 
 <section class="hero">
-    <!-- İLK AÇILIŞTA EKRANI KAPLAYAN DEV LOGO -->
+    <!-- İLK AÇILIŞTA EKRANI KAPLAYAN ORJİNAL DEV BOYUTLU LOGO -->
     <div class="hero-logo-intro" id="heroIntro">
         <div class="intro-logo-box">
             <img src="kumtas-logo.jpg" alt="Kumtaş İnşaat Logo" class="intro-logo-img">
