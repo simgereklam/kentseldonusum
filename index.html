@@ -49,50 +49,6 @@
             background: #030a14;
         }
 
-        /* Orijinal Boyut ve Büyüme (Scale) Animasyonlu Logo Giriş Perdesi */
-        .hero-logo-intro {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #030a14;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
-        }
-        .hero-logo-intro.fade-out {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-        
-        /* Logoyu orijinal genişliğinde tutan ve küçükten büyüğe (zoom) hareket ettiren yapı[cite: 1] */
-        .intro-logo-img {
-            width: 100%;
-            max-width: 650px; /* Orijinal net ve büyük boyut */
-            height: auto;
-            border-radius: 16px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-            animation: zoomInLogo 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-
-        @keyframes zoomInLogo {
-            0% {
-                transform: scale(0.6);
-                opacity: 0;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
         /* Arka Plan Video Stili */
         .hero-video-bg {
             position: absolute;
@@ -140,11 +96,23 @@
         }
         
         .hero h1{font-size:clamp(28px,3.2vw,44px);line-height:1.15;letter-spacing:-1px;margin-bottom:8px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
+        
+        /* İSTEDİĞİN ÖZEL KURUMSAL BAŞLIK (Büyük ve Mavi) */
+        .hero-company-title {
+            font-size: clamp(24px, 2.5vw, 36px);
+            font-weight: 900;
+            color: #38bdf8; /* Şık ve Parlak Kurumsal Mavi */
+            text-shadow: 0 4px 16px rgba(0,0,0,0.9);
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
         .hero p{font-size:clamp(15px,1.2vw,18px);color:#ffffff;max-width:800px;margin:0 auto;text-shadow:0 2px 10px rgba(0,0,0,1);font-weight:600;line-height:1.4}
         
         .hero-middle-spacer {
             flex-grow: 1;
-            min-height: 280px;
+            min-height: 240px;
         }
 
         .hero-bottom-area {
@@ -246,6 +214,9 @@
                 font-size: 22px;
                 padding: 0 5px;
             }
+            .hero-company-title {
+                font-size: 20px;
+            }
             .hero p {
                 font-size: 13.5px;
                 padding: 0 5px;
@@ -307,12 +278,7 @@
 </header>
 
 <section class="hero">
-    <!-- BÜYÜME (ZOOM) ANİMASYONLU ORİJİNAL BOYUT LOGO GİRİŞİ -->
-    <div class="hero-logo-intro" id="heroIntro">
-        <img src="kumtas-logo.jpg" alt="Kumtaş İnşaat Logo" class="intro-logo-img">
-    </div>
-
-    <!-- ARKA PLAN DÖNGÜ VİDEOSU -->
+    <!-- ARKA PLAN DÖNGÜ VİDEOSU (Karartmasız, Orijinal Renkler) -->
     <video autoplay muted loop playsinline class="hero-video-bg">
         <source src="kumtas-donusum.mp4" type="video/mp4">
         Tarayıcınız video etiketini desteklemiyor.
@@ -322,9 +288,10 @@
 
     <div class="container" style="display:flex; flex-direction:column; height:100%; min-height:85vh; justify-content:space-between;">
         
-        <!-- 1. ÜST ALAN (BAŞLIK VE SLOGAN) -->
+        <!-- 1. ÜST ALAN (KURUMSAL MAVİ BAŞLIK VE SLOGAN) -->
         <div class="hero-top-area">
             <div class="badge">🚨 İSTANBUL DEPREM GERÇEĞİNİ UNUTMAYALIM</div>
+            <div class="hero-company-title">Kumtaş İnşaat Ltd. Şti.</div>
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
             <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
         </div>
@@ -457,16 +424,6 @@
 <a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
 
 <script>
-    // 2.2 Saniye sonra logoyu yumuşakça ortadan kaldırıp arkadaki videoyu tam ekran başlatan kod
-    window.addEventListener('DOMContentLoaded', function() {
-        setTimeout(function() {
-            const intro = document.getElementById('heroIntro');
-            if(intro) {
-                intro.classList.add('fade-out');
-            }
-        }, 2200); // Animasyon süresiyle uyumlu gecikme
-    });
-
     document.querySelector('form[data-whatsapp-form]').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
