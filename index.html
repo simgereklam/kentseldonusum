@@ -50,7 +50,7 @@
             background: #030a14;
         }
 
-        /* AÇILIŞTA EKRANI TAM KAPLAYAN ORJİNAL DEV AKICI LOGO PERDESİ */
+        /* EKRANI DOMİNE EDEN DEVAASA ANİMASYONLU LOGO GİRİŞİ */
         .hero-logo-intro {
             position: absolute;
             top: 0;
@@ -70,31 +70,33 @@
             pointer-events: none;
         }
 
-        /* Akıcı, Görkemli ve Tam Boyutlu Logo Alanı (Masaüstü & Mobil Uyumlu) */
+        /* Maksimum Boyut ve Akıcı Zoom/Pulsing Efekti */
         .intro-logo-box {
-            width: min(1100px, 94vw);
-            padding: 20px;
+            width: min(1300px, 98vw);
+            padding: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: smoothGiantZoom 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            animation: ultraGiantAnim 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
-        @keyframes smoothGiantZoom {
+        @keyframes ultraGiantAnim {
             0% {
-                transform: scale(0.4);
+                transform: scale(0.3);
                 opacity: 0;
+                filter: blur(10px);
             }
-            35% {
-                transform: scale(1);
+            40% {
+                transform: scale(1.02);
                 opacity: 1;
+                filter: blur(0px);
             }
-            80% {
-                transform: scale(1.03);
+            85% {
+                transform: scale(1.06);
                 opacity: 1;
             }
             100% {
-                transform: scale(1.08);
+                transform: scale(1.12);
                 opacity: 0;
             }
         }
@@ -103,7 +105,7 @@
             width: 100%;
             height: auto;
             display: block;
-            filter: drop-shadow(0 25px 60px rgba(0,0,0,0.98));
+            filter: drop-shadow(0 30px 80px rgba(0,0,0,1));
         }
 
         /* Arka Plan Video Stili */
@@ -225,7 +227,7 @@
                 padding: 16px 0 32px 0;
             }
             .intro-logo-box {
-                width: 96vw; /* Mobilde orijinal oranda maksimum genişlik */
+                width: 99vw; /* Mobilde de ekranı tamamen doldurur */
             }
             .footer-grid{grid-template-columns:1fr 1fr}
         }
@@ -285,7 +287,7 @@
 </header>
 
 <section class="hero">
-    <!-- İLK AÇILIŞTA EKRANI KAPLAYAN ORJİNAL DEV AKICI LOGO -->
+    <!-- EKRANI KAPLAYAN DEVAASA AKICI LOGO GİRİŞİ -->
     <div class="hero-logo-intro" id="heroIntro">
         <div class="intro-logo-box">
             <img src="kumtas-logo.jpg" alt="Kumtaş İnşaat Logo" class="intro-logo-img">
@@ -414,7 +416,7 @@
 <a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
 
 <script>
-    // Dev logo pürüzsüz bir akışla 2 saniye ekranda durup sinematik kaybolur
+    // Devasa logo pürüzsüz bir akışla 2 saniye ekranda durup sinematik kaybolur
     window.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
             const intro = document.getElementById('heroIntro');
