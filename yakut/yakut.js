@@ -1,0 +1,76 @@
+(function(){
+'use strict';
+if(window.__yakutInstalled)return;window.__yakutInstalled=true;
+var current=document.currentScript;
+var base=new URL('./',current.src);
+var modelUrl=new URL('YAKUT_V9.glb',base).href;
+var videoUrl=new URL('kumtas-acilis.mp4',base).href;
+var greeting='Hoş geldiniz! Ben KUMTAŞ İnşaat yapay zekâ asistanınız YAKUT. Size yardımcı olmak için buradayım.';
+var isHome=location.pathname==='/'||/\/index\.html$/i.test(location.pathname);
+var state={ready:false,face:null,mixer:null,clips:{},active:null,canvas:null,THREE:null,root:null,speaking:false,stopped:false};
+var styles=document.createElement('style');styles.textContent=
+'#yk-toggle{position:fixed;right:20px;bottom:87px;z-index:8000;background:#0b547e;border:1px solid #83d8ff;border-radius:40px;color:white;padding:12px 17px;font:bold 14px Arial;cursor:pointer;box-shadow:0 9px 25px #0005}'+
+'#yk-widget{position:fixed;right:16px;bottom:147px;width:min(370px,calc(100vw - 32px));z-index:8100;display:none;background:#061b30;color:white;border:1px solid #4d9dbf;border-radius:15px;font:14px Arial;box-shadow:0 15px 38px #0009;overflow:hidden}'+
+'#yk-widget.visible{display:block}#yk-widget header{padding:14px!important;display:flex;align-items:center;justify-content:space-between;position:static!important;background:#103c5a!important;color:white;font-weight:bold;height:auto!important;box-shadow:none!important}'+
+'#yk-widget button{border:0;border-radius:8px;background:#176c99;color:white;padding:9px;cursor:pointer;font:inherit}#yk-messages{padding:12px;max-height:210px;overflow:auto;line-height:1.5;min-height:94px}#yk-messages p{margin:6px 0}'+
+'#yk-widget .yk-line{padding:10px;display:flex;gap:7px}#yk-widget input{flex:1;min-width:0;border:1px solid #5081a0;border-radius:7px;color:white;background:#0c2940;padding:9px;font:inherit}'+
+'#yk-widget .yk-actions{display:flex;gap:8px;padding:0 10px 11px}'+
+'#yk-robot{position:fixed;right:102px;bottom:84px;width:135px;height:185px;z-index:7900;pointer-events:none}#yk-robot canvas{width:100%;height:100%;display:block}'+
+'#yk-intro{position:fixed;inset:0;z-index:99998;background:#041123;color:white;font:16px Arial}#yk-intro video,#yk-intro canvas{position:absolute;inset:0;width:100%;height:100%}#yk-intro video{object-fit:cover}#yk-intro canvas{pointer-events:none}'+
+'#yk-intro .yk-logo{position:absolute;inset:0;background:radial-gradient(circle,#183958,#031023);display:grid;place-items:center}#yk-intro .yk-logo img{max-width:80vw;max-height:67vh;object-fit:contain}'+
+'#yk-intro .yk-caption{position:absolute;bottom:8%;left:5%;right:5%;text-align:center;font:bold clamp(19px,3vw,30px) Arial;text-shadow:0 3px 12px #000}'+
+'#yk-intro .yk-start{position:absolute;inset:0;z-index:5;background:#04152dd9;display:grid;place-items:center;text-align:center}#yk-intro .yk-start button,#yk-intro .yk-skip{border:1px solid #70caff;border-radius:10px;background:#135c86;color:#fff;padding:13px 18px;cursor:pointer;font:bold 15px Arial}'+
+'#yk-intro .yk-skip{position:absolute;z-index:7;right:20px;top:18px}'+
+'@media(max-width:620px){#yk-toggle{right:9px;bottom:84px}#yk-robot{right:87px;bottom:85px;width:100px;height:135px}}';
+document.head.appendChild(styles);
+function $(id){return document.getElementById(id)}
+function create(tag,cls){var x=document.createElement(tag);if(cls)x.className=cls;return x}
+var toggle=create('button');toggle.id='yk-toggle';toggle.textContent='🤖 YAKUT’a Sor';
+var pane=create('div');pane.id='yk-widget';
+pane.innerHTML='<header><span>🤖 YAKUT · KUMTAŞ İnşaat</span><button id="yk-close" aria-label="Kapat">✕</button></header><div id="yk-messages"><p>Merhaba! Ben YAKUT. Sitenin bölümlerini tanıtabilir ve örnek arsa alanı hesaplayabilirim. Canlı yapay zekâ bağlantısı henüz kurulmadı.</p></div><div class="yk-line"><input id="yk-question" placeholder="Bir soru sorun..." aria-label="Soru"><button id="yk-send">Gönder</button></div><div class="yk-actions"><button id="yk-mic">🎤 Konuş</button><button id="yk-greet">👋 Selam 2</button><button id="yk-stop">🔇 Sustur</button></div>';
+document.body.append(toggle,pane);
+toggle.onclick=function(){pane.classList.toggle('visible')};$('yk-close').onclick=function(){pane.classList.remove('visible')};
+function voice(text){if(!('speechSynthesis' in window))return;speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='tr-TR';u.rate=.92;u.pitch=1.1;var tr=speechSynthesis.getVoices().filter(function(v){return /^tr/i.test(v.lang)});u.voice=tr.find(function(v){return /emel|selin|zeynep|ayla|female/i.test(v.name)})||tr[0]||null;u.onstart=function(){state.speaking=true};u.onend=u.onerror=function(){state.speaking=false};speechSynthesis.speak(u)}
+function anim(name,once,speed){if(!state.THREE||!state.clips[name])return;var a=state.clips[name];if(state.active&&state.active!==a)state.active.fadeOut(.2);a.reset().setLoop(once?state.THREE.LoopOnce:state.THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed||1).setEffectiveWeight(1).fadeIn(.2).play();a.clampWhenFinished=!!once;state.active=a}
+$('yk-greet').onclick=function(){anim('greet_02',true);voice(greeting)};
+$('yk-stop').onclick=function(){if(window.speechSynthesis)speechSynthesis.cancel();state.speaking=false};
+function response(q){var text=q.toLocaleLowerCase('tr-TR');if(/arsa|metrekare|m²|m2|oturum|hesap/.test(text)){var m=text.match(/(\d+(?:[.,]\d+)?)\s*(m²|m2|metrekare)/),r=text.match(/0[.,](30|40|50)/);if(!m)return 'Örnek hesap için arsa alanını yazın: 500 metrekare 0,40';var area=Number(m[1].replace(',','.')),rate=r?Number(r[0].replace(',','.')):.4;return 'Örnek taban oturumu: '+area+' metrekare × '+rate+' = '+(area*rate).toLocaleString('tr-TR')+' metrekare. Bu resmî imar hakkı değildir.'}if(/iletişim|telefon|numara/.test(text))return 'İletişim sayfamız: iletisim.html. Telefon: 0543 181 34 85.';if(/riskli|kentsel|dönüşüm/.test(text))return 'Kentsel dönüşüm hakkında bilgi için kentsel-donusum.html sayfamıza göz atın. Kesin hukuki ve imar bilgileri için resmî doğrulama gerekir.';if(/merhaba|selam|yakut/.test(text))return greeting;return 'Şu an tanıtım ve temel örnek hesaplama yapabiliyorum. Gelişmiş yapay zekâ henüz bağlı değil; lütfen iletişim sayfamıza da göz atın.'}
+function send(){var inp=$('yk-question'),q=inp.value.trim();if(!q)return;var p=create('p'),a=create('p'),log=$('yk-messages');p.textContent='Siz: '+q;var out=response(q);a.textContent='YAKUT: '+out;log.append(p,a);log.scrollTop=log.scrollHeight;inp.value='';voice(out)}
+$('yk-send').onclick=send;$('yk-question').onkeydown=function(e){if(e.key==='Enter')send()};
+$('yk-mic').onclick=function(){var Rec=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Rec){var p=create('p');p.textContent='Bu tarayıcı konuşma tanımayı desteklemiyor.';$('yk-messages').append(p);return}var recog=new Rec();recog.lang='tr-TR';recog.onresult=function(e){$('yk-question').value=e.results[0][0].transcript;send()};recog.start()};
+function has(url){return fetch(url,{method:'HEAD'}).then(function(r){return r.ok}).catch(function(){return false})}
+async function renderRobot(canvas){try{var THREE=await import('https://esm.sh/three@0.164.1');var loader=await import('https://esm.sh/three@0.164.1/examples/jsm/loaders/GLTFLoader.js');state.THREE=THREE;var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));var scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(33,1,.1,30);camera.position.set(0,0.2,3.3);camera.lookAt(0,0,0);scene.add(new THREE.HemisphereLight(0xeefaff,0x1b3862,2.8));var light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-3,4,5);scene.add(light);var gltf=await new loader.GLTFLoader().loadAsync(modelUrl),root=gltf.scene,bb=new THREE.Box3().setFromObject(root),center=bb.getCenter(new THREE.Vector3()),size=bb.getSize(new THREE.Vector3());var scale=1.65/size.y;root.scale.setScalar(scale);root.position.set(-center.x*scale,-center.y*scale,-center.z*scale);scene.add(root);state.root=root;state.baseZ=root.position.z;state.baseScale=scale;state.runProgress=1;state.runActive=false;root.traverse(function(o){if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary&&o.morphTargetDictionary.jawOpen!==undefined)state.face=o}});var mix=new THREE.AnimationMixer(root);state.mixer=mix;gltf.animations.forEach(function(c){state.clips[c.name]=mix.clipAction(c)});mix.addEventListener('finished',function(){anim('wait')});anim('wait');var clock=new THREE.Clock();function loop(){if(!canvas.isConnected)return;requestAnimationFrame(loop);var dt=Math.min(clock.getDelta(),.05),rect=canvas.getBoundingClientRect();renderer.setSize(Math.max(1,rect.width),Math.max(1,rect.height),false);camera.aspect=Math.max(1,rect.width)/Math.max(1,rect.height);camera.updateProjectionMatrix();mix.update(dt);if(state.runActive){state.runProgress=Math.min(1,state.runProgress+dt/2.7);var p=state.runProgress;root.position.z=state.baseZ-3.8*(1-p);root.scale.setScalar(state.baseScale*(.55+.45*p));if(p>=1){state.runActive=false;anim('wait')}}if(state.face){var s=state.speaking?Math.pow(Math.max(0,Math.sin(performance.now()*.0158)),.55):0;Object.entries(state.face.morphTargetDictionary).forEach(function(kv){var k=kv[0],i=kv[1];var val=k==='jawOpen'?.28*s:k==='viseme_A'?.85*s:k==='viseme_O'?.15*s:0;state.face.morphTargetInfluences[i]=THREE.MathUtils.damp(state.face.morphTargetInfluences[i],val,15,dt)})}renderer.render(scene,camera)}loop();return true}catch(err){console.warn('YAKUT robot:',err);return false}}
+async function bundledAsset(prefix,count,compressed,mime){
+  const urls=Array.from({length:count},(_,i)=>new URL('media/'+prefix+'-'+String(i+1).padStart(3,'0')+'.txt',base).href);
+  const parts=await Promise.all(urls.map(async url=>{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('Missing YAKUT file: '+url+' ('+res.status+')');
+    return (await res.text()).replace(/\s+/g,'');
+  }));
+  const str=parts.join(''),bin=atob(str),data=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)data[i]=bin.charCodeAt(i);
+  if(compressed){
+    if(typeof DecompressionStream==='undefined')throw new Error('Browser does not support gzip');
+    const raw=new Blob([data],{type:'application/gzip'}).stream().pipeThrough(new DecompressionStream('gzip'));
+    return URL.createObjectURL(await new Response(raw).blob());
+  }
+  return URL.createObjectURL(new Blob([data],{type:mime}));
+}
+async function init(){
+  let ok=await has(modelUrl);
+  if(!ok){try{modelUrl=await bundledAsset('robot',22,true,'model/gltf-binary');ok=true}catch(e){console.warn('YAKUT V9 yüklenemedi',e)}}
+  if(!ok)return;
+  let introOk=isHome&&!sessionStorage.getItem('yakutIntroSeen');
+  if(introOk && !await has(videoUrl)){
+    try{videoUrl=await bundledAsset('video',7,false,'video/mp4')}
+    catch(e){introOk=false;console.warn('KUMTAŞ açılış videosu yüklenemedi',e)}
+  }
+
+if(!introOk){var holder=create('div');holder.id='yk-robot';var cv=create('canvas');holder.append(cv);document.body.append(holder);if(!await renderRobot(cv))holder.remove();return}
+var overlay=create('div');overlay.id='yk-intro';overlay.innerHTML='<video id="yk-film" autoplay playsinline muted preload="auto"></video><canvas id="yk-stage"></canvas><div class="yk-caption" id="yk-caption"></div><button class="yk-skip" id="yk-skip">Açılışı atla</button><button id="yk-sound" style="position:absolute;top:18px;left:18px;z-index:9;border:1px solid #8bd7fa;background:#115c89;color:#fff;border-radius:10px;padding:12px;font:bold 14px Arial;cursor:pointer">🔊 Sesi Aç</button>';document.body.append(overlay);$('yk-film').src=videoUrl;var old=$('heroIntro');if(old)old.style.visibility='hidden';if(!await renderRobot($('yk-stage'))){overlay.remove();if(old)old.style.visibility='';return}var finished=false;
+function finish(){if(finished)return;finished=true;sessionStorage.setItem('yakutIntroSeen','1');overlay.style.transition='opacity .75s';overlay.style.opacity='0';overlay.style.pointerEvents='none';setTimeout(function(){var canvas=$('yk-stage');var holder=create('div');holder.id='yk-robot';holder.append(canvas);document.body.append(holder);anim('wait');overlay.remove()},760)}
+var allowVoice=false;$('yk-sound').onclick=function(){allowVoice=true;$('yk-sound').textContent='🔊 Ses açık'};$('yk-skip').onclick=finish;async function startIntro(){var vid=$('yk-film');await vid.play().catch(function(){});var dur=isFinite(vid.duration)&&vid.duration>0?vid.duration:10;setTimeout(function(){if(!finished){state.runProgress=0;state.runActive=true;state.root.position.z=state.baseZ-3.8;state.root.scale.setScalar(state.baseScale*.55);anim('walk',false,1);$('yk-caption').textContent='YAKUT GELİYOR...'}},Math.max(0,dur*1000-2800));setTimeout(function(){if(!finished){state.runActive=false;state.root.position.z=state.baseZ;state.root.scale.setScalar(state.baseScale);anim('greet_02',true);$('yk-caption').textContent=greeting;if(allowVoice)voice(greeting);setTimeout(finish,5800)}},dur*1000)};
+startIntro();
+}
+init().catch(function(e){console.warn('YAKUT initialization:',e)});
+})();
