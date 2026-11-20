@@ -162,8 +162,8 @@ function unlockYakutSound(){
  audioUnlocked=true;
  visitorInteracted=true;
  listenEnabled=true;
- if(ready&&!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')){
-  openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');
+ if(ready&&!openingSpoken){
+  openingSpoken=true;
   play('greet_02',true);speak(welcome);
  } else if(ready && !speaking) queueListen(700);
 }
@@ -174,7 +174,7 @@ document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
 // Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
 // Upstream ES modules and the ONNX model are loaded only when speech is requested.
 const yakutAhenkRoot='https://ozguradmin.github.io/ahenk-turkish-tts/';
-let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null;
+let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
 function finishYakutSpeech(){
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
@@ -183,7 +183,7 @@ function finishYakutSpeech(){
 }
 function yakutTtsFailure(e){
  console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
- yakutTtsFailed=true;yakutTtsReady=false;yakutTtsPending='';
+ yakutTtsFailed=true;yakutTtsLastFailure=Date.now();yakutTtsReady=false;yakutTtsPending='';
  clearTimeout(yakutTtsBootTimer);clearTimeout(yakutTtsSayTimer);
  try{yakutTtsWorker?.terminate()}catch(_){}
  yakutTtsWorker=null;finishYakutSpeech();
@@ -210,7 +210,8 @@ function yakutTtsSayNow(text){
  yakutTtsSayTimer=setTimeout(()=>yakutTtsFailure(Error('Ses üretimi zaman aşımı')),90000);
 }
 function startYakutAhenk(){
- if(yakutTtsWorker||yakutTtsFailed)return;
+ if(yakutTtsWorker)return;
+ if(yakutTtsFailed){if(Date.now()-yakutTtsLastFailure<12000)return;yakutTtsFailed=false}
  try{
   // Local blob-backed module worker avoids a cross-origin Worker constructor.
   // The imported upstream module resolves its own relative dependencies at its real URL.
@@ -244,8 +245,8 @@ function speak(text){
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;
  if(recognition){try{recognition.abort()}catch(e){}}
- if(yakutTtsFailed){
-  // A failed remote engine must not hold the microphone indefinitely.
+ if(yakutTtsFailed&&Date.now()-yakutTtsLastFailure<12000){
+  // Avoid rapid repeated network retries, but never disable speech for the entire visit.
   finishYakutSpeech();return;
  }
  if(yakutTtsSource){try{yakutTtsSource.stop()}catch(e){}yakutTtsSource=null}
@@ -260,7 +261,7 @@ function openingGreeting(){
  if(!ready||hidden||openingGreeted)return;
  openingGreeted=true;phase='greeting';play('greet_02',true);
  show(welcome,12000);
- if(!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')&&audioUnlocked){openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');speak(welcome)}
+ if(!openingSpoken&&audioUnlocked){openingSpoken=true;speak(welcome)}
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
