@@ -36,7 +36,7 @@ let processingSpeech=false;
 let yakutReturnLeftAfterSpeech=false;
 let yakutFirstInteraction=false,yakutWelcomeRequested=false,yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
-let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false;
+let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false,yakutSpeechEndedAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -215,11 +215,11 @@ function finishYakutSpeech(){
  if(yakutReadyChunk&&!hidden){const next=yakutReadyChunk;yakutReadyChunk=null;yakutPlaySpeech(next);return}
  if(yakutRequests.size||yakutSpeechQueue.length)return;
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
- yakutSpeechQueue=[];speaking=false;
+ yakutSpeechQueue=[];speaking=false;yakutSpeechEndedAt=Date.now();
  if(yakutGreetingInProgress){yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now()}
  if(yakutReturnLeftAfterSpeech){yakutReturnLeftAfterSpeech=false;moveTo(leftGreetingX())}
  if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
- if(listenEnabled&&!hidden)queueListen(400);
+ if(listenEnabled&&!hidden)queueListen(1200);
 }
 function yakutTtsFailure(e){
  console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
@@ -291,6 +291,9 @@ function startYakutAhenk(){
  }catch(e){yakutTtsFailure(e)}
 }
 function speak(text){
+ // Pause microphone recognition before producing sound to prevent self-triggered loops.
+ clearTimeout(listenRetry);
+ if(recognition){try{recognition.abort()}catch(_){}}
  yakutCurrentPrompt=String(text||'');
  show(text,Math.max(7000,text.length*85));
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
@@ -307,7 +310,7 @@ function speak(text){
  yakutTtsPending=segments[0]||'';
  startYakutAhenk();
  if(yakutTtsReady&&yakutTtsPending){const first=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(first)}
- if(listenEnabled&&!recognition)queueListen(500);
+ // Listening resumes only after the voice ends.
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
 function leftGreetingX(){return 0}
@@ -552,9 +555,9 @@ react(clip,isShortReaction?answer:'Sorunuzu cevaplayalım. '+answer,'center');
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
- if(!listenEnabled||hidden||processingSpeech||recognition||micStarting)return;
+ if(!listenEnabled||hidden||processingSpeech||speaking||recognition||micStarting)return;
  const ms=Math.max(delay,micRestartAt-Date.now(),0);
- listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!processingSpeech&&!recognition)startSpeech()},ms)
+ listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!processingSpeech&&!recognition)startSpeech()},ms)
 }
 function stopListening(){
  listenEnabled=false;clearTimeout(listenRetry);micStarting=false;
@@ -591,13 +594,13 @@ function speechProblem(err){
 function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;show('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın.',9000);return}
- if(!ready||!listenEnabled||hidden||processingSpeech||recognition||micStarting)return;
+ if(!ready||!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
  rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
  rec.onresult=e=>{
   const spoken=e.results?.[0]?.[0]?.transcript;
-  if(!spoken)return;
+  if(!spoken||speaking||Date.now()-yakutSpeechEndedAt<1000)return;
   micFailureCount=0;
   const heard=normalizeYakutCommand(spoken);
   // A delayed microphone transcript of our page introduction is not a new user command.
@@ -632,7 +635,7 @@ function startSpeech(){
  rec.onerror=e=>{micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
  rec.onend=()=>{
   micStarting=false;if(recognition===rec)recognition=null;
-  if(listenEnabled&&!hidden&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(900)}
+  if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(900)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
  try{rec.start()}catch(e){
