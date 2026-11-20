@@ -113,6 +113,61 @@ function chooseVoice(){
 window.speechSynthesis?.addEventListener?.('voiceschanged',chooseVoice);
 chooseVoice();
 
+/* Browser-based Turkish voice synthesis fallback. Uses meSpeak (GPL) at a CDN,
+   female-style f3 variant; does not require Windows voices or an API key.
+   This is a robotic synthesizer, not a natural neural female voice. */
+const mespeakBase='https://cdn.jsdelivr.net/gh/foxdog-studios/meSpeak@master/';
+let mespeakPromise=null,audioUnlocked=false,robotSpeechId=null,ttsGeneration=0;
+function mespeakLoad(loader,path){
+ return new Promise((resolve,reject)=>{
+  const timer=setTimeout(()=>reject(Error('Ses motoru zaman aşımı')),16000);
+  try{loader(mespeakBase+path,(ok,result)=>{clearTimeout(timer);if(ok===false)reject(Error(String(result)));else resolve()})}
+  catch(e){clearTimeout(timer);reject(e)}
+ });
+}
+function initMespeak(){
+ if(mespeakPromise)return mespeakPromise;
+ mespeakPromise=(async()=>{
+  if(!window.meSpeak){
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement('script');script.src=mespeakBase+'mespeak.full.js';
+    script.onload=resolve;script.onerror=()=>reject(Error('meSpeak script yüklenemedi'));document.head.appendChild(script);
+   });
+  }
+  if(!window.meSpeak)throw Error('meSpeak bulunamadı');
+  await mespeakLoad(meSpeak.loadConfig.bind(meSpeak),'mespeak_config.json');
+  await mespeakLoad(meSpeak.loadVoice.bind(meSpeak),'voices/tr.json');
+  return true;
+ })();
+ mespeakPromise.catch(()=>{mespeakPromise=null});
+ return mespeakPromise;
+}
+async function speakWithEngine(text){
+ const id=++ttsGeneration;speaking=true;
+ if(recognition){try{recognition.abort()}catch(e){}}
+ try{
+  await initMespeak();
+  if(id!==ttsGeneration||hidden)return;
+  if(!audioUnlocked){speaking=false;if(listenEnabled)queueListen(600);return}
+  if(robotSpeechId!==null){try{meSpeak.stop(robotSpeechId)}catch(e){}}
+  robotSpeechId=meSpeak.speak(text,{voice:'tr',variant:'f3',pitch:76,speed:145,amplitude:100},()=>{
+   if(id!==ttsGeneration)return;robotSpeechId=null;speaking=false;
+   if(listenEnabled&&!hidden)queueListen(600);
+  });
+  if(robotSpeechId===false||robotSpeechId===undefined){speaking=false;if(listenEnabled)queueListen(600)}
+ }catch(e){speaking=false;console.warn('YAKUT ses motoru:',e.message);if(listenEnabled)queueListen(600)}
+}
+function unlockYakutSound(){
+ audioUnlocked=true;
+ if(ready&&!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')){
+  openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');
+  play('greet_02',true);speak(welcome);
+ }
+}
+document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
+document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
+initMespeak().catch(e=>console.warn('YAKUT Türkçe ses ön hazırlık:',e.message));
+
 function speak(text){show(text,Math.max(7000,text.length*85));
 if(!window.speechSynthesis)return;
 // Do not let YAKUT hear its own spoken response.
@@ -120,7 +175,7 @@ speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voice=chooseVoice();
-if(!voice){speaking=false;console.info('YAKUT: Türkçe kadın ses motoru henüz bağlı değil.');if(listenEnabled)queueListen(600);return}
+if(!voice){speakWithEngine(text);return}
 u.voice=voice;
 u.onstart=()=>{speaking=true;voiceButton.hidden=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
@@ -131,7 +186,7 @@ function openingGreeting(){
  if(!ready||hidden||openingGreeted)return;
  openingGreeted=true;phase='greeting';play('greet_02',true);
  show(welcome,12000);
- if(!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')){openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');speak(welcome)}
+ if(!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')&&audioUnlocked){openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');speak(welcome)}
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
