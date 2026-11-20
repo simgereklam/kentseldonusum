@@ -297,12 +297,50 @@ voiceButton.onclick=()=>{
 function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;pendingSpeechGesture=clip;speak(text)}
+// Navigate to the relevant real website page, with a conversational introduction.
+const yakutTopics=[
+ {test:/kentsel dön[üu]ş[üu]m|riskli bina|riskli yapı|bina yenileme|dönüşüm süreci/i,path:'kentsel-donusum.html',
+  intro:'Tabii, kentsel dönüşümü birlikte inceleyelim. İlk olarak binanın risk durumu ve mevcut imar koşulları değerlendirilir. Ardından maliklerin hakları, yeni dairelerin metrekareleri, sözleşme, teminat, ruhsat ve teslim süreci konuşulur. Siz hangi aşama hakkında bilgi almak istiyorsunuz?'},
+ {test:/malik hakk|maliklerin hak|haklarım|haklarımız|arsa payı|çoğunluk|oy birliği|kira yardım/i,path:'sss.html',
+  intro:'Elbette. Malik haklarında arsa payı, sözleşme, metrekare dengesi ve teminat çok önemlidir. Karar süreçleri ve yardım şartları binanın durumuna göre değişebilir. İsterseniz önce hangi hakkınızı merak ettiğinizi konuşalım.'},
+ {test:/hizmet|ne iş yap|neler yap|anahtar teslim|kat karşılığı/i,path:'hizmetlerimiz.html',
+  intro:'Memnuniyetle. Kumtaş İnşaat; ön değerlendirme, imar ve parsel incelemesi, kat karşılığı inşaat, sözleşme ve anahtar teslim yenileme konularında hizmet veriyor. Hangisini anlatmamı istersiniz?'},
+ {test:/kurumsal|kumtaş kim|firma hakkında|şirket hakkında/i,path:'kurumsal.html',
+  intro:'Kumtaş İnşaat, iki bin dört yılında kurulmuş bir inşaat ve taahhüt firmasıdır. Şirketin faaliyetleri arasında konut, ticari ve endüstriyel yapılar bulunuyor. İsterseniz projelerini de konuşabiliriz.'},
+ {test:/proje|yaptığınız bina|referans/i,path:'projelerimiz.html',
+  intro:'Tabii, projeler bölümüne geçelim. Kumtaş İnşaatın proje ve referanslarını buradan inceleyebilirsiniz. Hangi tür projeyle ilgileniyorsunuz?'},
+ {test:/iletişim|adres|telefon|ofis|nasıl ulaş/i,path:'iletisim.html',
+  intro:'Elbette. Kumtaş İnşaatın ofisi Bahçelievler, Kocasinan Merkez Mahallesi, Mahmutbey Caddesinde. İletişim sayfasından telefon ve konum bilgilerine ulaşabilirsiniz.'},
+ {test:/bağcılar|bahçelievler|bakırköy|güngören|avcılar|esenler|küçükçekmece|zeytinburnu|yenibosna/i,path:null,intro:'Hemen bu bölgeyle ilgili kentsel dönüşüm bilgilerine bakalım.'}
+];
+const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
+function openYakutTopic(topic,spoken){
+ const name=location.pathname.split('/').pop()||'index.html';
+ if(name===topic.path)return false;
+ // Carry only the next, short voice reply across this same-origin page navigation.
+ sessionStorage.setItem('yakutNextTopic',JSON.stringify({path:topic.path,reply:spoken}));
+ location.assign(new URL(topic.path,location.href).href);
+ return true;
+}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
 let clip='agree',answer='';
+ const requestedTopic=yakutTopics.find(topic=>topic.test.test(t));
+ if(requestedTopic && !/(dans|gül|alkış|yürü|selam|teşekkür)/i.test(t)){
+  let topic=requestedTopic;
+  if(!topic.path){
+   const district=Object.keys(yakutDistrictPages).find(d=>t.includes(d));
+   if(district)topic={...topic,path:yakutDistrictPages[district]+'-kentsel-donusum.html'};
+  }
+  if(topic.path){
+   processingSpeech=false;
+   if(openYakutTopic(topic,topic.intro))return;
+   react('agree',topic.intro);return;
+  }
+ }
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
 if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil|eğilir misin|selam duruşu)/i.test(t)){
  targetX=posX;walkTimer=0;phase='reacting';phaseTime=0;
@@ -324,12 +362,12 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
 }else if(/(kızgın|sinirli|berbat|kötü|üzgün|saçma|yapamadın)/i.test(t)){
  clip='frustrated_01';answer='Seni anlıyorum. Ne olduğunu anlatırsan birlikte çözmeye çalışabiliriz.';
 }else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne|yakut kimsin|kendini tanıt)/i.test(t)){
- clip='greet_02';answer='Merhaba! Ben YAKUT. KUMTAŞ İnşaat için buradayım. Nasıl yardımcı olabilirim?';
+ clip='greet_02';answer='Merhaba, size nasıl yardımcı olabilirim?';
 }else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
  clip='agree';answer='6306 sayılı Kanun kapsamındaki dönüşüm kararlarında, oybirliği sağlanamazsa maliklerin arsa paylarına göre salt çoğunluğu esas alınabilir. Maliklerin sözleşme şartlarını ve haklarını incelemesi, riskli yapı tespitini, tebligatları ve uygunluk varsa kira yardımını resmi kurumlardan doğrulaması önemlidir. Ayrıntılar yapının durumuna göre değişir. Resmi bilgi için Kentsel Dönüşüm Başkanlığının mevzuat ve bilgi merkezine bakılmalıdır.';
 }else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
  clip='agree';await loadSiteKnowledge();const found=siteAnswer(q);
- answer=found?found.text+' Bu, KUMTAŞ internet sitesinin '+found.path.replace('.html','')+' sayfasındaki bilgidir. Kesin yapılaşma hakkı için belediyenin güncel imar durumu esas alınmalıdır.':'Kentsel dönüşümde arsa alanı, imar durumu, mevcut bina bilgileri ve maliklerin anlaşma şartları birlikte incelenir. Arsa alanını, ilçeyi ve biliyorsan ada parsel numaranı söyle. Kesin haklar için belediyenin güncel imar durumu gerekir.';
+ answer=found?'Bu konuda şu bilgileri paylaşabilirim: '+found.text+' Kesin yapılaşma hakkı için belediyenin güncel imar durumu esas alınır.':'Kentsel dönüşümde arsa, imar durumu, maliklerin hakları ve sözleşme şartları birlikte incelenir. Hangi konuda bilgi almak istersiniz?';
 }else if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
  clip='greet_02';answer='Merhaba! Seni görmek güzel!';
 }else if(/(dans et|dans etsene|dans eder misin|oyna|dans yap)/i.test(t)){
@@ -343,7 +381,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  clip='agree';
  await loadSiteKnowledge();
  const match=siteAnswer(q);
- answer=match?match.text+' Bu bilgi KUMTAŞ internet sitesindeki '+match.path.replace('.html','')+' sayfasından alınmıştır.':'Bu konuda sitemizde doğrulanmış bilgi bulamadım. Kentsel dönüşüm ve malik haklarıyla ilgili bir soruyu daha ayrıntılı sorabilir veya KUMTAŞ ile görüşebilirsiniz.';
+ answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
 }
 processingSpeech=false;
 react(clip,answer);
@@ -453,6 +491,24 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage.offsetWidth;targetX=leftGreetingX();
+ try{
+  const saved=sessionStorage.getItem('yakutNextTopic');
+  if(saved){
+   sessionStorage.removeItem('yakutNextTopic');
+   const state=JSON.parse(saved);
+   if(state.path===(location.pathname.split('/').pop()||'index.html')){
+    openingSpoken=true;
+    const sayOnArrival=()=>{
+     if(!audioUnlocked)return;
+     if(!openingGreeted)openingGreeted=true;
+     react('agree',state.reply);
+    };
+    document.addEventListener('pointerdown',sayOnArrival,{once:true,capture:true});
+    if(audioUnlocked)queueMicrotask(sayOnArrival);
+   }
+  }
+ }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
+
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
