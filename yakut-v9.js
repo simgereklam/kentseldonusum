@@ -161,11 +161,12 @@ async function speakWithEngine(text){
 }
 function unlockYakutSound(){
  audioUnlocked=true;
+ try{sessionStorage.setItem('yakutAudioApproved','1')}catch(_){}
  visitorInteracted=true;
  listenEnabled=true;
  if(ready&&!openingSpoken){
   openingSpoken=true;
-  play('greet_02',true);speak(welcome);
+  pendingSpeechGesture='greet_02';speak(welcome);
  } else if(ready && !speaking) queueListen(700);
 }
 document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
@@ -175,6 +176,7 @@ document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
 // Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
 // Upstream ES modules and the ONNX model are loaded only when speech is requested.
 const yakutAhenkRoot='https://ozguradmin.github.io/ahenk-turkish-tts/';
+const YAKUT_SPEECH_SPEED=0.9;
 let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
 let yakutSpeechQueue=[];
@@ -183,7 +185,7 @@ function splitYakutSpeech(text){
  for(const sentence of sentences){
   let chunk='';
   for(const w of sentence.trim().split(/\s+/)){
-   if(chunk&&(chunk+' '+w).length>115){chunks.push(chunk);chunk=w}
+   if(chunk&&(chunk+' '+w).length>335){chunks.push(chunk);chunk=w}
    else chunk=chunk?chunk+' '+w:w;
   }
   if(chunk)chunks.push(chunk);
@@ -195,6 +197,7 @@ function finishYakutSpeech(){
  if(yakutSpeechQueue.length && yakutTtsReady && !hidden){
   yakutTtsSayNow(yakutSpeechQueue.shift());return;
  }
+ yakutSpeechQueue=[];
  speaking=false;
  if(listenEnabled&&!hidden)queueListen(650);
 }
@@ -229,7 +232,7 @@ function yakutPlaySpeech(data){
 function yakutTtsSayNow(text){
  if(!yakutTtsReady||!yakutTtsWorker)return;
  const id=++yakutTtsId;
- yakutTtsWorker.postMessage({type:'say',id,text:text.slice(0,600),style:'neutral',steps:8,speed:1,seed:0});
+ yakutTtsWorker.postMessage({type:'say',id,text,style:'neutral',steps:8,speed:YAKUT_SPEECH_SPEED,seed:0});
  clearTimeout(yakutTtsSayTimer);
  yakutTtsSayTimer=setTimeout(()=>yakutTtsFailure(Error('Ses üretimi zaman aşımı')),90000);
 }
@@ -275,8 +278,9 @@ function speak(text){
  }
  if(yakutTtsSource){try{yakutTtsSource.stop()}catch(e){}yakutTtsSource=null}
  if(!yakutTtsContext&&window.AudioContext){try{yakutTtsContext=new AudioContext();yakutTtsContext.resume().catch(()=>{})}catch(e){}}
- yakutSpeechQueue=[];
- yakutTtsPending=text;
+ const segments=splitYakutSpeech(text);
+ yakutSpeechQueue=segments.slice(1);
+ yakutTtsPending=segments[0]||'';
  startYakutAhenk();
  if(yakutTtsReady&&yakutTtsPending){const first=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(first)}
 }
@@ -284,7 +288,7 @@ function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'
 function leftGreetingX(){return innerWidth<650?23:35}
 function openingGreeting(){
  if(!ready||hidden||openingGreeted)return;
- openingGreeted=true;phase='greeting';play('greet_02',true);
+ openingGreeted=true;phase='greeting';pendingSpeechGesture='greet_02';
  show(welcome,12000);
  if(!openingSpoken&&audioUnlocked){openingSpoken=true;speak(welcome)}
 }
