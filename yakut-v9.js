@@ -135,7 +135,8 @@ function initMespeak(){
    });
   }
   if(!window.meSpeak)throw Error('meSpeak bulunamadı');
-  await mespeakLoad(meSpeak.loadConfig.bind(meSpeak),'mespeak_config.json');
+  meSpeak.loadConfig(mespeakBase+'mespeak_config.json');
+  await new Promise((resolve,reject)=>{const began=Date.now();const check=()=>{if(meSpeak.isConfigLoaded())resolve();else if(Date.now()-began>16000)reject(Error('YAKUT ses yapılandırması yüklenemedi'));else setTimeout(check,120)};check()});
   await mespeakLoad(meSpeak.loadVoice.bind(meSpeak),'voices/tr.json');
   return true;
  })();
