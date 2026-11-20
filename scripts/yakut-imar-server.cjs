@@ -1,7 +1,7 @@
 'use strict';
 
 const { createServer } = require('node:http');
-const { lookup } = require('./yakut-bagcilar-sorgu.cjs');
+const { lookup, sources } = require('./yakut-bagcilar-sorgu.cjs');
 
 function createImarServer(findParcel, allowedOrigin) {
   let active = false;
@@ -20,9 +20,11 @@ function createImarServer(findParcel, allowedOrigin) {
       res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     }
     const url = new URL(req.url, 'http://localhost');
-    if (req.method !== 'GET' || url.pathname !== '/imar/bagcilar') {
+    if (req.method !== 'GET' || !['/imar/sorgu', '/imar/bagcilar'].includes(url.pathname)) {
       return send(404, { durum: 'bulunamadi' });
     }
+    const ilce = url.pathname === '/imar/bagcilar' ? 'Bağcılar' : url.searchParams.get('ilce');
+    if (!sources.has(ilce)) return send(422, { durum: 'ilce_desteklenmiyor' });
     const ada = url.searchParams.get('ada') || '';
     const parsel = url.searchParams.get('parsel') || '';
     const mahalle = (url.searchParams.get('mahalle') || '').trim();
@@ -32,7 +34,7 @@ function createImarServer(findParcel, allowedOrigin) {
     if (active) return send(503, { durum: 'mesgul' });
     active = true;
     try {
-      send(200, await findParcel({ ada, parsel, mahalle }));
+      send(200, await findParcel({ ilce, ada, parsel, mahalle }));
     } catch (error) {
       console.error('Bağcılar e-İmar:', error.message);
       send(502, { durum: 'belediye_yanit_vermedi' });

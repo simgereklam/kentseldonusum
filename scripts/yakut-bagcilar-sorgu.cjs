@@ -1,10 +1,16 @@
 'use strict';
 
 const { chromium } = require('playwright');
-const source = 'https://bbgis.bagcilar.bel.tr/imardurumu/';
+const sources = new Map([
+  ['Bağcılar', 'https://bbgis.bagcilar.bel.tr/imardurumu/'],
+  ['Ataşehir', 'https://webgis.atasehir.bel.tr/imardurumu/index.aspx'],
+  ['Kadıköy', 'https://webgis.kadikoy.bel.tr/imardurumu/']
+]);
 const normalize = value => value.trim().toLocaleLowerCase('tr-TR').normalize('NFC');
 
-async function lookup({ ada, parsel, mahalle }) {
+async function lookup({ ilce = 'Bağcılar', ada, parsel, mahalle }) {
+  const source = sources.get(ilce);
+  if (!source) return { durum: 'ilce_desteklenmiyor' };
   if (!/^\d+$/.test(ada) || !/^\d+$/.test(parsel)) {
     throw new Error('Ada ve parsel numarası rakamlardan oluşmalı.');
   }
@@ -15,8 +21,13 @@ async function lookup({ ada, parsel, mahalle }) {
     page.setDefaultTimeout(30000);
     await page.goto(source, { waitUntil: 'commit', timeout: 45000 });
     await page.getByRole('tab', { name: 'Ada/Parsel', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Ada', exact: true }).fill(ada);
-    await page.getByRole('textbox', { name: 'Parsel', exact: true }).fill(parsel);
+    const adaField = page.getByRole('textbox', { name: 'Ada', exact: true });
+    if (await adaField.isVisible()) {
+      await adaField.fill(ada);
+      await page.getByRole('textbox', { name: 'Parsel', exact: true }).fill(parsel);
+    } else {
+      await page.getByRole('textbox', { name: 'Ada/Parsel', exact: true }).fill(ada + '/' + parsel);
+    }
     await page.getByRole('button', { name: 'Ara', exact: true }).click();
 
     const cards = page.locator('.result-item').filter({
@@ -66,4 +77,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { lookup };
+module.exports = { lookup, sources };

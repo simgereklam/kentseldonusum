@@ -431,7 +431,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
- if(yakutKirazliRequest(message)||yakutParcelIntakeCommand(message)||yakutDistrictImarCommand(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
+ if(yakutParcelIntakeCommand(message)||yakutDistrictImarCommand(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -542,12 +542,9 @@ function openYakutPage(path){
 }
 let yakutScenario = null;
 const yakutAreaUnit = '(?:m²|m2|metre\\s*kare|metrekare)';
-let yakutKirazliCase = null;
-const yakutKirazliSource = 'https://bbgis.bagcilar.bel.tr/imardurumu/imar.aspx?parselid=6423';
 const yakutImarGuidance = 'İmar planını ve plan notlarını görmeden kesin rakam veremem. Belgeniz varsa sitemizdeki WhatsApp düğmesinden Kumtaş İnşaat’a iletebilirsiniz. Belge yoksa tapu sahiplerinden biri belediyenin kentsel dönüşüm veya imar biriminden güncel imar durumunu, taban oturumu oranını, emsali ve toplam brüt inşaat alanı bilgisini isteyebilir.';
 function yakutParcelSpeech(message) {
  return message.toLocaleLowerCase('tr-TR')
-  .replace(/iki bin yüz otuz beş/g, '2135')
   .replace(/sıfır/g, '0');
 }
 function yakutImarHelpRequest(message) {
@@ -561,7 +558,8 @@ function yakutImarHelpAnswer(message) {
   const link = document.querySelector('a.float-wa[href^="https://wa.me/"]');
   if (link) { location.assign(link.href); return ''; }
  }
- return 'Bu konuda size yardımcı olabilirim. ' + yakutImarGuidance;
+ showYakutImarScreen(null, 'İmar bilgileri için belediye başvurusu');
+ return 'Belediyeden isteyebileceğiniz bilgileri ekranda gösteriyorum. ' + yakutImarGuidance;
 }
 const yakutDistrictImarSources = [
  ['Adalar', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
@@ -626,11 +624,37 @@ function yakutParcelIntakeCommand(message) {
  const parsel = raw.match(/\bparsel\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+parsel\b/);
  const suffixPair = raw.match(/\b(\d+)\s+ada[\s,]+(\d+)\s+parsel\b/);
  const numbered = pair ? pair.slice(1) : suffixPair ? suffixPair.slice(1) : [ada?.[1], parsel?.[1]];
- if (/(?:vekalet|vek let|teklif|fiyatlandırma)/.test(t) && (yakutParcelIntake || yakutKirazliCase === 'kirazli')) return {guidance:true};
+ if (/(?:vekalet|vek let|teklif|fiyatlandırma)/.test(t) && yakutParcelIntake) return {guidance:true};
  if (!/(?:arsam|arsamız) var/.test(t) &&
      !(yakutParcelIntake?.waiting && (district || numbered.some(Boolean))) &&
      !(numbered.every(Boolean) && (district || yakutParcelIntake))) return null;
  return {district, numbered};
+}
+function createYakutImarChecklist() {
+ const guide = document.createElement('details');
+ guide.open = true;
+ guide.style.cssText = 'padding:12px 16px;background:#f3f6fa;line-height:1.5;max-height:44vh;overflow:auto';
+ const heading = document.createElement('summary');
+ heading.textContent = 'Belediyeden hangi bilgileri istemeliyim?';
+ heading.style.fontWeight = '700';
+ const intro = document.createElement('p');
+ intro.textContent = 'İlçe, mahalle, ada ve parsel bilgileriyle belediyenin imar veya kentsel dönüşüm birimine başvurup şu bilgileri isteyin.';
+ const list = document.createElement('ul');
+ for (const item of [
+  'Güncel imar durum belgesi ve parsele uygulanan imar planı notları.',
+  'Net imar parseli alanı (m²) ve TAKS (taban oturumu oranı).',
+  'KAKS (emsal) ve emsale esas inşaat alanı (m²).',
+  'İzin verilen kat adedi veya bina yüksekliği ve bahçe çekme mesafeleri.',
+  'Varsa toplam brüt inşaat alanı (m²) ve ilave yapılaşma haklarının koşulları.'
+ ]) {
+  const row = document.createElement('li');
+  row.textContent = item;
+  list.append(row);
+ }
+ const footer = document.createElement('p');
+ footer.textContent = 'Belge elinizdeyse inceleme için Kumtaş İnşaat’a WhatsApp üzerinden iletebilirsiniz.';
+ guide.append(heading, intro, list, footer);
+ return guide;
 }
 function showYakutImarScreen(url, details) {
  document.getElementById('yakut-imar-screen')?.close();
@@ -646,7 +670,7 @@ function showYakutImarScreen(url, details) {
  title.textContent = details;
  title.style.flex = '1 1 220px';
  const external = document.createElement('a');
- external.href = url;
+ if (url) external.href = url;
  external.target = '_blank';
  external.rel = 'noopener noreferrer';
  external.textContent = 'Resmî e-İmarı yeni sekmede aç';
@@ -658,15 +682,17 @@ function showYakutImarScreen(url, details) {
  const frame = document.createElement('iframe');
  frame.title = 'Resmî imar kaynağı';
  frame.style.cssText = 'width:100%;flex:1;min-height:0;border:0';
- bar.append(title, external, close);
- layout.append(bar);
- if (new URL(url).hostname === 'keos.besiktas.bel.tr') {
+ bar.append(title);
+ if (url) bar.append(external);
+ bar.append(close);
+ layout.append(bar, createYakutImarChecklist());
+ if (!url || new URL(url).hostname === 'keos.besiktas.bel.tr') {
   dialog.style.cssText = 'position:fixed;inset:0;width:min(92%,680px);max-height:85vh;margin:auto;padding:0;border:0;border-radius:14px;background:white;color:#152b45;box-shadow:0 12px 50px #0005';
   layout.style.height = 'auto';
   const note = document.createElement('p');
   note.textContent = 'Beşiktaş Belediyesi, sorgu ekranını kendi sitesi içinde gösteriyor. Yukarıdaki bağlantıyla resmî ekranı yeni sekmede açıp başlıktaki ada ve parseli aratabilirsiniz. Kumtaş sayfası açık kalır.';
   note.style.cssText = 'max-width:640px;padding:24px 16px;margin:0 auto;line-height:1.6';
-  layout.append(note);
+  if (url) layout.append(note);
  } else {
   frame.src = url;
   layout.append(frame);
@@ -676,12 +702,12 @@ function showYakutImarScreen(url, details) {
  document.body.append(dialog);
  dialog.showModal();
 }
-async function readYakutBagcilarParcel(state) {
+async function readYakutMunicipalParcel(state) {
  const endpoint = document.querySelector('meta[name="yakut-imar-service"]')?.content;
- if (!endpoint || state.district[0] !== 'Bağcılar') return null;
+ if (!endpoint) return null;
  try {
-  const request = new URL('/imar/bagcilar', endpoint);
-  request.search = new URLSearchParams({ada:state.ada, parsel:state.parsel, mahalle:state.mahalle || ''});
+  const request = new URL('/imar/sorgu', endpoint);
+  request.search = new URLSearchParams({ilce:state.district[0], ada:state.ada, parsel:state.parsel, mahalle:state.mahalle || ''});
   const response = await fetch(request, {signal:AbortSignal.timeout(65000)});
   if (!response.ok) return null;
   const result = await response.json();
@@ -700,7 +726,8 @@ async function readYakutBagcilarParcel(state) {
    const value = result.alanlar[key];
    return typeof value === 'string' && value && !/^[-()\s]+$/.test(value) ? [label + ' ' + value] : [];
   });
-  return result.mahalle + ' için Bağcılar Belediyesi kaydında şu bilgileri buldum. ' +
+  if (values.length < fields.length) showYakutImarScreen(null, state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
+  return result.mahalle + ' için belediye kaydında şu bilgileri buldum. ' +
    (values.length ? values.join('. ') + '. ' : 'Tabloda yapılaşma bilgisi görünmüyor. ') +
    'Bu bilgiler ön inceleme içindir. Kesin değerlendirmede güncel imar belgesi ve plan notları esas alınır.';
  } catch (_) { return null; }
@@ -720,7 +747,7 @@ async function yakutParcelIntakeAnswer({district, numbered, guidance, mahalle}) 
  state.waiting = false;
  state.mahalle = mahalle || state.mahalle;
  state.mahalleler = null;
- const result = await readYakutBagcilarParcel(state);
+ const result = await readYakutMunicipalParcel(state);
  if (state !== yakutParcelIntake) return null;
  if (result) return result;
  showYakutImarScreen(state.district[1], state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
@@ -753,35 +780,6 @@ function yakutDistrictImarAnswer({district, open}) {
   return '';
  }
  return district[0] + ' için resmî imar kaynaklarını açabilirim. Açmamı isterseniz, e-İmarı aç deyin. ' + yakutImarGuidance;
-}
-function yakutKirazliRequest(message) {
- const t = normalizeYakutCommand(message.replace(/[â]/gi, "a"));
- const exact = /(?:\b0\s*[/–-]\s*2135\b|\b(?:ada\s+0|0\s+ada)\b.*\b(?:parsel\s+2135|2135\s+parsel)\b)/i.test(yakutParcelSpeech(message));
- return exact || (yakutKirazliCase === 'neighborhood' && /^(?:yakut )?(?:kirazlı|mahmutbey|bağcılar)(?: mahallesi)?$/.test(t)) ||
-  (yakutKirazliCase === 'kirazli' && !/\b(?:ada|parsel)\b/.test(t) &&
-   /(?:bonus|ilave emsal|mânia|mania|zemin|kaç kat|kaç daire|imar kaydını aç)/.test(t));
-}
-function yakutKirazliAnswer(message) {
- const t = normalizeYakutCommand(message.replace(/[â]/gi,'a'));
- if (/mahmutbey/.test(t) || yakutKirazliCase === 'neighborhood' && /^bağcılar(?: mahallesi)?$/.test(t)) {
-  yakutKirazliCase = null;
-  return 'Bu mahalle için doğrulanmış imar verim yok. Bağcılar Belediyesi e-İmar ekranından mahalleye ait kaydı açabilirsiniz.';
- }
- if (!t.includes('kirazlı') && yakutKirazliCase !== 'kirazli') {
-  yakutKirazliCase = 'neighborhood';
-  return 'Sıfır ada, iki bin yüz otuz beş parsel için üç eşleşme var. Kirazlı, Mahmutbey veya Bağcılar mahallelerinden hangisi?';
- }
- yakutKirazliCase = 'kirazli';
- if (/imar kaydını aç/.test(t)) {
-  showYakutImarScreen(yakutKirazliSource, 'Bağcılar · Kirazlı · Ada 0 / Parsel 2135');
-  return '';
- }
- if (/mania/.test(t)) return 'Bu parselin havaalanı mânia sınırı doğrulanmadı. Kat hesabından önce konum, zemin kotu ve ilgili yükseklik sınırı belediyeden kontrol edilmeli.';
- if (/zemin/.test(t)) return 'Belediyenin imar kaydı zemin etüdü yapılmadan uygulama yapılamayacağını belirtiyor. Zemin iyileştirmesi gerekip gerekmediği etüt sonucunda belirlenir.';
- if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) return 'Belediye ekranında taban oturumu ve kat sınırı görünmüyor. ' + yakutImarGuidance;
- if (/bonus|ilave emsal/.test(t)) return 'Sunumda üç bin yedi yüz yetmiş yedi metrekare net arsa için dokuz bin sekiz yüz yirmi metrekare emsale esas alan gösteriliyor. Bu yaklaşık iki virgül altmış emsale denk geliyor. Artışın parseldeki uygulanma şartı teyit edilmeli. Sunumda brüt alan on iki bin yedi yüz altmış altı; mevcut brüt alan düşüldüğünde kalan alan üç bin iki yüz seksen dört metrekare.';
- showYakutImarScreen(yakutKirazliSource, 'Bağcılar · Kirazlı · Ada 0 / Parsel 2135');
- return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. Belediye kaydında burası konut alanı ve emsal iki. Bu da kabaca yedi bin beş yüz metrekare emsale esas alan demek. Taban oturumu ve kat sınırı görünmüyor.';
 }
 function yakutScenarioRequest(message) {
  const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
@@ -856,8 +854,8 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -869,12 +867,6 @@ const contactNavigation=/(?:iletişim\s+(?:bilgi(?:si|leri|lerini)?|sayfa(?:sı|
 if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
 const contactAnswer=yakutContactRequest(q);
 if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
-if(yakutKirazliRequest(q) && (!yakutParcelIntake?.district || yakutParcelIntake.district[0] === 'Bağcılar')){
- yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
- const answer=yakutKirazliAnswer(q);
- if(answer)react('agree',answer,'center');
- return;
-}
 const intake = yakutParcelIntakeCommand(q);
 if(intake){
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
@@ -902,7 +894,7 @@ if(yakutScenarioRequest(q)){
  if (!yakutScenario && yakutParcelIntake?.district) {
   yakutScenario = {district:yakutParcelIntake.district[0], area:null, floors:null, flat:null, shop:0, waiting:null};
  }
- yakutKirazliCase=null;
+ 
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  react('agree',yakutScenarioAnswer(q),'center');return;
 }
