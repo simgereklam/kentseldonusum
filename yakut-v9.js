@@ -27,7 +27,7 @@ ui.innerHTML='<button id="yakut-talk" type="button" aria-label="YAKUT ile konuş
 const caption=document.createElement('div');caption.id='yakut-v9-caption';
 document.body.append(stage,caption,ui);
 const talk=ui.querySelector('#yakut-talk'),inp=ui.querySelector('#yakut-text'),send=ui.querySelector('#yakut-send'),close=ui.querySelector('#yakut-close');
-let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null;
+let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=false,micStarting=false,listenRetry=null,visitorInteracted=false;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){caption.textContent=text;caption.classList.add('shown');clearTimeout(dialogTimer);if(ms)dialogTimer=setTimeout(()=>caption.classList.remove('shown'),ms)}
@@ -38,15 +38,17 @@ next.clampWhenFinished=!!once;current=next;return true;
 }
 function speak(text){show(text,Math.max(7000,text.length*85));
 if(!window.speechSynthesis)return;
+// Do not let YAKUT hear its own spoken response.
+speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voices=speechSynthesis.getVoices().filter(v=>/^tr/i.test(v.lang));
 u.voice=voices.find(v=>/emel|selin|zeynep|ayla|female|kadın/i.test(v.name))||voices[0]||null;
-u.onstart=()=>{speaking=true};u.onend=u.onerror=()=>{speaking=false};
+u.onstart=()=>{speaking=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
-function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?0:Math.PI;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;play(clip,true,1);speak(text)}
 function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
@@ -76,23 +78,58 @@ if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
 }else{clip='agree';answer='Seni duydum. İnşaat ve kentsel dönüşümle ilgili sorularında yardımcı olabilirim. Sorunu biraz daha ayrıntılı anlatır mısın?'}
 react(clip,answer);
 }
+function queueListen(delay=250){
+clearTimeout(listenRetry);if(!listenEnabled||hidden||speaking||recognition||micStarting)return;
+listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!recognition)startSpeech()},delay)
+}
+function stopListening(){
+listenEnabled=false;clearTimeout(listenRetry);
+if(recognition){try{recognition.abort()}catch(e){}}
+talk.textContent='🎤 YAKUT';
+}
 function startSpeech(){
 const API=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!API){ui.classList.add('open');send.hidden=false;inp.focus();show('Tarayıcınız sesli dinlemeyi desteklemiyor. Buraya yazarak konuşabilirsiniz.');return}
-if(recognition){recognition.stop();recognition=null;return}
-recognition=new API();recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
-recognition.onresult=e=>{const spoken=e.results[0][0].transcript;show('Siz: '+spoken,2500);handle(spoken)};
-recognition.onerror=e=>{show('Mikrofon kullanılamadı. İsterseniz yazarak konuşabilirsiniz.');ui.classList.add('open');send.hidden=false;inp.focus()};
-recognition.onend=()=>{recognition=null;talk.textContent='🎤 YAKUT'};
-talk.textContent='🟢 Dinliyorum';try{recognition.start()}catch(e){recognition=null;talk.textContent='🎤 YAKUT';ui.classList.add('open');send.hidden=false;inp.focus()}
+if(!API){stopListening();ui.classList.add('open');send.hidden=false;show('Bu tarayıcıda ses algılama desteklenmiyor. Mesajınızı yazarak iletebilirsiniz.');return}
+if(!ready||!listenEnabled||hidden||speaking||recognition||micStarting)return;
+let rec=new API();recognition=rec;micStarting=true;
+rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
+rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
+rec.onresult=e=>{
+ const spoken=e.results?.[0]?.[0]?.transcript;
+ if(!spoken)return;
+ show('Siz: '+spoken,2600);
+ handle(spoken);
+};
+rec.onerror=e=>{
+ micStarting=false;
+ if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){
+  stopListening();show('Mikrofon izni gerekli. Adres çubuğundan mikrofon erişimine izin verin. Yazılı mesaj da gönderebilirsiniz.',9000);
+  ui.classList.add('open');send.hidden=false;return;
+ }
+ if(e.error==='no-speech')return;
+ show('Ses algılama geçici olarak durdu; bağlantıyı yeniden deniyorum.',3000)
+};
+rec.onend=()=>{
+ micStarting=false;if(recognition===rec)recognition=null;
+ if(listenEnabled&&!hidden&&!speaking){talk.textContent='🟢 Dinliyorum';queueListen(450)}
+ else if(!listenEnabled)talk.textContent='🎤 YAKUT';
+};
+try{rec.start()}catch(e){micStarting=false;if(recognition===rec)recognition=null;queueListen(1000)}
 }
-talk.onclick=()=>{if(!ready)return;ui.classList.add('open');send.hidden=false;startSpeech()};
+talk.onclick=()=>{
+ if(!ready)return;
+ ui.classList.add('open');send.hidden=false;
+ if(listenEnabled){stopListening();show('Mikrofon kapatıldı. İsterseniz yazarak devam edebilirsiniz.',4000);return}
+ listenEnabled=true;visitorInteracted=true;talk.textContent='🟢 Dinliyorum';
+ speak('Merhaba! Ben YAKUT. Seni dinlemeye hazırım. Bana bir şey sorabilirsin.');
+ if(!window.speechSynthesis)queueListen(250);
+};
 send.onclick=()=>handle(inp.value);
 inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();handle(inp.value)}});
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';caption.classList.remove('shown');
-if(hidden){speechSynthesis?.cancel();speaking=false;recognition?.stop()}
-close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';inp.style.display=hidden?'none':'';send.style.display=hidden?'none':'';if(!hidden){positionStage();show('YAKUT tekrar burada!',2500)}
+if(hidden){stopListening();speechSynthesis?.cancel();speaking=false}
+close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';inp.style.display=hidden?'none':'';send.style.display=hidden?'none':'';if(!hidden){positionStage();show('YAKUT tekrar burada! Konuşmak için mikrofona bir kez dokun.',4500)}
 };
 window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
 async function init(){
@@ -120,6 +157,7 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;posX=-stage.offsetWidth;targetX=Math.min(innerWidth*.25,innerWidth-stage.offsetWidth);
+model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait')}else{phase='walking';play('walk',false,.95)}
 positionStage();
 const clock=new THREE.Clock();
@@ -133,11 +171,11 @@ mixer.update(dt);
 if(phase==='walking'){
 const step=(innerWidth<650?56:94)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
- if(phaseTime===0){phase='greeting';play('greet_02',true);show(welcome,6500);phaseTime=1}
+ if(phaseTime===0){phase='greeting';play('greet_02',true);show(welcome+' Sesli konuşmak için 🎤 YAKUT düğmesine bir kez bas.',8500);phaseTime=1}
 }else{posX+=Math.sign(targetX-posX)*step;}
 positionStage();
 }else if(phase==='idle'&&!reduced){
-walkTimer+=dt;if(walkTimer>9){walkTimer=0;moveTo(innerWidth*(.08+Math.random()*.65))}
+walkTimer+=dt;if(!speaking&&walkTimer>13){walkTimer=0;moveTo(innerWidth*(.08+Math.random()*.65))}
 }
 if(face){
 const v=speaking?Math.max(0,Math.sin(performance.now()*.016)):.0;
