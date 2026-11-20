@@ -408,6 +408,33 @@ function yakutPageIntro(path){
  const title=names[path]||path.replace('-kentsel-donusum.html','').replace(/-/g,' ');
  return 'Memnuniyetle. '+title+' sayfasını birlikte inceleyelim. ';
 }
+function prepareYakutPageOffer(){
+ if(!ready)return;
+ yakutPageOfferPending=true;yakutOfferSpoken=false;
+ if(audioUnlocked&&!speaking&&!yakutIsGreetingWalking)offerYakutPage();
+}
+function offerYakutPage(){
+ if(!ready||!yakutPageOfferPending||yakutOfferSpoken||speaking||yakutIsGreetingWalking||!audioUnlocked)return;
+ yakutOfferSpoken=true;
+ const page=getYakutCurrentPage();
+ const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(' sayfasını birlikte inceleyelim. ','');
+ react('agree',topic+' hakkında size bilgi verebilirim. İster misiniz?','left');
+}
+function handleYakutOfferAnswer(t){
+ if(!yakutPageOfferPending||!yakutOfferSpoken)return false;
+ const normalized=t.replace(/[.!?,;:]/g,' ').replace(/\s+/g,' ').trim();
+ if(/^(?:yakut\s+)?(?:evet|evet istiyorum|istiyorum|olur|olur anlat|tabii|tabii ki|anlat|anlatabilirsin|bilgi ver|dinliyorum|lütfen anlat|evet lütfen|memnuniyetle|başlayabilirsin|başla|hadi anlat)(?:\s+lütfen)?$/.test(normalized)){
+  yakutPageOfferPending=false;yakutOfferSpoken=false;
+  yakutSpeakCurrentPage();
+  return true;
+ }
+ if(/^(?:yakut\s+)?(?:hayır|hayır istemiyorum|istemiyorum|gerek yok|şimdilik hayır|sonra|daha sonra|şimdi değil|hayır teşekkürler|istemem|yok teşekkürler|hayır sağ ol)$/.test(normalized)){
+  yakutPageOfferPending=false;yakutOfferSpoken=false;
+  react('agree','Tamam, ne zaman isterseniz yardıma hazırım.','left');
+  return true;
+ }
+ return false;
+}
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage();
  const content=collectYakutPageSpeech();
@@ -433,6 +460,7 @@ if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
 const destination=yakutIsPageRequest(q);
 if(destination){openYakutPage(destination);return;}
+if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
 if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil|eğilir misin|selam duruşu)/i.test(t)){
@@ -606,12 +634,8 @@ ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=leftGr
   }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
  }catch(e){console.warn('YAKUT oturumu:',e)}
- if(getYakutCurrentPage()!=='index.html' && (arrivalOffer||openingGreeted)){
-  prepareYakutPageOffer();
- }
- if(getYakutCurrentPage()==='index.html' && openingGreeted && arrivalOffer){
-  prepareYakutPageOffer();
- }
+ if(getYakutCurrentPage()!=='index.html')prepareYakutPageOffer();
+ else if(openingGreeted && arrivalOffer)prepareYakutPageOffer();
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 posX=targetX;phase='idle';play('wait');
