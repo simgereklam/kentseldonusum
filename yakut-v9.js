@@ -421,7 +421,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
- if(yakutKirazliRequest(message)||yakutScenarioRequest(message))return null;
+ if(yakutKirazliRequest(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -534,9 +534,28 @@ let yakutScenario = null;
 const yakutAreaUnit = '(?:m²|m2|metre\\s*kare|metrekare)';
 let yakutKirazliCase = null;
 const yakutKirazliSource = 'https://bbgis.bagcilar.bel.tr/imardurumu/imar.aspx?parselid=6423';
+const yakutImarGuidance = 'İmar planını ve plan notlarını görmeden kesin rakam veremem. Belgeniz varsa sitemizdeki WhatsApp düğmesinden Kumtaş İnşaat’a iletebilirsiniz. Belge yoksa tapu sahiplerinden biri belediyenin kentsel dönüşüm veya imar biriminden güncel imar durumunu, taban oturumu oranını, emsali ve toplam brüt inşaat alanı bilgisini isteyebilir.';
+function yakutParcelSpeech(message) {
+ return message.toLocaleLowerCase('tr-TR')
+  .replace(/iki bin yüz otuz beş/g, '2135')
+  .replace(/sıfır/g, '0');
+}
+function yakutImarHelpRequest(message) {
+ const t = yakutParcelSpeech(message);
+ return /ada/.test(t) && /parsel/.test(t) && /\d/.test(t) ||
+  /imar (?:planı|belgesi|durum belgesi).{0,35}(?:yok|nasıl|nereden|gönder|ilet|var)|whats\s*app.{0,25}(?:aç|bağla)/.test(t);
+}
+function yakutImarHelpAnswer(message) {
+ const t = normalizeYakutCommand(message);
+ if (/whats\s*app.{0,25}(?:aç|bağla)/.test(t)) {
+  const link = document.querySelector('a.float-wa[href^="https://wa.me/"]');
+  if (link) { location.assign(link.href); return ''; }
+ }
+ return 'Bu konuda size yardımcı olabilirim. ' + yakutImarGuidance;
+}
 function yakutKirazliRequest(message) {
  const t = normalizeYakutCommand(message.replace(/[â]/gi, "a"));
- const exact = /(?:\b0\s*[/–-]\s*2135\b|\b(?:ada\s+0|0\s+ada)\b.*\b(?:parsel\s+2135|2135\s+parsel)\b)/i.test(message);
+ const exact = /(?:\b0\s*[/–-]\s*2135\b|\b(?:ada\s+0|0\s+ada)\b.*\b(?:parsel\s+2135|2135\s+parsel)\b)/i.test(yakutParcelSpeech(message));
  return exact || (yakutKirazliCase === 'neighborhood' && /^(?:yakut )?(?:kirazlı|mahmutbey|bağcılar)(?: mahallesi)?$/.test(t)) ||
   (yakutKirazliCase === 'kirazli' && !/\b(?:ada|parsel)\b/.test(t) &&
    /(?:bonus|ilave emsal|mânia|mania|zemin|kaç kat|kaç daire|imar kaydını aç)/.test(t));
@@ -558,9 +577,9 @@ function yakutKirazliAnswer(message) {
  }
  if (/mania/.test(t)) return 'Bu parselin havaalanı mânia sınırı doğrulanmadı. Kat hesabından önce konum, zemin kotu ve ilgili yükseklik sınırı belediyeden kontrol edilmeli.';
  if (/zemin/.test(t)) return 'Belediyenin imar kaydı zemin etüdü yapılmadan uygulama yapılamayacağını belirtiyor. Zemin iyileştirmesi gerekip gerekmediği etüt sonucunda belirlenir.';
- if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) return 'Belediye ekranında TAKS, kat adedi ve bina yüksekliği gösterilmiyor. Kat ve daire sayısı için geçerli yükseklik sınırı ve yerleşim bilgileri gerekiyor.';
+ if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) return 'Belediye ekranında taban oturumu ve kat sınırı görünmüyor. ' + yakutImarGuidance;
  if (/bonus|ilave emsal/.test(t)) return 'Sunumda üç bin yedi yüz yetmiş yedi metrekare net arsa için dokuz bin sekiz yüz yirmi metrekare emsale esas alan gösteriliyor. Bu yaklaşık iki virgül altmış emsale denk geliyor. Artışın parseldeki uygulanma şartı teyit edilmeli. Sunumda brüt alan on iki bin yedi yüz altmış altı; mevcut brüt alan düşüldüğünde kalan alan üç bin iki yüz seksen dört metrekare.';
- return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. İncelediğimiz belediye kaydında konut alanı, hesap alanı üç bin yedi yüz elli bir virgül on iki metrekare ve emsal iki. Bu değerlerle emsale esas ön hesap yedi bin beş yüz iki virgül yirmi dört metrekare. Kat sınırı ve taban oturumu ekranda gösterilmiyor. Sunumdaki bonus hesabını sorabilir ya da imar kaydını açmamı isteyebilirsiniz.';
+ return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. Belediye kaydında burası konut alanı ve emsal iki. Bu da kabaca yedi bin beş yüz metrekare emsale esas alan demek. Taban oturumu ve kat sınırı görünmüyor. İsterseniz imar kaydını açabilirim.';
 }
 function yakutScenarioRequest(message) {
  const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
@@ -651,6 +670,12 @@ if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingS
 if(yakutKirazliRequest(q)){
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  const answer=yakutKirazliAnswer(q);
+ if(answer)react('agree',answer,'center');
+ return;
+}
+if(yakutImarHelpRequest(q)){
+ yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
+ const answer=yakutImarHelpAnswer(q);
  if(answer)react('agree',answer,'center');
  return;
 }
