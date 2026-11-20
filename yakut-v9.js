@@ -117,7 +117,7 @@ speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voice=chooseVoice();
-if(!voice){speaking=false;show('Bu cihazda Türkçe kadın sesi bulunamadı. Kadın sesi için Türkçe Emel gibi bir ses yükleyin veya daha sonra bulut ses motoru bağlayın. Erkek ses kullanmayacağım.',14000);if(listenEnabled)queueListen(600);return}
+if(!voice){speaking=false;show('YAKUT: '+text+'  (Ses kapalı: Bu cihazda Türkçe kadın sesi bulunamadı. Türkçe kadın sesi yüklenmeli veya güvenli bir bulut ses servisi bağlanmalı.)',14000);if(listenEnabled)queueListen(600);return}
 u.voice=voice;
 u.onstart=()=>{speaking=true;voiceButton.hidden=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
@@ -215,11 +215,11 @@ try{rec.start()}catch(e){micStarting=false;if(recognition===rec)recognition=null
 talk.onclick=()=>{
  if(!ready)return;
  voiceEnabled=true;visitorInteracted=true;
- if(!openingSpoken){openingSpoken=true;play('greet_02',true);speak(welcome)}
  ui.classList.add('open');send.hidden=false;
  if(listenEnabled){stopListening();show('Mikrofon kapatıldı. İsterseniz yazarak devam edebilirsiniz.',4000);return}
  listenEnabled=true;visitorInteracted=true;talk.textContent='🟢 Dinliyorum';
- if(openingGreeted){speak('Seni dinliyorum. Bana bir şey sorabilirsin.')}else{speak(welcome)}
+ if(!openingSpoken){openingSpoken=true;play('greet_02',true);speak(welcome)}
+ else{speak('Seni dinliyorum. Bana bir şey sorabilirsin.')}
  if(!window.speechSynthesis)queueListen(250);
 };
 send.onclick=()=>handle(inp.value);
