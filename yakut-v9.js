@@ -747,7 +747,7 @@ function addYakutChestLogo() {
   paint.drawImage(source, 840, 296, 336, 158, 6, 129, 388, 182);
   const pixels = paint.getImageData(0, 0, artwork.width, artwork.height);
   for (let i = 0; i < pixels.data.length; i += 4) {
-   pixels.data[i + 3] = 255 - pixels.data[i];
+   pixels.data[i + 3] *= 1 - pixels.data[i] / 255;
    pixels.data[i] = 0;
    pixels.data[i + 1] = 75;
    pixels.data[i + 2] = 194;
