@@ -386,7 +386,17 @@ function react(clip,text,placement='left'){
  if(!ready)return;
  const answering=placement==='center';
  yakutReturnLeftAfterSpeech=answering;
- moveTo(answering?centerAnswerX():leftGreetingX());
+ if (answering) {
+  targetX=posX;
+  if (phase==='walking') {
+   phase='idle';
+   walkTimer=0;
+   play('wait');
+  }
+  model.rotation.y=0;
+ } else {
+  moveTo(leftGreetingX());
+ }
  phaseTime=0;
  pendingSpeechGesture=findYakutGesture(clip);
  speak(text);
@@ -631,7 +641,7 @@ function yakutParcelIntakeAnswer({district, numbered, guidance}) {
  if (state.ada === null) return 'Parsel numarasını aldım. Ada numarası nedir?';
  if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
  state.waiting = false;
- return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parseli aldım. Bu parselin belediye verisini konuşma içinde doğrulayamıyorum. İsterseniz e-İmarı aç diyerek resmî sorguya gidebilirsiniz. Arsa alanınızı biliyorsanız varsayımlarla ön hesap yapabilirim. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
+ return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parseli aldım. Bu parselin belediye verisini konuşma içinde doğrulayamıyorum. Arsanızın metrekare bilgisini verirseniz bir ön hesap yapabiliriz. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
 }
 function yakutDistrictImarCommand(message) {
  const t = normalizeYakutCommand(message);
