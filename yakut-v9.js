@@ -622,8 +622,8 @@ function yakutParcelIntakeCommand(message) {
  const district = yakutFindImarDistrict(t);
  const raw = yakutParcelSpeech(message);
  const pair = raw.match(/(?:^|\D)(\d+)\s*[/-]\s*(\d+)(?:\D|$)/);
- const ada = raw.match(/(?:\bada\s*[:=]?\s*(\d+)\b|\b(\d+)\s+ada\b)/);
- const parsel = raw.match(/(?:\bparsel\s*[:=]?\s*(\d+)\b|\b(\d+)\s+parsel\b)/);
+ const ada = raw.match(/\bada\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+ada\b/);
+ const parsel = raw.match(/\bparsel\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+parsel\b/);
  const numbered = pair ? pair.slice(1) : [ada?.[1] || ada?.[2], parsel?.[1] || parsel?.[2]];
  if (/(?:vekalet|vek let|teklif|fiyatlandırma)/.test(t) && (yakutParcelIntake || yakutKirazliCase === 'kirazli')) return {guidance:true};
  if (!/(?:arsam|arsamız) var/.test(t) &&
