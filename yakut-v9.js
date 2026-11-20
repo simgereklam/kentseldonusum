@@ -167,6 +167,7 @@ function unlockYakutSound(){
  try{sessionStorage.setItem('yakutAudioApproved','1')}catch(_){}
  visitorInteracted=true;
  listenEnabled=true;
+ if(yakutTtsContext?.state==='suspended')yakutTtsContext.resume().catch(()=>{});
  if(!ready){yakutWelcomeRequested=true;return}
  beginYakutVisit();
 }
@@ -178,6 +179,7 @@ function beginYakutVisit(){
   yakutFirstGreetingDone=true;yakutWelcomeRequested=false;openingSpoken=true;openingGreeted=true;
   yakutIsGreetingWalking=true;
   moveTo(centerAnswerX());
+  if(phase!=='walking')finishYakutGreetingWalk();
   return;
  }
  if(yakutPageOfferPending){offerYakutPage();return}
