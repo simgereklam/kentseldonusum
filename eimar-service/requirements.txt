@@ -1,0 +1,1 @@
+fastapi>=0.115,<1\nuvicorn>=0.30,<1\nplaywright>=1.50,<2\n
