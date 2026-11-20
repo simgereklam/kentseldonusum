@@ -41,12 +41,17 @@
             border-bottom: 5px solid var(--orange);
         }
 
+        .hero-banner {
+            display: grid;
+            place-items: center;
+            height: calc(100vh - 76px);
+            height: calc(100dvh - 76px);
+        }
+
         .hero-company-logo {
             display: block;
             width: 100%;
-            height: auto;
-            max-height: 72vh;
-            max-height: 72svh;
+            height: 100%;
             object-fit: contain;
         }
 
@@ -108,6 +113,10 @@
             .menu::-webkit-scrollbar{display:none}
             .menu a{padding:15px 0 13px;font-size:13.5px}
             .nav-cta{display:none}
+            .hero-banner {
+                height: calc(100vh - 54px);
+                height: calc(100dvh - 54px);
+            }
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
@@ -157,7 +166,9 @@
 </header>
 
 <section class="hero">
-    <img class="hero-company-logo" src="kumtas-ana-ekran.webp" width="1672" height="941" alt="Kumtaş İnşaat" fetchpriority="high">
+    <div class="hero-banner">
+        <img class="hero-company-logo" src="kumtas-ana-ekran.webp" width="1672" height="941" alt="Kumtaş İnşaat" fetchpriority="high">
+    </div>
     <div class="container">
         <div class="hero-bottom-area">
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
