@@ -9,6 +9,8 @@ const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(190px,20vw,265px);height:clamp(300px,37vw,410px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
+#yakut-enable-audio{position:fixed;z-index:135;bottom:18px;left:14px;border:0;background:#09638c;color:white;padding:11px 15px;border-radius:24px;font:700 14px Arial,sans-serif;box-shadow:0 5px 16px #0005;cursor:pointer}
+#yakut-enable-audio[hidden]{display:none!important}
 /* YAKUT is a voice-only on-page character: no caption, chat box, or buttons. */
 #yakut-v9-ui,#yakut-v9-caption{display:none!important}
 #yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
@@ -28,6 +30,7 @@ const ui=document.createElement('div');ui.id='yakut-v9-ui';
 ui.innerHTML='<button id="yakut-voice" type="button" aria-label="Karşılama sesini aç" hidden>🔊 Sesi Aç</button><button id="yakut-talk" type="button" aria-label="Mikrofon izni ver" hidden>🎤 İzin Ver</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
 const caption=document.createElement('div');caption.id='yakut-v9-caption';
 document.body.append(stage,caption,ui);
+const enableAudio=document.createElement('button');enableAudio.id='yakut-enable-audio';enableAudio.type='button';enableAudio.textContent='🔊 YAKUT’u Dinle';enableAudio.hidden=true;document.body.appendChild(enableAudio);
 const voiceButton=ui.querySelector('#yakut-voice'),talk=ui.querySelector('#yakut-talk'),close=ui.querySelector('#yakut-close');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=false,micStarting=false,listenRetry=null,visitorInteracted=false;
 let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null,openingGreeted=false,openingSpoken=false,voiceEnabled=false;
@@ -39,6 +42,7 @@ let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
 let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false,yakutSpeechEndedAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 let yakutGreetingIdleTimer=null;
+let yakutWelcomeWaitingForSound=false;
 function cancelGreetingRetreat(){clearTimeout(yakutGreetingIdleTimer);yakutGreetingIdleTimer=null}
 function scheduleGreetingRetreat(delay=14000){cancelGreetingRetreat();yakutGreetingIdleTimer=setTimeout(()=>{if(!hidden&&ready&&!speaking&&!processingSpeech&&phase!=='walking'&&getYakutCurrentPage()==='index.html'){moveTo(leftGreetingX())}},delay)}
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -174,6 +178,10 @@ function unlockYakutSound(){
  listenEnabled=true;
  if(yakutTtsContext?.state==='suspended')yakutTtsContext.resume().catch(()=>{});
  if(!ready){yakutWelcomeRequested=true;return}
+ if(yakutWelcomeWaitingForSound){
+  yakutWelcomeWaitingForSound=false;enableAudio.hidden=true;cancelGreetingRetreat();
+  speak(welcome);return;
+ }
  beginYakutVisit();
 }
 function beginYakutVisit(){
@@ -193,6 +201,7 @@ document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true
 document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
 document.addEventListener('wheel',unlockYakutSound,{once:true,capture:true,passive:true});
 document.addEventListener('touchmove',unlockYakutSound,{once:true,capture:true,passive:true});
+enableAudio.addEventListener('click',unlockYakutSound);
 // meSpeak robotik ses motoru devre dışı: doğal kadın sesi doğrulanana kadar yükleme yapma.
 
 // Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
@@ -333,9 +342,13 @@ function finishYakutGreetingWalk(){
 function completeYakutOpening(){
  yakutOpeningBow=false;
  try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
- phase='idle';play('wait');speak(welcome);yakutReturnLeftAfterSpeech=false;
- // Also retreat if audio cannot start because the visitor has not unlocked playback.
- if(!audioUnlocked)scheduleGreetingRetreat();
+ phase='idle';play('wait');yakutReturnLeftAfterSpeech=false;
+ if(audioUnlocked){enableAudio.hidden=true;speak(welcome)}
+ else {
+  // Browsers may block sound until a real user gesture; bow still plays automatically.
+  yakutWelcomeWaitingForSound=true;enableAudio.hidden=false;
+  scheduleGreetingRetreat(20000);
+ }
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
@@ -663,7 +676,7 @@ talk.onclick=()=>{
 
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';caption.classList.remove('shown');
-if(hidden){stopListening();cancelYakutSpeech();window.speechSynthesis?.cancel()}
+if(hidden){enableAudio.hidden=true;stopListening();cancelYakutSpeech();window.speechSynthesis?.cancel()}
 close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';voiceButton.style.display=hidden?'none':'';if(!hidden){positionStage();listenEnabled=true;queueListen(400);show('YAKUT dinlemeye devam ediyor.',3500)}
 };
 window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
@@ -714,7 +727,12 @@ listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
 posX=targetX;phase='idle';play('wait');
  // Walk to the homepage center with real gait animation on load. Browser audio starts only after interaction.
- if(getYakutCurrentPage()==='index.html'&&!openingGreeted)moveTo(centerAnswerX());
+ if(getYakutCurrentPage()==='index.html'&&!openingGreeted){
+  yakutFirstGreetingDone=true;openingSpoken=true;openingGreeted=true;
+  yakutIsGreetingWalking=true;
+  moveTo(centerAnswerX());
+  if(phase!=='walking')finishYakutGreetingWalk();
+ }
  if(yakutFirstInteraction||yakutWelcomeRequested)queueMicrotask(beginYakutVisit);
 positionStage();
 const clock=new THREE.Clock();
