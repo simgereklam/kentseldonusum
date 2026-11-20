@@ -43,6 +43,8 @@ let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 let yakutGreetingIdleTimer=null;
 let yakutWelcomeWaitingForSound=false;
+// Prepare greeting audio during movement, but hold playback until the bow finishes.
+let yakutHoldWelcomeAudio=false;
 function cancelGreetingRetreat(){clearTimeout(yakutGreetingIdleTimer);yakutGreetingIdleTimer=null}
 function scheduleGreetingRetreat(delay=14000){cancelGreetingRetreat();yakutGreetingIdleTimer=setTimeout(()=>{if(!hidden&&ready&&!speaking&&!processingSpeech&&phase!=='walking'&&getYakutCurrentPage()==='index.html'){moveTo(leftGreetingX())}},delay)}
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -193,6 +195,7 @@ function beginYakutVisit(){
   cancelGreetingRetreat();
   yakutIsGreetingWalking=true;
   if(phase==='walking')return;
+  if(audioUnlocked){yakutHoldWelcomeAudio=true;speak(welcome)}
   moveTo(centerAnswerX());
   if(phase!=='walking')finishYakutGreetingWalk();
   return;
@@ -244,6 +247,7 @@ function yakutTtsFailure(e){
  yakutTtsWorker=null;finishYakutSpeech();
 }
 function yakutPlaySpeech(data){
+ if(yakutHoldWelcomeAudio){yakutReadyChunk=data;return}
  try{
   if(!yakutTtsContext)yakutTtsContext=new (window.AudioContext||window.webkitAudioContext)();
   yakutTtsContext.resume().catch(()=>{});
@@ -346,7 +350,14 @@ function completeYakutOpening(){
  yakutOpeningBow=false;
  try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
  phase='idle';play('wait');yakutReturnLeftAfterSpeech=false;
- if(audioUnlocked){enableAudio.hidden=true;speak(welcome)}
+ if(audioUnlocked){
+  enableAudio.hidden=true;
+  if(yakutHoldWelcomeAudio){
+   yakutHoldWelcomeAudio=false;
+   if(yakutReadyChunk){const prepared=yakutReadyChunk;yakutReadyChunk=null;yakutPlaySpeech(prepared)}
+   else if(!speaking)speak(welcome);
+  }else speak(welcome);
+ }
  else {
   // Browsers may block sound until a real user gesture; bow still plays automatically.
   yakutWelcomeWaitingForSound=true;enableAudio.hidden=false;
