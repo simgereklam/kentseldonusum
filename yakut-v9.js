@@ -36,6 +36,7 @@ let processingSpeech=false;
 let yakutReturnLeftAfterSpeech=false;
 let yakutFirstInteraction=false,yakutWelcomeRequested=false,yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
+let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -354,7 +355,7 @@ const yakutPageNames=[
  ['hizmetlerimiz.html',/hizmetlerimiz|hizmetler|ne\s*iş\s*yapıyorsunuz|neler\s*yapıyorsunuz/i],
  ['projelerimiz.html',/projelerimiz|projeler|referanslar/i],
  ['iletisim.html',/iletişim|telefon(?:lar)?|adres(?:imiz)?|bize\s*ulaş/i],
- ['bolgelerimiz.html',/bölgelerimiz|bölgeler|hangi\s*ilçelerde/i],
+ ['bolgelerimiz.html',/bölgelerimiz|bölgeler|bolgeler|bölge sayfası|hangi\s*ilçelerde/i],
  ['kentsel-donusum.html',/kentsel\s*d[oö]n[uü]ş[uü]m|riskli\s*(?:bina|yapı)|malik\s*hak|arsa\s*payı|kira\s*yardım/i]
 ];
 function normalizeYakutCommand(message){
@@ -408,7 +409,7 @@ function collectYakutPageSpeech(){
  return pieces.join('. ').replace(/\.{2,}/g,'.').replace(/\s+/g,' ').trim();
 }
 function yakutPageIntro(path){
- const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','hakkimizda.html':'hakkımızda','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgelerimiz'};
+ const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','hakkimizda.html':'hakkımızda','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgeler'};
  const districts={'bagcilar':'Bağcılar','bahcelievler':'Bahçelievler','bakirkoy':'Bakırköy','gungoren':'Güngören','avcilar':'Avcılar','esenler':'Esenler','kucukcekmece':'Küçükçekmece','zeytinburnu':'Zeytinburnu','yenibosna':'Yenibosna'};
  const area=path.replace('-kentsel-donusum.html','');
  const title=names[path]||(districts[area]?districts[area]+' kentsel dönüşüm':path.replace(/-/g,' '));
@@ -424,17 +425,21 @@ function offerYakutPage(){
  yakutOfferSpoken=true;
  const page=getYakutCurrentPage();
  const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(/ sayfasını birlikte inceleyelim\.\s*$/,'');
- react('agree',topic+' sayfasındayız. Size yardımcı olabilir miyim? İsterseniz bu sayfadaki bilgileri anlatabilirim.','left');
+ const offer=page==='iletisim.html'
+  ?'İletişim sayfasındayız. Size iletişim bilgilerini paylaşmamı ister misiniz?'
+  :topic+' sayfasındayız. Bu sayfa hakkında bilgi vermemi ister misiniz?';
+ yakutLastOfferAt=Date.now();
+ react('agree',offer,'left');
 }
 function handleYakutOfferAnswer(t){
  if(!yakutPageOfferPending||!yakutOfferSpoken)return false;
- const normalized=t.replace(/[.!?,;:]/g,' ').replace(/\s+/g,' ').trim();
- if(/^(?:yakut\s+)?(?:evet|evet istiyorum|evet anlat|evet bilgi ver|istiyorum|istiyorum anlat|olur|olur anlat|olur isterim|tabii|tabii ki|tabii anlat|anlat|anlatabilirsin|bilgi ver|bilgi almak istiyorum|dinliyorum|lütfen anlat|evet lütfen|memnuniyetle|başlayabilirsin|başla|hadi anlat)(?:\s+lütfen)?$/.test(normalized)){
+ const normalized=normalizeYakutCommand(t).replace(/^(?:yakut|asistan)\s+/,'').replace(/\s+lütfen$/,'').trim();
+ if(/^(?:evet|isterim|evet istiyorum|evet anlat|evet bilgi ver|istiyorum|istiyorum anlat|olur|olur anlat|olur isterim|tabii|tabii ki|tabii anlat|anlat|anlat bakalım|anlatsana|anlatır mısın|anlatabilir misin|anlatabilirsin|bilgi ver|bilgi verir misin|bilgileri anlat|bilgi almak istiyorum|dinliyorum|lütfen anlat|evet lütfen|memnuniyetle|başlayabilirsin|başla|hadi anlat|buyur anlat)$/.test(normalized)||/^(?:evet|olur|tabii|peki|tamam)\s+(?:anlat|anlatabilirsin|istiyorum|bilgi ver)(?:\s+bakalım)?$/.test(normalized)){
   yakutPageOfferPending=false;yakutOfferSpoken=false;
   yakutSpeakCurrentPage();
   return true;
  }
- if(/^(?:yakut\s+)?(?:hayır|hayır istemiyorum|hayır istemem|istemiyorum|istemiyorum teşekkürler|gerek yok|şimdilik hayır|sonra|daha sonra|şimdi değil|hayır teşekkürler|istemem|yok teşekkürler|hayır sağ ol)$/.test(normalized)){
+ if(/^(?:hayır|hayır istemiyorum|hayır istemem|istemiyorum|istemiyorum teşekkürler|gerek yok|şimdilik hayır|sonra|daha sonra|şimdi değil|hayır teşekkürler|istemem|yok teşekkürler|hayır sağ ol|hayır gerek yok)$/.test(normalized)){
   yakutPageOfferPending=false;yakutOfferSpoken=false;
   react('agree','Tamam, ne zaman isterseniz yardıma hazırım.','left');
   return true;
@@ -464,9 +469,9 @@ const q=String(message||'').trim();if(!q||!ready)return;
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
 const destination=yakutIsPageRequest(q);
 if(destination){openYakutPage(destination);return;}
-if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
 if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil|eğilir misin|selam duruşu)/i.test(t)){
@@ -569,9 +574,20 @@ function startSpeech(){
   // Prevent the recognition engine from replying to YAKUT's own welcome.
   if((yakutGreetingInProgress||Date.now()-yakutGreetingEndAt<3500)
     && /(?:merhaba|kumtaş|dijital asistan|nasıl yardımcı olabilirim)/i.test(heard))return;
-  const wanted=yakutIsPageRequest(spoken,speaking||processingSpeech);
+  const answerText=normalizeYakutCommand(spoken);
+  // Spoken page title inside YAKUT's own offer is not a visitor navigation request.
+  const navigationIntent=/(?:^|\s)(?:yakut|aç|git|geç|göster|sayfaya|sayfasına)(?:\s|$)/.test(answerText);
+  if(speaking||processingSpeech){
+   if(navigationIntent){
+    const wanted=yakutIsPageRequest(spoken,true);
+    if(wanted){openYakutPage(wanted);return}
+   }
+   return;
+  }
+  // Responses take precedence over page-name matching, including "anlat".
+  if(yakutPageOfferPending && handleYakutOfferAnswer(answerText))return;
+  const wanted=yakutIsPageRequest(spoken,false);
   if(wanted){openYakutPage(wanted);return}
-  if(speaking||processingSpeech)return; // Ignore YAKUT output except explicit page commands.
   show('Siz: '+spoken,2600);
   handle(spoken);
  };
@@ -627,7 +643,7 @@ model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDic
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
-ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=leftGreetingX();targetX=leftGreetingX();
+ready=true;loadSiteKnowledge().catch(console.warn);posX=leftGreetingX();targetX=leftGreetingX();
  // Share the first greeting across the site. All other pages ask before narrating.
  let arrivalOffer=false;
  try{
@@ -689,5 +705,6 @@ renderer.render(scene,camera);
 }catch(err){
 console.error('YAKUT V9 yüklenemedi:',err);stage.remove();ui.remove();caption.remove();
 }}
+startYakutAhenk(); // Warm up voice model in parallel with 3D loading.
 init();
 })();
