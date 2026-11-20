@@ -657,6 +657,8 @@ function showYakutImarScreen(url, details) {
  bar.append(title, external, close);
  layout.append(bar);
  if (new URL(url).hostname === 'keos.besiktas.bel.tr') {
+  dialog.style.cssText = 'position:fixed;inset:0;width:min(92%,680px);max-height:85vh;margin:auto;padding:0;border:0;border-radius:14px;background:white;color:#152b45;box-shadow:0 12px 50px #0005';
+  layout.style.height = 'auto';
   const note = document.createElement('p');
   note.textContent = 'Beşiktaş Belediyesi, sorgu ekranını kendi sitesi içinde gösteriyor. Yukarıdaki bağlantıyla resmî ekranı yeni sekmede açıp başlıktaki ada ve parseli aratabilirsiniz. Kumtaş sayfası açık kalır.';
   note.style.cssText = 'max-width:640px;padding:24px 16px;margin:0 auto;line-height:1.6';
