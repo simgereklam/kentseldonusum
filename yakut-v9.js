@@ -223,12 +223,13 @@ function yakutPlaySpeech(data){
    src.connect(gain);gain.connect(limiter);limiter.connect(yakutTtsContext.destination);
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
   src.start();
+   if(pendingSpeechGesture){play(pendingSpeechGesture,true);pendingSpeechGesture=null}
  }catch(e){yakutTtsFailure(e)}
 }
 function yakutTtsSayNow(text){
  if(!yakutTtsReady||!yakutTtsWorker)return;
  const id=++yakutTtsId;
- yakutTtsWorker.postMessage({type:'say',id,text:text.slice(0,125),style:'neutral',steps:6,speed:1,seed:0});
+ yakutTtsWorker.postMessage({type:'say',id,text:text.slice(0,600),style:'neutral',steps:8,speed:1,seed:0});
  clearTimeout(yakutTtsSayTimer);
  yakutTtsSayTimer=setTimeout(()=>yakutTtsFailure(Error('Ses üretimi zaman aşımı')),90000);
 }
@@ -274,9 +275,8 @@ function speak(text){
  }
  if(yakutTtsSource){try{yakutTtsSource.stop()}catch(e){}yakutTtsSource=null}
  if(!yakutTtsContext&&window.AudioContext){try{yakutTtsContext=new AudioContext();yakutTtsContext.resume().catch(()=>{})}catch(e){}}
- const segments=splitYakutSpeech(text);
- yakutSpeechQueue=segments.slice(1);
- yakutTtsPending=segments[0]||'';
+ yakutSpeechQueue=[];
+ yakutTtsPending=text;
  startYakutAhenk();
  if(yakutTtsReady&&yakutTtsPending){const first=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(first)}
 }
@@ -295,7 +295,8 @@ voiceButton.onclick=()=>{
  else speak(welcome);
 };
 function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
-function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;play(clip,true,1);speak(text)}
+let pendingSpeechGesture=null;
+function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;pendingSpeechGesture=clip;speak(text)}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 processingSpeech=true;
