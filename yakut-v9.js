@@ -204,12 +204,10 @@ const q=String(message||'').trim();if(!q||!ready)return;
 const t=q.toLocaleLowerCase('tr-TR');
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
-if(/(saygı duruşu|saygı duruşuna geç|hazır ol|hazırola geç)/i.test(t)){
- targetX=posX;walkTimer=0;phase='idle';phaseTime=0;
- model.rotation.y=0;play('wait');
- // No verified military-attention clip exists, so use the neutral standing animation.
- // Remain stationary briefly rather than start an automatic patrol immediately.
- walkTimer=-30;
+if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı)/i.test(t)){
+ targetX=posX;walkTimer=0;phase='reacting';phaseTime=0;
+ model.rotation.y=0;
+ play('bow',true);
  return;
 }
 if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
