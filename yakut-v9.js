@@ -32,6 +32,7 @@ const voiceButton=ui.querySelector('#yakut-voice'),talk=ui.querySelector('#yakut
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=false,micStarting=false,listenRetry=null,visitorInteracted=false;
 let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null,openingGreeted=false,openingSpoken=false,voiceEnabled=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
+let processingSpeech=false;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -279,6 +280,8 @@ function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));
 function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;play(clip,true,1);speak(text)}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
+processingSpeech=true;
+if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
@@ -322,13 +325,14 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  const match=siteAnswer(q);
  answer=match?match.text+' Bu bilgi KUMTAŞ internet sitesindeki '+match.path.replace('.html','')+' sayfasından alınmıştır.':'Bu konuda sitemizde doğrulanmış bilgi bulamadım. Kentsel dönüşüm ve malik haklarıyla ilgili bir soruyu daha ayrıntılı sorabilir veya KUMTAŞ ile görüşebilirsiniz.';
 }
+processingSpeech=false;
 react(clip,answer);
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
- if(!listenEnabled||hidden||speaking||recognition||micStarting)return;
+ if(!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
  const ms=Math.max(delay,micRestartAt-Date.now(),0);
- listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!recognition)startSpeech()},ms)
+ listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!processingSpeech&&!recognition)startSpeech()},ms)
 }
 function stopListening(){
  listenEnabled=false;clearTimeout(listenRetry);micStarting=false;
@@ -365,7 +369,7 @@ function speechProblem(err){
 function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;show('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın.',9000);return}
- if(!ready||!listenEnabled||hidden||speaking||recognition||micStarting)return;
+ if(!ready||!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
  rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
@@ -379,7 +383,7 @@ function startSpeech(){
  rec.onerror=e=>{micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
  rec.onend=()=>{
   micStarting=false;if(recognition===rec)recognition=null;
-  if(listenEnabled&&!hidden&&!speaking){talk.textContent='🟢 Dinliyorum';queueListen(700)}
+  if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(700)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
  try{rec.start()}catch(e){
