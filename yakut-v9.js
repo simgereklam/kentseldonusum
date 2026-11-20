@@ -571,6 +571,9 @@ function startSpeech(){
   if(!spoken)return;
   micFailureCount=0;
   const heard=normalizeYakutCommand(spoken);
+  // A delayed microphone transcript of our page introduction is not a new user command.
+  if(Date.now()-yakutLastOfferAt<15000 &&
+    /(?:sayfasındayız|size yardımcı olabilir miyim|bilgi vermemi|ister misiniz|bilgileri anlatabilirim)/.test(heard))return;
   // Prevent the recognition engine from replying to YAKUT's own welcome.
   if((yakutGreetingInProgress||Date.now()-yakutGreetingEndAt<3500)
     && /(?:merhaba|kumtaş|dijital asistan|nasıl yardımcı olabilirim)/i.test(heard))return;
