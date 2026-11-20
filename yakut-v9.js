@@ -620,9 +620,10 @@ function yakutParcelIntakeCommand(message) {
  const district = yakutFindImarDistrict(t);
  const raw = yakutParcelSpeech(message);
  const pair = raw.match(/(?:^|\D)(\d+)\s*[/-]\s*(\d+)(?:\D|$)/);
- const ada = raw.match(/(?:\bada\s*[:=]?\s*(\d+)\b|\b(\d+)\s+ada\b)/);
- const parsel = raw.match(/(?:\bparsel\s*[:=]?\s*(\d+)\b|\b(\d+)\s+parsel\b)/);
- const numbered = pair ? pair.slice(1) : [ada?.[1] || ada?.[2], parsel?.[1] || parsel?.[2]];
+ const ada = raw.match(/\bada\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+ada\b/);
+ const parsel = raw.match(/\bparsel\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+parsel\b/);
+ const suffixPair = raw.match(/\b(\d+)\s+ada[\s,]+(\d+)\s+parsel\b/);
+ const numbered = pair ? pair.slice(1) : suffixPair ? suffixPair.slice(1) : [ada?.[1], parsel?.[1]];
  if (/(?:vekalet|vek let|teklif|fiyatlandırma)/.test(t) && (yakutParcelIntake || yakutKirazliCase === 'kirazli')) return {guidance:true};
  if (!/(?:arsam|arsamız) var/.test(t) &&
      !(yakutParcelIntake?.waiting && (district || numbered.some(Boolean))) &&
@@ -714,6 +715,11 @@ function yakutParcelIntakeAnswer({district, numbered, guidance}) {
  if (state.ada === null) return 'Parsel numarasını aldım. Ada numarası nedir?';
  if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
  state.waiting = false;
+ if (state.district[0] === 'Bağcılar' && state.ada === '3215' && state.parsel === '1') {
+  showYakutImarScreen('https://bbgis.bagcilar.bel.tr/imardurumu/imar.aspx?parselid=6783',
+   'Bağcılar · Kirazlı · Ada 3215 / Parsel 1');
+  return 'Daha önce kontrol ettiğimiz belediye kaydında Kirazlı, üç bin iki yüz on beş ada, bir parsel, kültürel tesis alanı olarak geçiyor. Hesap alanı sekiz yüz altmış virgül kırk altı metrekare. TAKS, emsal ve kat adedi ana tabloda görünmüyor. Bu nedenle daire hesabı yapamam. Belediyeden isteyebileceğiniz bilgileri ekranda gösteriyorum.';
+ }
  showYakutImarScreen(state.district[1], state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
  if (new URL(state.district[1]).hostname === 'keos.besiktas.bel.tr') {
   return 'Ada ve parseli aldım. Beşiktaş’ın resmî sorgusunu ekrandaki bağlantıdan yeni sekmede açabilirsiniz. Kumtaş sayfası açık kalacak.';
