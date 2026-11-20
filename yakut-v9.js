@@ -246,7 +246,10 @@ function yakutPlaySpeech(data){
    src.connect(gain);gain.connect(yakutTtsContext.destination); // Avoid compressor pumping/distortion.
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
   src.start();yakutAudioPlaying=true;yakutAudioStartTime=performance.now();yakutGestureClock=0;if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
-   if(pendingSpeechGesture){const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);if(phase!=='walking')phase='reacting'}
+   // The speaking gesture must never interrupt the real walk animation.
+   if(pendingSpeechGesture&&phase!=='walking'){
+    const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);phase='reacting';
+   }
  }catch(e){yakutTtsFailure(e)}
 }
 function yakutTtsSayNow(text){
@@ -329,7 +332,7 @@ voiceButton.onclick=()=>{
  if(!openingGreeted)openingGreeting();
  else queueListen(250);
 };
-function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{posX=targetX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{console.warn('YAKUT: yürüme animasyonu bulunamadı, kayma yerine sabit kalıyor');targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))
@@ -416,9 +419,8 @@ function yakutPageIntro(path){
  return 'Memnuniyetle. '+title+' sayfasını birlikte inceleyelim. ';
 }
 function prepareYakutPageOffer(){
- if(!ready)return;
- yakutPageOfferPending=true;yakutOfferSpoken=false;
- if(audioUnlocked&&!speaking&&!yakutIsGreetingWalking)offerYakutPage();
+ // No unsolicited page/image narration: YAKUT answers only when asked.
+ yakutPageOfferPending=false;yakutOfferSpoken=false;
 }
 function offerYakutPage(){
  if(!ready||!yakutPageOfferPending||yakutOfferSpoken||speaking||yakutIsGreetingWalking||!audioUnlocked)return;
@@ -721,6 +723,8 @@ if(yakutAudioPlaying && phase==='idle'){
 if(phase==='walking'){
 const step=(innerWidth<650?105:175)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
+ // Finish walking with actual footstep motion before any response gesture.
+ if(pendingSpeechGesture&&yakutAudioPlaying){const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);phase='reacting'}
  if(yakutIsGreetingWalking)finishYakutGreetingWalk()
 }else{posX+=Math.sign(targetX-posX)*step;}
 positionStage();
