@@ -4,7 +4,7 @@
 'use strict';
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
-const welcome='Merhaba, ben KUMTAŞ İnşaat asistanınız YAKUT. Size yardımcı olmak için buradayım.';
+const welcome='Merhaba, ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Size nasıl yardımcı olabilirim?';
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(190px,20vw,265px);height:clamp(300px,37vw,410px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -34,6 +34,7 @@ let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null,op
 let micFailureCount=0,micLastError='',micRestartAt=0;
 let processingSpeech=false;
 let yakutReturnLeftAfterSpeech=false;
+let yakutFirstInteraction=false,yakutWelcomeRequested=false,yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -161,18 +162,31 @@ async function speakWithEngine(text){
  }catch(e){speaking=false;console.warn('YAKUT ses motoru:',e.message);if(listenEnabled)queueListen(600)}
 }
 function unlockYakutSound(){
+ yakutFirstInteraction=true;
  audioUnlocked=true;
  try{sessionStorage.setItem('yakutAudioApproved','1')}catch(_){}
  visitorInteracted=true;
  listenEnabled=true;
- if(ready&&!openingSpoken){
-  openingSpoken=true;openingGreeted=true;
-  try{sessionStorage.setItem('yakutVisited','1')}catch(_){}
-  pendingSpeechGesture='greet_02';speak(welcome);
- } else if(ready && !speaking) queueListen(700);
+ if(!ready){yakutWelcomeRequested=true;return}
+ beginYakutVisit();
+}
+function beginYakutVisit(){
+ if(!ready||hidden)return;
+ let greeted=false;
+ try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
+ if(!greeted && getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone){
+  yakutFirstGreetingDone=true;yakutWelcomeRequested=false;openingSpoken=true;openingGreeted=true;
+  yakutIsGreetingWalking=true;
+  moveTo(centerAnswerX());
+  return;
+ }
+ if(greeted && yakutPageOfferPending){offerYakutPage();return}
+ if(greeted&&!speaking)queueListen(450);
 }
 document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
 document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
+document.addEventListener('wheel',unlockYakutSound,{once:true,capture:true,passive:true});
+document.addEventListener('touchmove',unlockYakutSound,{once:true,capture:true,passive:true});
 // meSpeak robotik ses motoru devre dışı: doğal kadın sesi doğrulanana kadar yükleme yapma.
 
 // Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
@@ -200,6 +214,7 @@ function finishYakutSpeech(){
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
  yakutSpeechQueue=[];speaking=false;
  if(yakutReturnLeftAfterSpeech){yakutReturnLeftAfterSpeech=false;moveTo(leftGreetingX())}
+ if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
  if(listenEnabled&&!hidden)queueListen(400);
 }
 function yakutTtsFailure(e){
@@ -291,9 +306,17 @@ function leftGreetingX(){return 0}
 function centerAnswerX(){return Math.max(0,(innerWidth-stage.offsetWidth)/2)}
 function openingGreeting(){
  if(!ready||hidden||openingGreeted)return;
- openingGreeted=true;phase='greeting';pendingSpeechGesture='greet_02';
- show(welcome,12000);
- if(!openingSpoken&&audioUnlocked){openingSpoken=true;try{sessionStorage.setItem('yakutVisited','1')}catch(_){}speak(welcome)}
+ // Do not greet before the visitor interacts; never greet again on another page.
+ if(!yakutFirstInteraction)return;
+ beginYakutVisit();
+}
+function finishYakutGreetingWalk(){
+ yakutIsGreetingWalking=false;
+ phase='greeting';
+ try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
+ pendingSpeechGesture=findYakutGesture('greet_02');
+ speak(welcome);
+ yakutReturnLeftAfterSpeech=true;
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
@@ -394,10 +417,10 @@ function yakutSpeakCurrentPage(){
 function openYakutPage(path){
  const current=getYakutCurrentPage();
  cancelYakutSpeech();
- if(current===path){yakutSpeakCurrentPage();return true}
+ if(current===path){prepareYakutPageOffer();return true}
  try{
   sessionStorage.setItem('yakutVisited','1');
-  sessionStorage.setItem('yakutNextTopic',JSON.stringify({path,readPage:true}));
+  sessionStorage.setItem('yakutNextTopic',JSON.stringify({path,readPage:false,offerPage:true}));
   if(audioUnlocked)sessionStorage.setItem('yakutAudioApproved','1');
  }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
  location.assign(new URL(path,location.origin+'/').href);
@@ -567,34 +590,32 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=leftGreetingX();targetX=leftGreetingX();
- // Keep one greeting across every page and use the current page's real content.
- let arrivalReadPage=false;
+ // Share the first greeting across the site. All other pages ask before narrating.
+ let arrivalOffer=false;
  try{
   const entry=sessionStorage.getItem('yakutNextTopic');
   if(entry){
    const state=JSON.parse(entry);
    if(state.path===getYakutCurrentPage()){
     sessionStorage.removeItem('yakutNextTopic');
-    arrivalReadPage=!!state.readPage;
+    arrivalOffer=!!(state.offerPage||state.readPage);
    }
   }
-  if(sessionStorage.getItem('yakutVisited')==='1'||arrivalReadPage){
-   openingSpoken=true;openingGreeted=true;
+  if(sessionStorage.getItem('yakutGreeted')==='1'){
+   openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
-  // Mark visited only after the one-time greeting is actually triggered.
  }catch(e){console.warn('YAKUT oturumu:',e)}
- if(arrivalReadPage){
-  const beginNarration=()=>{if(audioUnlocked&&!speaking)yakutSpeakCurrentPage()};
-  if(audioUnlocked)queueMicrotask(beginNarration);
-  else{
-   document.addEventListener('pointerdown',beginNarration,{once:true,capture:true});
-   document.addEventListener('keydown',beginNarration,{once:true,capture:true});
-  }
+ if(getYakutCurrentPage()!=='index.html' && (arrivalOffer||openingGreeted)){
+  prepareYakutPageOffer();
+ }
+ if(getYakutCurrentPage()==='index.html' && openingGreeted && arrivalOffer){
+  prepareYakutPageOffer();
  }
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
-posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting);
+posX=targetX;phase='idle';play('wait');
+ if(yakutFirstInteraction||yakutWelcomeRequested)queueMicrotask(beginYakutVisit);
 positionStage();
 const clock=new THREE.Clock();
 function frame(){
@@ -614,7 +635,7 @@ if(yakutAudioPlaying && phase==='idle'){
 if(phase==='walking'){
 const step=(innerWidth<650?56:94)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
- if(!openingGreeted){openingGreeting();phaseTime=1}
+ if(yakutIsGreetingWalking)finishYakutGreetingWalk()
 }else{posX+=Math.sign(targetX-posX)*step;}
 positionStage();
 }else if(phase==='idle'&&!reduced){
