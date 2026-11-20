@@ -744,7 +744,6 @@ function addYakutChestLogo() {
  const source = new Image();
  source.onload = () => {
   paint.drawImage(source, 942, 86, 133, 183, 162, 16, 76, 105);
-  paint.drawImage(source, 840, 296, 336, 158, 6, 129, 388, 182);
   const pixels = paint.getImageData(0, 0, artwork.width, artwork.height);
   for (let i = 0; i < pixels.data.length; i += 4) {
    pixels.data[i + 3] *= 1 - pixels.data[i] / 255;
@@ -753,6 +752,12 @@ function addYakutChestLogo() {
    pixels.data[i + 2] = 194;
   }
   paint.putImageData(pixels, 0, 0);
+  paint.fillStyle = '#0045b6';
+  paint.font = '900 101px Arial, sans-serif';
+  paint.textAlign = 'center';
+  paint.textBaseline = 'alphabetic';
+  paint.fillText('KUMTAŞ', 200, 207, 392);
+  paint.fillText('İNŞAAT', 200, 305, 392);
   texture.needsUpdate = true;
  };
  source.src = chestLogoUrl;
