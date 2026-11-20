@@ -160,23 +160,25 @@ async function speakWithEngine(text){
 }
 function unlockYakutSound(){
  audioUnlocked=true;
+ visitorInteracted=true;
+ listenEnabled=true;
  if(ready&&!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')){
   openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');
   play('greet_02',true);speak(welcome);
- }
+ } else if(ready && !speaking) queueListen(700);
 }
 document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
 document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
-initMespeak().catch(e=>console.warn('YAKUT Türkçe ses ön hazırlık:',e.message));
+// meSpeak robotik ses motoru devre dışı: doğal kadın sesi doğrulanana kadar yükleme yapma.
 
 function speak(text){show(text,Math.max(7000,text.length*85));
-if(!window.speechSynthesis)return;
+if(!window.speechSynthesis){if(listenEnabled)queueListen(650);return}
 // Do not let YAKUT hear its own spoken response.
 speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voice=chooseVoice();
-if(!voice){speakWithEngine(text);return}
+if(!voice){speaking=false;console.info('YAKUT: Doğal Türkçe kadın sesi henüz bağlı değil; robotik meSpeak kullanılmayacak.');if(listenEnabled)queueListen(650);return}
 u.voice=voice;
 u.onstart=()=>{speaking=true;voiceButton.hidden=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
@@ -338,7 +340,7 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);posX=-stage.offsetWidth;targetX=leftGreetingX();
-listenEnabled=true;queueListen(1300);voiceButton.hidden=true;
+listenEnabled=false;voiceButton.hidden=true;
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
 positionStage();
