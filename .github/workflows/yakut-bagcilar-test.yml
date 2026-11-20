@@ -1,0 +1,22 @@
+name: Yakut Bağcılar sorgu testi
+on:
+  push:
+    branches: [yakut-bagcilar-test]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  kirazli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.61.1
+      - run: npx playwright install --with-deps chromium
+      - name: Kirazlı kaydını doğrula
+        run: |
+          node scripts/yakut-bagcilar-sorgu.cjs 0 2135 Kirazlı > /tmp/yakut-kirazli.json
+          node -e 'const r=require("/tmp/yakut-kirazli.json"); if(r.durum!=="bulundu" || r.ada!=="0" || r.parsel!=="2135" || !Object.keys(r.alanlar).some(k=>k.includes("Emsal"))) process.exit(1); console.log(r.kaynak)'
