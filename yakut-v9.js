@@ -407,7 +407,9 @@ function collectYakutPageSpeech(){
 }
 function yakutPageIntro(path){
  const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','hakkimizda.html':'hakkımızda','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgelerimiz'};
- const title=names[path]||path.replace('-kentsel-donusum.html','').replace(/-/g,' ');
+ const districts={'bagcilar':'Bağcılar','bahcelievler':'Bahçelievler','bakirkoy':'Bakırköy','gungoren':'Güngören','avcilar':'Avcılar','esenler':'Esenler','kucukcekmece':'Küçükçekmece','zeytinburnu':'Zeytinburnu','yenibosna':'Yenibosna'};
+ const area=path.replace('-kentsel-donusum.html','');
+ const title=names[path]||(districts[area]?districts[area]+' kentsel dönüşüm':path.replace(/-/g,' '));
  return 'Memnuniyetle. '+title+' sayfasını birlikte inceleyelim. ';
 }
 function prepareYakutPageOffer(){
@@ -425,12 +427,12 @@ function offerYakutPage(){
 function handleYakutOfferAnswer(t){
  if(!yakutPageOfferPending||!yakutOfferSpoken)return false;
  const normalized=t.replace(/[.!?,;:]/g,' ').replace(/\s+/g,' ').trim();
- if(/^(?:yakut\s+)?(?:evet|evet istiyorum|istiyorum|olur|olur anlat|tabii|tabii ki|anlat|anlatabilirsin|bilgi ver|dinliyorum|lütfen anlat|evet lütfen|memnuniyetle|başlayabilirsin|başla|hadi anlat)(?:\s+lütfen)?$/.test(normalized)){
+ if(/^(?:yakut\s+)?(?:evet|evet istiyorum|evet anlat|evet bilgi ver|istiyorum|istiyorum anlat|olur|olur anlat|olur isterim|tabii|tabii ki|tabii anlat|anlat|anlatabilirsin|bilgi ver|bilgi almak istiyorum|dinliyorum|lütfen anlat|evet lütfen|memnuniyetle|başlayabilirsin|başla|hadi anlat)(?:\s+lütfen)?$/.test(normalized)){
   yakutPageOfferPending=false;yakutOfferSpoken=false;
   yakutSpeakCurrentPage();
   return true;
  }
- if(/^(?:yakut\s+)?(?:hayır|hayır istemiyorum|istemiyorum|gerek yok|şimdilik hayır|sonra|daha sonra|şimdi değil|hayır teşekkürler|istemem|yok teşekkürler|hayır sağ ol)$/.test(normalized)){
+ if(/^(?:yakut\s+)?(?:hayır|hayır istemiyorum|hayır istemem|istemiyorum|istemiyorum teşekkürler|gerek yok|şimdilik hayır|sonra|daha sonra|şimdi değil|hayır teşekkürler|istemem|yok teşekkürler|hayır sağ ol)$/.test(normalized)){
   yakutPageOfferPending=false;yakutOfferSpoken=false;
   react('agree','Tamam, ne zaman isterseniz yardıma hazırım.','left');
   return true;
