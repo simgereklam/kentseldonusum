@@ -188,10 +188,13 @@ function beginYakutVisit(){
  if(!ready||hidden)return;
  let greeted=false;
  try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
- if(!greeted && getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone){
+ if(getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone){
   yakutFirstGreetingDone=true;yakutWelcomeRequested=false;openingSpoken=true;openingGreeted=true;
-  if(phase==='walking')yakutIsGreetingWalking=true;
-  else finishYakutGreetingWalk();
+  cancelGreetingRetreat();
+  yakutIsGreetingWalking=true;
+  if(phase==='walking')return;
+  moveTo(centerAnswerX());
+  if(phase!=='walking')finishYakutGreetingWalk();
   return;
  }
  if(yakutPageOfferPending){offerYakutPage();return}
@@ -716,22 +719,21 @@ ready=true;loadSiteKnowledge().catch(console.warn);posX=leftGreetingX();targetX=
     arrivalOffer=!!(state.offerPage||state.readPage);
    }
   }
-  if(sessionStorage.getItem('yakutGreeted')==='1'){
+  if(sessionStorage.getItem('yakutGreeted')==='1' && getYakutCurrentPage()!=='index.html'){
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
  }catch(e){console.warn('YAKUT oturumu:',e)}
  if(getYakutCurrentPage()!=='index.html')prepareYakutPageOffer();
  else if(openingGreeted && arrivalOffer)prepareYakutPageOffer();
-listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
+listenEnabled=getYakutCurrentPage()!=='index.html';voiceButton.hidden=true;if(listenEnabled)queueListen(1600);
 model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
 posX=targetX;phase='idle';play('wait');
- // Walk to the homepage center with real gait animation on load. Browser audio starts only after interaction.
- if(getYakutCurrentPage()==='index.html'&&!openingGreeted){
-  yakutFirstGreetingDone=true;openingSpoken=true;openingGreeted=true;
-  yakutIsGreetingWalking=true;
-  moveTo(centerAnswerX());
-  if(phase!=='walking')finishYakutGreetingWalk();
+ // Home: render YAKUT in the lower-left immediately after the GLB is ready.
+ // A genuine pointer/key interaction, not microphone permission, starts walking.
+ // Retain the real walk animation; never translate an idle model across the page.
+ if(getYakutCurrentPage()==='index.html'){
+  posX=leftGreetingX();targetX=posX;phase='idle';play('wait');
  }
  if(yakutFirstInteraction||yakutWelcomeRequested)queueMicrotask(beginYakutVisit);
 positionStage();
