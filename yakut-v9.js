@@ -628,6 +628,40 @@ function yakutParcelIntakeCommand(message) {
      !(numbered.every(Boolean) && (district || yakutParcelIntake))) return null;
  return {district, numbered};
 }
+function showYakutImarScreen(url, details) {
+ document.getElementById('yakut-imar-screen')?.close();
+ const dialog = document.createElement('dialog');
+ dialog.id = 'yakut-imar-screen';
+ dialog.setAttribute('aria-label', 'İmar sorgulama ekranı');
+ dialog.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:white;color:#152b45';
+ const layout = document.createElement('div');
+ layout.style.cssText = 'display:flex;flex-direction:column;height:100%';
+ const bar = document.createElement('header');
+ bar.style.cssText = 'display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;background:#0c2037;color:white';
+ const title = document.createElement('strong');
+ title.textContent = details;
+ title.style.flex = '1 1 220px';
+ const external = document.createElement('a');
+ external.href = url;
+ external.target = '_blank';
+ external.rel = 'noopener noreferrer';
+ external.textContent = 'Ekran yüklenmezse resmî sitede aç';
+ external.style.cssText = 'color:white;text-decoration:underline';
+ const close = document.createElement('button');
+ close.type = 'button';
+ close.textContent = 'Kapat';
+ close.addEventListener('click', () => dialog.close());
+ const frame = document.createElement('iframe');
+ frame.title = 'Resmî imar kaynağı';
+ frame.src = url;
+ frame.style.cssText = 'width:100%;flex:1;min-height:0;border:0';
+ bar.append(title, external, close);
+ layout.append(bar, frame);
+ dialog.append(layout);
+ dialog.addEventListener('close', () => dialog.remove(), {once:true});
+ document.body.append(dialog);
+ dialog.showModal();
+}
 function yakutParcelIntakeAnswer({district, numbered, guidance}) {
  if (guidance) return yakutTeklifGuidance;
  if (district && district !== yakutParcelIntake?.district) yakutParcelIntake = null;
@@ -641,7 +675,8 @@ function yakutParcelIntakeAnswer({district, numbered, guidance}) {
  if (state.ada === null) return 'Parsel numarasını aldım. Ada numarası nedir?';
  if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
  state.waiting = false;
- return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parseli aldım. Bu parselin belediye verisini konuşma içinde doğrulayamıyorum. Arsanızın metrekare bilgisini verirseniz bir ön hesap yapabiliriz. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
+ showYakutImarScreen(state.district[1], state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
+ return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parsel için resmî sorgu ekranını gösteriyorum. Ekrandaki sonucu otomatik okuyamıyorum. TAKS veya emsal değerini görürseniz bana söyleyebilirsiniz. Arsanızın metrekare bilgisini verirseniz bir ön hesap yapabiliriz. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
 }
 function yakutDistrictImarCommand(message) {
  const t = normalizeYakutCommand(message);
@@ -663,7 +698,7 @@ function yakutDistrictImarAnswer({district, open}) {
  }
  yakutImarDistrict = district;
  if (open) {
-  location.assign(district[1]);
+  showYakutImarScreen(district[1], district[0] + ' · İmar sorgulama');
   return '';
  }
  return district[0] + ' için resmî imar kaynaklarını açabilirim. Açmamı isterseniz, e-İmarı aç deyin. ' + yakutImarGuidance;
@@ -687,14 +722,15 @@ function yakutKirazliAnswer(message) {
  }
  yakutKirazliCase = 'kirazli';
  if (/imar kaydını aç/.test(t)) {
-  location.assign(yakutKirazliSource);
+  showYakutImarScreen(yakutKirazliSource, 'Bağcılar · Kirazlı · Ada 0 / Parsel 2135');
   return '';
  }
  if (/mania/.test(t)) return 'Bu parselin havaalanı mânia sınırı doğrulanmadı. Kat hesabından önce konum, zemin kotu ve ilgili yükseklik sınırı belediyeden kontrol edilmeli.';
  if (/zemin/.test(t)) return 'Belediyenin imar kaydı zemin etüdü yapılmadan uygulama yapılamayacağını belirtiyor. Zemin iyileştirmesi gerekip gerekmediği etüt sonucunda belirlenir.';
  if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) return 'Belediye ekranında taban oturumu ve kat sınırı görünmüyor. ' + yakutImarGuidance;
  if (/bonus|ilave emsal/.test(t)) return 'Sunumda üç bin yedi yüz yetmiş yedi metrekare net arsa için dokuz bin sekiz yüz yirmi metrekare emsale esas alan gösteriliyor. Bu yaklaşık iki virgül altmış emsale denk geliyor. Artışın parseldeki uygulanma şartı teyit edilmeli. Sunumda brüt alan on iki bin yedi yüz altmış altı; mevcut brüt alan düşüldüğünde kalan alan üç bin iki yüz seksen dört metrekare.';
- return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. Belediye kaydında burası konut alanı ve emsal iki. Bu da kabaca yedi bin beş yüz metrekare emsale esas alan demek. Taban oturumu ve kat sınırı görünmüyor. İsterseniz imar kaydını açabilirim.';
+ showYakutImarScreen(yakutKirazliSource, 'Bağcılar · Kirazlı · Ada 0 / Parsel 2135');
+ return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. Belediye kaydında burası konut alanı ve emsal iki. Bu da kabaca yedi bin beş yüz metrekare emsale esas alan demek. Taban oturumu ve kat sınırı görünmüyor.';
 }
 function yakutScenarioRequest(message) {
  const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
