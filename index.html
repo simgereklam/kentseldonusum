@@ -35,70 +35,19 @@
         .nav-cta{display:inline-flex;align-items:center;gap:8px;background:var(--orange);color:white;border-radius:12px;padding:14px 18px;font-weight:950;box-shadow:0 10px 22px rgba(255,107,0,.24);white-space:nowrap}
         .nav-cta:hover{background:#f26100}
 
-        /* HERO - MASAÜSTÜ VE MOBİLDE %100 TAM EKRAN */
         .hero {
-            position: relative;
             color: white;
-            height: calc(100vh - 76px);
-            height: calc(100dvh - 76px);
-            padding: 14px 0 28px 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
+            background: #00019e;
             border-bottom: 5px solid var(--orange);
-            background: #030a14;
-        }
-
-        /* Arka Plan Video Stili */
-        .hero-video-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            object-fit: cover;
-            pointer-events: none;
-        }
-
-        .hero-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            z-index: 2;
-        }
-
-        .hero .container {
-            position: relative;
-            z-index: 3;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        /* ÜST ALAN: KUMTAŞ İNŞAAT LOGOSU */
-        .hero-top-area {
-            text-align: center;
-            max-width: 950px;
-            margin: 0 auto;
-            padding-top: 4px;
         }
 
         .hero-company-logo {
             display: block;
-            width: min(576px, 82vw, 66dvh);
+            width: 100%;
             height: auto;
-        }
-
-        .hero-middle-spacer {
-            flex-grow: 1;
+            max-height: 72vh;
+            max-height: 72svh;
+            object-fit: contain;
         }
 
         /* ALT ALAN: SLOGAN VE AÇIKLAMA */
@@ -111,7 +60,7 @@
             text-align: center;
             max-width: 950px;
             margin: 0 auto;
-            padding-bottom: 8px;
+            padding: 16px 0 24px;
         }
 
         .hero h1{font-size:clamp(22px,3.2vw,44px);line-height:1.2;letter-spacing:-1px;text-shadow:0 4px 16px rgba(0,0,0,1);font-weight:950}
@@ -159,21 +108,11 @@
             .menu::-webkit-scrollbar{display:none}
             .menu a{padding:15px 0 13px;font-size:13.5px}
             .nav-cta{display:none}
-            .hero {
-                height: calc(100vh - 54px);
-                height: calc(100dvh - 54px);
-                padding: 16px 0 32px 0;
-            }
             .footer-grid{grid-template-columns:1fr 1fr}
         }
         
         /* TELEFON EKRAN OPTİMİZASYONU */
         @media(max-width:768px){
-            .hero {
-                height: calc(100vh - 54px);
-                height: calc(100dvh - 54px);
-                padding: 14px 0 36px 0;
-            }
             .hero h1 {
                 font-size: 21px;
                 padding: 0 6px;
@@ -218,25 +157,8 @@
 </header>
 
 <section class="hero">
-    <!-- ARKA PLAN DÖNGÜ VİDEOSU -->
-    <video autoplay muted loop playsinline class="hero-video-bg">
-        <source src="kumtas-donusum.mp4" type="video/mp4">
-        Tarayıcınız video etiketini desteklemiyor.
-    </video>
-    
-    <div class="hero-overlay"></div>
-
+    <img class="hero-company-logo" src="kumtas-ana-ekran.webp" width="1672" height="941" alt="Kumtaş İnşaat" fetchpriority="high">
     <div class="container">
-        
-        <!-- ÜST ALAN: KUMTAŞ İNŞAAT LOGOSU -->
-        <div class="hero-top-area">
-            <img class="hero-company-logo" src="kumtas-altin-logo.webp" width="1152" height="648" alt="Kumtaş İnşaat" fetchpriority="high">
-        </div>
-
-        <!-- ORTA BOŞLUK: ŞANTİYE VİDEOSUNU TAM AÇIK BIRAKIR -->
-        <div class="hero-middle-spacer"></div>
-
-        <!-- ALT ALAN: SLOGAN VE AÇIKLAMA -->
         <div class="hero-bottom-area">
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
             <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
