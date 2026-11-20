@@ -4,7 +4,7 @@
 'use strict';
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
-const welcome='Merhaba, hoş geldiniz. Ben KUMTAŞ İnşaat dijital asistanınız YAKUT.';
+const welcome='Merhaba, hoş geldiniz. Ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Sizin için ne yapabilirim?';
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(190px,20vw,265px);height:clamp(300px,37vw,410px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -38,6 +38,9 @@ let yakutFirstInteraction=false,yakutWelcomeRequested=false,yakutFirstGreetingDo
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
 let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false,yakutSpeechEndedAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
+let yakutGreetingIdleTimer=null;
+function cancelGreetingRetreat(){clearTimeout(yakutGreetingIdleTimer);yakutGreetingIdleTimer=null}
+function scheduleGreetingRetreat(delay=14000){cancelGreetingRetreat();yakutGreetingIdleTimer=setTimeout(()=>{if(!hidden&&ready&&!speaking&&!processingSpeech&&phase!=='walking'&&getYakutCurrentPage()==='index.html'){moveTo(leftGreetingX())}},delay)}
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
 function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
@@ -216,7 +219,7 @@ function finishYakutSpeech(){
  if(yakutRequests.size||yakutSpeechQueue.length)return;
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
  yakutSpeechQueue=[];speaking=false;yakutSpeechEndedAt=Date.now();
- if(yakutGreetingInProgress){yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now()}
+ if(yakutGreetingInProgress){yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();scheduleGreetingRetreat()}
  if(yakutReturnLeftAfterSpeech){yakutReturnLeftAfterSpeech=false;moveTo(leftGreetingX())}
  if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
  if(listenEnabled&&!hidden)queueListen(1200);
@@ -331,6 +334,8 @@ function completeYakutOpening(){
  yakutOpeningBow=false;
  try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
  phase='idle';play('wait');speak(welcome);yakutReturnLeftAfterSpeech=false;
+ // Also retreat if audio cannot start because the visitor has not unlocked playback.
+ if(!audioUnlocked)scheduleGreetingRetreat();
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
@@ -493,8 +498,10 @@ function openYakutPage(path){
 }
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
+cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){cancelYakutSpeech();yakutPageOfferPending=false;return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -704,9 +711,9 @@ ready=true;loadSiteKnowledge().catch(console.warn);posX=leftGreetingX();targetX=
  if(getYakutCurrentPage()!=='index.html')prepareYakutPageOffer();
  else if(openingGreeted && arrivalOffer)prepareYakutPageOffer();
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
-model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
+model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
 posX=targetX;phase='idle';play('wait');
- // Walk to the homepage center on load. Do not speak until the first interaction.
+ // Walk to the homepage center with real gait animation on load. Browser audio starts only after interaction.
  if(getYakutCurrentPage()==='index.html'&&!openingGreeted)moveTo(centerAnswerX());
  if(yakutFirstInteraction||yakutWelcomeRequested)queueMicrotask(beginYakutVisit);
 positionStage();
