@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "scripts": { "start": "node yakut-imar-server.cjs" },
+  "dependencies": { "playwright": "1.61.1" }
+}

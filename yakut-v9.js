@@ -615,6 +615,9 @@ let yakutParcelIntake = null;
 const yakutTeklifGuidance = 'İsterseniz Kumtaş İnşaat’a inceleme için vekâlet verebilirsiniz. Ekibimiz belediyedeki güncel belgeleri ve yapılaşma koşullarını kontrol eder. Kat ve alan bilgileri netleşince proje ve maliyet çalışması yapar, ardından teklif hazırlar.';
 function yakutParcelIntakeCommand(message) {
  const t = normalizeYakutCommand(message);
+ const mahalle = yakutParcelIntake?.mahalleler?.find(name =>
+  normalizeYakutCommand(name) === t.replace(/ mahallesi$/, ''));
+ if (mahalle) return {district:null, numbered:[], mahalle};
  if (/(?:^| )(?:aç|git|bağlan|bağla)(?: |$)/.test(t)) return null;
  const district = yakutFindImarDistrict(t);
  const raw = yakutParcelSpeech(message);
@@ -672,7 +675,36 @@ function showYakutImarScreen(url, details) {
  document.body.append(dialog);
  dialog.showModal();
 }
-function yakutParcelIntakeAnswer({district, numbered, guidance}) {
+async function readYakutBagcilarParcel(state) {
+ const endpoint = document.querySelector('meta[name="yakut-imar-service"]')?.content;
+ if (!endpoint || state.district[0] !== 'Bağcılar') return null;
+ try {
+  const request = new URL('/imar/bagcilar', endpoint);
+  request.search = new URLSearchParams({ada:state.ada, parsel:state.parsel, mahalle:state.mahalle || ''});
+  const response = await fetch(request, {signal:AbortSignal.timeout(65000)});
+  if (!response.ok) return null;
+  const result = await response.json();
+  if (result.durum === 'mahalle_teyidi' && Array.isArray(result.mahalleler) && result.mahalleler.length) {
+   state.mahalleler = result.mahalleler;
+   state.waiting = true;
+   return 'Aynı ada ve parsel için şu mahalleler görünüyor: ' + result.mahalleler.join(', ') + '. Hangisine bakalım?';
+  }
+  if (result.durum !== 'bulundu' || result.ada !== state.ada || result.parsel !== state.parsel || !result.alanlar) return null;
+  const fields = [
+   ['Fonksiyon','Kullanım'], ['Hesap Alanı','Hesap alanı'],
+   ['T.A.K.S','Taban oturumu oranı'], ['K.A.K.S (Emsal)','Emsal'],
+   ['Kat Adedi','Kat adedi'], ['Bina Yüksekliği','Bina yüksekliği']
+  ];
+  const values = fields.flatMap(([key,label]) => {
+   const value = result.alanlar[key];
+   return typeof value === 'string' && value && !/^[-()\s]+$/.test(value) ? [label + ' ' + value] : [];
+  });
+  return result.mahalle + ' için Bağcılar Belediyesi kaydında şu bilgileri buldum. ' +
+   (values.length ? values.join('. ') + '. ' : 'Tabloda yapılaşma bilgisi görünmüyor. ') +
+   'Bu bilgiler ön inceleme içindir. Kesin değerlendirmede güncel imar belgesi ve plan notları esas alınır.';
+ } catch (_) { return null; }
+}
+async function yakutParcelIntakeAnswer({district, numbered, guidance, mahalle}) {
  if (guidance) return yakutTeklifGuidance;
  if (district && district !== yakutParcelIntake?.district) yakutParcelIntake = null;
  const state = yakutParcelIntake ??= {district:null, ada:null, parsel:null, waiting:true};
@@ -685,6 +717,11 @@ function yakutParcelIntakeAnswer({district, numbered, guidance}) {
  if (state.ada === null) return 'Parsel numarasını aldım. Ada numarası nedir?';
  if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
  state.waiting = false;
+ state.mahalle = mahalle || state.mahalle;
+ state.mahalleler = null;
+ const result = await readYakutBagcilarParcel(state);
+ if (state !== yakutParcelIntake) return null;
+ if (result) return result;
  showYakutImarScreen(state.district[1], state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
  if (new URL(state.district[1]).hostname === 'keos.besiktas.bel.tr') {
   return 'Ada ve parseli aldım. Beşiktaş’ın resmî sorgusunu ekrandaki bağlantıdan yeni sekmede açabilirsiniz. Kumtaş sayfası açık kalacak.';
@@ -840,7 +877,11 @@ if(yakutKirazliRequest(q) && (!yakutParcelIntake?.district || yakutParcelIntake.
 const intake = yakutParcelIntakeCommand(q);
 if(intake){
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
- react('agree',yakutParcelIntakeAnswer(intake),'center');
+ processingSpeech=true;
+ const answer = await yakutParcelIntakeAnswer(intake);
+ if(answer === null)return;
+ processingSpeech=false;
+ react('agree',answer,'center');
  return;
 }
 const districtImar = yakutDistrictImarCommand(q);
