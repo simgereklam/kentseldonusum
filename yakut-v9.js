@@ -645,7 +645,7 @@ function showYakutImarScreen(url, details) {
  external.href = url;
  external.target = '_blank';
  external.rel = 'noopener noreferrer';
- external.textContent = 'Ekran yüklenmezse resmî sitede aç';
+ external.textContent = 'Resmî e-İmarı yeni sekmede aç';
  external.style.cssText = 'color:white;text-decoration:underline';
  const close = document.createElement('button');
  close.type = 'button';
@@ -653,10 +653,18 @@ function showYakutImarScreen(url, details) {
  close.addEventListener('click', () => dialog.close());
  const frame = document.createElement('iframe');
  frame.title = 'Resmî imar kaynağı';
- frame.src = url;
  frame.style.cssText = 'width:100%;flex:1;min-height:0;border:0';
  bar.append(title, external, close);
- layout.append(bar, frame);
+ layout.append(bar);
+ if (new URL(url).hostname === 'keos.besiktas.bel.tr') {
+  const note = document.createElement('p');
+  note.textContent = 'Beşiktaş Belediyesi, sorgu ekranını kendi sitesi içinde gösteriyor. Yukarıdaki bağlantıyla resmî ekranı yeni sekmede açıp başlıktaki ada ve parseli aratabilirsiniz. Kumtaş sayfası açık kalır.';
+  note.style.cssText = 'max-width:640px;padding:24px 16px;margin:0 auto;line-height:1.6';
+  layout.append(note);
+ } else {
+  frame.src = url;
+  layout.append(frame);
+ }
  dialog.append(layout);
  dialog.addEventListener('close', () => dialog.remove(), {once:true});
  document.body.append(dialog);
@@ -676,6 +684,9 @@ function yakutParcelIntakeAnswer({district, numbered, guidance}) {
  if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
  state.waiting = false;
  showYakutImarScreen(state.district[1], state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
+ if (new URL(state.district[1]).hostname === 'keos.besiktas.bel.tr') {
+  return 'Ada ve parseli aldım. Beşiktaş’ın resmî sorgusunu ekrandaki bağlantıdan yeni sekmede açabilirsiniz. Kumtaş sayfası açık kalacak.';
+ }
  return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parsel için resmî sorgu ekranını gösteriyorum. Ekrandaki sonucu otomatik okuyamıyorum. TAKS veya emsal değerini görürseniz bana söyleyebilirsiniz. Arsanızın metrekare bilgisini verirseniz bir ön hesap yapabiliriz. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
 }
 function yakutDistrictImarCommand(message) {
