@@ -704,6 +704,43 @@ if(hidden){enableAudio.hidden=true;stopListening();cancelYakutSpeech();window.sp
 close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';voiceButton.style.display=hidden?'none':'';if(!hidden){positionStage();listenEnabled=true;queueListen(400);show('YAKUT dinlemeye devam ediyor.',3500)}
 };
 window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
+function addYakutChestInscription() {
+ const chest = model.getObjectByName('mixamorigSpine2');
+ if (!chest) return;
+
+ const artwork = document.createElement('canvas');
+ artwork.width = 512;
+ artwork.height = 224;
+ const paint = artwork.getContext('2d');
+ if (!paint) return;
+ paint.fillStyle = '#0049cc';
+ paint.font = '900 100px Arial, sans-serif';
+ paint.textAlign = 'center';
+ paint.textBaseline = 'middle';
+ paint.fillText('KUMTAŞ', 256, 58, 490);
+ paint.fillText('İNŞAAT', 256, 162, 490);
+
+ const texture = new THREE.CanvasTexture(artwork);
+ texture.colorSpace = THREE.SRGBColorSpace;
+ texture.anisotropy = 4;
+ const geometry = new THREE.PlaneGeometry(0.116, 0.045, 12, 6);
+ const vertices = geometry.attributes.position;
+ // Follow the chest plate's curvature in the GLB's rest pose.
+ for (let i = 0; i < vertices.count; i++) {
+  const x = vertices.getX(i);
+  const y = vertices.getY(i);
+  vertices.setXYZ(i, x, 0.65 + y, 0.113 - 0.29 * y - 2.7 * x * x);
+ }
+ const material = new THREE.MeshBasicMaterial({
+  map: texture,
+  alphaTest: 0.35,
+  toneMapped: false
+ });
+ const inscription = new THREE.Mesh(geometry, material);
+ inscription.frustumCulled = false;
+ model.add(inscription);
+ chest.attach(inscription);
+}
 async function init(){
 try{
 const [three,{GLTFLoader}]=await Promise.all([
@@ -720,6 +757,7 @@ const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,5,6);sc
 const fill=new THREE.DirectionalLight(0x46bbff,1.6);fill.position.set(4,4,-2);scene.add(fill);
 const gltf=await new GLTFLoader().loadAsync(url);model=gltf.scene;
 const bbox=new THREE.Box3().setFromObject(model);
+addYakutChestInscription();
 const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
 normalScale=1.55/Math.max(size.y,0.01);
 model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
