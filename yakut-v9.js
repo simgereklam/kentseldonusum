@@ -142,7 +142,8 @@ if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
 }else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
  clip='agree';answer='6306 sayılı Kanun kapsamındaki dönüşüm kararlarında, oybirliği sağlanamazsa maliklerin arsa paylarına göre salt çoğunluğu esas alınabilir. Maliklerin sözleşme şartlarını ve haklarını incelemesi, riskli yapı tespitini, tebligatları ve uygunluk varsa kira yardımını resmi kurumlardan doğrulaması önemlidir. Ayrıntılar yapının durumuna göre değişir. Resmi bilgi için Kentsel Dönüşüm Başkanlığının mevzuat ve bilgi merkezine bakılmalıdır.';
 }else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
- clip='agree';answer='Kentsel dönüşüm konusunda yardımcı olabilirim. Arsa alanını, ilçeyi ve biliyorsan geçerli imar koşullarını yaz. Kesin yapılaşma hakkı için belediyenin güncel imar durumunu kontrol etmek gerekir.';
+ clip='agree';await loadSiteKnowledge();const found=siteAnswer(q);
+ answer=found?found.text+' Bu, KUMTAŞ internet sitesinin '+found.path.replace('.html','')+' sayfasındaki bilgidir. Kesin yapılaşma hakkı için belediyenin güncel imar durumu esas alınmalıdır.':'Kentsel dönüşümde arsa alanı, imar durumu, mevcut bina bilgileri ve maliklerin anlaşma şartları birlikte incelenir. Arsa alanını, ilçeyi ve biliyorsan ada parsel numaranı söyle. Kesin haklar için belediyenin güncel imar durumu gerekir.';
 }else if(/(el salla|selam ver|selamla)/i.test(t)){
  clip='greet_02';answer='Merhaba! Seni görmek güzel!';
 }else if(/(dans et|oyna)/i.test(t)){
