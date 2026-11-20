@@ -291,6 +291,7 @@ function startYakutAhenk(){
  }catch(e){yakutTtsFailure(e)}
 }
 function speak(text){
+ yakutCurrentPrompt=String(text||'');
  show(text,Math.max(7000,text.length*85));
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;++yakutVoiceGeneration;yakutRequests.clear();
@@ -489,6 +490,9 @@ function openYakutPage(path){
 }
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
+const command=normalizeYakutCommand(q);
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){cancelYakutSpeech();yakutPageOfferPending=false;return}
+if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
@@ -614,12 +618,9 @@ function startSpeech(){
     return;
   }
   if(speaking||processingSpeech){
-   // Short voice commands like 'kentsel dönüşüm' work during YAKUT speech.
-   if(!yakutContactRequest(spoken)){
-    const wanted=yakutIsPageRequest(spoken,true);
-    if(wanted&&(navigationIntent||answerText.split(' ').length<=4)){openYakutPage(wanted);return}
-   }
-   return;
+   const wanted=yakutContactRequest(spoken)?null:yakutIsPageRequest(spoken,true);
+   if(wanted&&(navigationIntent||answerText.split(' ').length<=4)){openYakutPage(wanted);return}
+   cancelYakutSpeech();handle(spoken);return;
   }
   // Responses take precedence over page-name matching, including "anlat".
   if(yakutPageOfferPending && handleYakutOfferAnswer(answerText))return;
