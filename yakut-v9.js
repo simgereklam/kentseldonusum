@@ -129,7 +129,7 @@ function openingGreeting(){
  if(!ready||hidden||openingGreeted)return;
  openingGreeted=true;phase='greeting';play('greet_02',true);
  show(welcome,12000);
- if(!openingSpoken){openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');speak(welcome)}
+ if(!openingSpoken&&!sessionStorage.getItem('yakutVoiceWelcomed')){openingSpoken=true;sessionStorage.setItem('yakutVoiceWelcomed','1');speak(welcome)}
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
