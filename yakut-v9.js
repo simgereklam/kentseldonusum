@@ -7,7 +7,7 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const welcome='Merhaba, ben KUMTAŞ İnşaat asistanınız YAKUT. Size yardımcı olmak için buradayım.';
 const css=document.createElement('style');
 css.textContent=`
-#yakut-v9{position:fixed;left:-35px;bottom:70px;width:clamp(195px,22vw,290px);height:clamp(315px,40vw,445px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
+#yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(190px,20vw,265px);height:clamp(300px,37vw,410px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
 /* YAKUT is a voice-only on-page character: no caption, chat box, or buttons. */
 #yakut-v9-ui,#yakut-v9-caption{display:none!important}
@@ -18,7 +18,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-@media(max-width:650px){#yakut-v9{width:175px;height:282px;bottom:62px;left:-23px}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
+@media(max-width:650px){#yakut-v9{width:clamp(118px,32vw,155px);height:clamp(190px,51vw,250px);bottom:52px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
 document.head.appendChild(css);
@@ -33,6 +33,7 @@ let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaki
 let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null,openingGreeted=false,openingSpoken=false,voiceEnabled=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
 let processingSpeech=false;
+let yakutReturnLeftAfterSpeech=false;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -165,7 +166,8 @@ function unlockYakutSound(){
  visitorInteracted=true;
  listenEnabled=true;
  if(ready&&!openingSpoken){
-  openingSpoken=true;
+  openingSpoken=true;openingGreeted=true;
+  try{sessionStorage.setItem('yakutVisited','1')}catch(_){}
   pendingSpeechGesture='greet_02';speak(welcome);
  } else if(ready && !speaking) queueListen(700);
 }
@@ -196,7 +198,9 @@ function finishYakutSpeech(){
  if(yakutReadyChunk&&!hidden){const next=yakutReadyChunk;yakutReadyChunk=null;yakutPlaySpeech(next);return}
  if(yakutRequests.size||yakutSpeechQueue.length)return;
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
- yakutSpeechQueue=[];speaking=false;if(listenEnabled&&!hidden)queueListen(400);
+ yakutSpeechQueue=[];speaking=false;
+ if(yakutReturnLeftAfterSpeech){yakutReturnLeftAfterSpeech=false;moveTo(leftGreetingX())}
+ if(listenEnabled&&!hidden)queueListen(400);
 }
 function yakutTtsFailure(e){
  console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
@@ -283,12 +287,13 @@ function speak(text){
  if(listenEnabled&&!recognition)queueListen(500);
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
-function leftGreetingX(){return innerWidth<650?23:35}
+function leftGreetingX(){return 0}
+function centerAnswerX(){return Math.max(0,(innerWidth-stage.offsetWidth)/2)}
 function openingGreeting(){
  if(!ready||hidden||openingGreeted)return;
  openingGreeted=true;phase='greeting';pendingSpeechGesture='greet_02';
  show(welcome,12000);
- if(!openingSpoken&&audioUnlocked){openingSpoken=true;speak(welcome)}
+ if(!openingSpoken&&audioUnlocked){openingSpoken=true;try{sessionStorage.setItem('yakutVisited','1')}catch(_){}speak(welcome)}
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
@@ -298,7 +303,20 @@ voiceButton.onclick=()=>{
 };
 function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
-function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;pendingSpeechGesture=clip;speak(text)}
+function findYakutGesture(preferred){
+ if(preferred==='bow')return Object.keys(clips).find(n=>/^(bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))
+   ||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||'agree';
+ return clips[preferred]?preferred:(clips.agree?'agree':'wait');
+}
+function react(clip,text,placement='left'){
+ if(!ready)return;
+ const answering=placement==='center';
+ yakutReturnLeftAfterSpeech=answering;
+ moveTo(answering?centerAnswerX():leftGreetingX());
+ phaseTime=0;
+ pendingSpeechGesture=findYakutGesture(clip);
+ speak(text);
+}
 // A single conversation/session for all published pages: greetings are once per visit.
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 const yakutPageNames=[
@@ -371,7 +389,7 @@ function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage();
  const content=collectYakutPageSpeech();
  const text=yakutPageIntro(page)+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
- react('agree',text);
+ react('agree',text,'left');
 }
 function openYakutPage(path){
  const current=getYakutCurrentPage();
@@ -410,9 +428,11 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
 }else if(/(harika|mükemmel|süper|çok güzel|başarılı|tebrik|aferin|sevindim|sevin|mutlu|muhteşem|bravo|ne kadar güzel|çok iyisin)/i.test(t)){
  clip='dance_01';answer='Çok sevindim! Böyle güzel sözler duymak harika!';
 }else if(/(teşekkür|sağ ol|eyvallah|eline sağlık)/i.test(t)){
- clip='bow';answer='Ne demek! Yardımcı olabildiysem ne mutlu bana.';
+ clip='bow';answer='Ben teşekkür ederim. Yardımcı olabildiysem ne mutlu bana.';
 }else if(/(kızgın|sinirli|berbat|kötü|üzgün|saçma|yapamadın)/i.test(t)){
  clip='frustrated_01';answer='Seni anlıyorum. Ne olduğunu anlatırsan birlikte çözmeye çalışabiliriz.';
+}else if(/^(?:tamam|anladım|anlaşıldı|şimdi anladım|çok iyi anladım|peki anladım|anlıyorum|oldu anladım)(?:\s+(?:yakut|teşekkürler|sağ ol))?$/.test(t)){
+ clip='clap';answer='Harika, anlaştığımıza sevindim.';
 }else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne|yakut kimsin|kendini tanıt)/i.test(t)){
  clip='greet_02';answer='Merhaba, size nasıl yardımcı olabilirim?';
 }else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
@@ -436,7 +456,8 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
 }
 processingSpeech=false;
-react(clip,answer);
+const isShortReaction=/(teşekkür|sağ ol|eyvallah|eline sağlık|anladım|anlaşıldı|anlıyorum|tamam|merhaba|selam)/i.test(t);
+react(clip,isShortReaction?answer:'Sorunuzu cevaplayalım. '+answer,'center');
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
@@ -510,14 +531,14 @@ talk.onclick=()=>{
  talk.hidden=false;
  if(listenEnabled&&recognition){stopListening();show('Dinleme durduruldu.',3000);return}
  listenEnabled=true;micFailureCount=0;micRestartAt=0;visitorInteracted=true;talk.hidden=true;talk.textContent='🟢 Dinliyorum';
- if(!openingSpoken){openingSpoken=true;pendingSpeechGesture='greet_02';speak(welcome)}
+ if(!openingSpoken){openingSpoken=true;openingGreeted=true;try{sessionStorage.setItem('yakutVisited','1')}catch(_){}pendingSpeechGesture='greet_02';speak(welcome)}
  else{speak('Seni dinliyorum. Bana bir şey sorabilirsin.')}
  if(!window.speechSynthesis)queueListen(250);
 };
 
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';caption.classList.remove('shown');
-if(hidden){stopListening();speechSynthesis?.cancel();speaking=false}
+if(hidden){stopListening();cancelYakutSpeech();window.speechSynthesis?.cancel()}
 close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';voiceButton.style.display=hidden?'none':'';if(!hidden){positionStage();listenEnabled=true;queueListen(400);show('YAKUT dinlemeye devam ediyor.',3500)}
 };
 window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
@@ -545,7 +566,7 @@ model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDic
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
-ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage.offsetWidth;targetX=leftGreetingX();
+ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=leftGreetingX();targetX=leftGreetingX();
  // Keep one greeting across every page and use the current page's real content.
  let arrivalReadPage=false;
  try{
@@ -561,7 +582,7 @@ ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage
    openingSpoken=true;openingGreeted=true;
   }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
-  sessionStorage.setItem('yakutVisited','1');
+  // Mark visited only after the one-time greeting is actually triggered.
  }catch(e){console.warn('YAKUT oturumu:',e)}
  if(arrivalReadPage){
   const beginNarration=()=>{if(audioUnlocked&&!speaking)yakutSpeakCurrentPage()};
@@ -573,7 +594,7 @@ ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage
  }
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
-if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
+posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting);
 positionStage();
 const clock=new THREE.Clock();
 function frame(){
@@ -590,7 +611,7 @@ if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTime
 }else{posX+=Math.sign(targetX-posX)*step;}
 positionStage();
 }else if(phase==='idle'&&!reduced){
-walkTimer+=dt;if(!speaking&&walkTimer>13){walkTimer=0;moveTo(innerWidth*(.08+Math.random()*.65))}
+walkTimer+=dt; // Keep YAKUT by the left edge for narration.
 }
 if(face){
 const v=yakutAudioPlaying?Math.max(0,Math.sin(performance.now()*.016)):.0;
