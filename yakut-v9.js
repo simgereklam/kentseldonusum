@@ -293,6 +293,7 @@ if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam
    || Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n));
  if(bowName){play(bowName,true);console.info('YAKUT eğilme:',bowName)}
  else {phase='idle';play('wait');console.warn('YAKUT modelinde eğilme animasyonu bulunamadı:',Object.keys(clips))}
+ processingSpeech=false;if(listenEnabled)queueListen(650);
  return;
 }
 if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|fıkra)/i.test(t)){
@@ -318,7 +319,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  clip='clap';answer='Bravo! Seni alkışlıyorum!';
 }else if(/(yürü|yürüsene|yürüyebilir misin|gez|gezinsene|dolaş|sola git|sağa git)/i.test(t)){
  const x=/sola/.test(t)?innerWidth*.07:/sağa/.test(t)?innerWidth*.72:innerWidth*(.15+Math.random()*.6);
- moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
+ processingSpeech=false;moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
 }else{
  clip='agree';
  await loadSiteKnowledge();
