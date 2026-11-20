@@ -14,7 +14,7 @@ css.textContent=`
 #yakut-v9-ui button:hover{background:#137aaa}
 #yakut-v9-ui input{display:none;width:min(320px,45vw);padding:9px;border:1px solid #71c8fa;border-radius:14px;background:#fff;color:#122f44;font:13px Arial,sans-serif}
 #yakut-v9-ui.open input{display:block}
-#yakut-v9-caption{position:fixed;bottom:64px;left:4px;max-width:min(350px,85vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:11px 13px;border:1px solid #6dccff;border-radius:13px;font:13px/1.5 Arial,sans-serif;box-shadow:0 5px 15px #0004}
+#yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
 @media(max-width:650px){#yakut-v9{width:175px;height:282px;bottom:62px;left:-23px}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
@@ -118,7 +118,7 @@ speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voice=chooseVoice();
-if(!voice){speaking=false;show('YAKUT: '+text+' (Kadın ses motoru henüz bağlı değil.)',14000);if(listenEnabled)queueListen(600);return}
+if(!voice){speaking=false;voiceButton.hidden=true;show(text,6500);if(listenEnabled)queueListen(600);return}
 u.voice=voice;
 u.onstart=()=>{speaking=true;voiceButton.hidden=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
@@ -280,7 +280,7 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);posX=-stage.offsetWidth;targetX=leftGreetingX();
-listenEnabled=true;queueListen(1300);if(!sessionStorage.getItem('yakutVoiceWelcomed'))voiceButton.hidden=false;
+listenEnabled=true;queueListen(1300);voiceButton.hidden=!!sessionStorage.getItem('yakutVoiceWelcomed')||!chooseVoice();
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
 positionStage();
