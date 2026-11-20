@@ -421,7 +421,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
- if(yakutKirazliRequest(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
+ if(yakutKirazliRequest(message)||yakutDistrictImarCommand(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -553,6 +553,73 @@ function yakutImarHelpAnswer(message) {
  }
  return 'Bu konuda size yardımcı olabilirim. ' + yakutImarGuidance;
 }
+const yakutDistrictImarSources = [
+ ['Adalar', 'https://www.ibb.istanbul/tum-hizmetler/imar-ve-sehircilik-hizmetleri/'],
+ ['Arnavutköy', 'https://www.turkiye.gov.tr/arnavutkoy-belediyesi-imar-durum-sorgulama'],
+ ['Ataşehir', 'https://www.turkiye.gov.tr/atasehir-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Avcılar', 'https://www.turkiye.gov.tr/avcilar-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Bağcılar', 'https://bbgis.bagcilar.bel.tr/imardurumu/'],
+ ['Bahçelievler', 'https://www.turkiye.gov.tr/bahcelievler-belediyesi-imar-durum-sorgulama'],
+ ['Bakırköy', 'https://www.turkiye.gov.tr/bakirkoy-belediyesi-eimar-8881'],
+ ['Başakşehir', 'https://www.turkiye.gov.tr/basaksehir-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Bayrampaşa', 'https://www.turkiye.gov.tr/bayrampasa-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Beşiktaş', 'https://www.turkiye.gov.tr/besiktas-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Beykoz', 'https://www.turkiye.gov.tr/beykoz-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Beylikdüzü', 'https://www.turkiye.gov.tr/beylikduzu-belediyesi-imar-durum-sorgulama'],
+ ['Beyoğlu', 'https://www.turkiye.gov.tr/beyoglu-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Büyükçekmece', 'https://www.turkiye.gov.tr/buyukcekmece-belediyesi-imar-durum-sorgulama'],
+ ['Çatalca', 'https://www.turkiye.gov.tr/catalca-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Çekmeköy', 'https://www.turkiye.gov.tr/cekmekoy-belediyesi-imar-durum-sorgulama'],
+ ['Esenler', 'https://www.turkiye.gov.tr/esenler-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Esenyurt', 'https://www.turkiye.gov.tr/esenyurt-belediyesi-imar-durum-sorgulama-v3'],
+ ['Eyüpsultan', 'https://www.turkiye.gov.tr/eyupsultan-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Fatih', 'https://www.turkiye.gov.tr/fatih-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Gaziosmanpaşa', 'https://www.turkiye.gov.tr/gaziosmanpasa-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Güngören', 'https://www.turkiye.gov.tr/gungoren-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Kadıköy', 'https://www.turkiye.gov.tr/kadikoy-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Kağıthane', 'https://www.turkiye.gov.tr/kagithane-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Kartal', 'https://www.turkiye.gov.tr/kartal-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Küçükçekmece', 'https://www.turkiye.gov.tr/kucukcekmece-belediyesi-imar-durum-sorgulama'],
+ ['Maltepe', 'https://www.turkiye.gov.tr/maltepe-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Pendik', 'https://www.turkiye.gov.tr/pendik-belediyesi-imar-sorgulama'],
+ ['Sancaktepe', 'https://www.turkiye.gov.tr/sancaktepe-belediyesi-imar-durum-sorgulama'],
+ ['Sarıyer', 'https://www.turkiye.gov.tr/sariyer-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Silivri', 'https://www.turkiye.gov.tr/silivri-belediyesi-imar-durum-sorgulama'],
+ ['Sultanbeyli', 'https://www.turkiye.gov.tr/sultanbeyli-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Sultangazi', 'https://www.turkiye.gov.tr/sultangazi-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Şile', 'https://www.turkiye.gov.tr/sile-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Şişli', 'https://www.turkiye.gov.tr/sisli-belediyesi-imar-durum-sorgulama'],
+ ['Tuzla', 'https://www.turkiye.gov.tr/tuzla-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Ümraniye', 'https://www.turkiye.gov.tr/umraniye-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Üsküdar', 'https://www.turkiye.gov.tr/uskudar-belediyesi?belediye=kategori&kategori=ARSA'],
+ ['Zeytinburnu', 'https://www.turkiye.gov.tr/zeytinburnu-belediyesi?belediye=kategori&kategori=ARSA']
+];
+let yakutImarDistrict = null;
+function yakutDistrictImarCommand(message) {
+ const t = normalizeYakutCommand(message);
+ const district = yakutDistrictImarSources.find(([name]) => {
+  const key = name.toLocaleLowerCase('tr-TR');
+  return new RegExp('(?:^| )' + key + '(?: |$|da(?: |$)|de(?: |$)|ta(?: |$)|te(?: |$))').test(t);
+ });
+ const imar = /(?:^| )(?:e imarı?|e belediye|imar durumu|imar sorgusu|imar sorgula|belediye kaydı)(?: |$)/.test(t);
+ const parcel = /(?:^| )ada(?: |$)/.test(t) && /(?:^| )parsel(?: |$)/.test(t);
+ const open = /(?:^| )(?:aç|bağlan|git)(?: |$)/.test(t);
+ if (!imar && !parcel && !(yakutImarDistrict === 'waiting' && district) &&
+     !(district && open && /belediye/.test(t))) return null;
+ return {district: district || (imar && Array.isArray(yakutImarDistrict) ? yakutImarDistrict : null), open};
+}
+function yakutDistrictImarAnswer({district, open}) {
+ if (!district) {
+  yakutImarDistrict = 'waiting';
+  return 'İmar sorgusu için İstanbul’un hangi ilçesine bakalım?';
+ }
+ yakutImarDistrict = district;
+ if (open) {
+  location.assign(district[1]);
+  return '';
+ }
+ return district[0] + ' için resmî imar kaynaklarını açabilirim. Açmamı isterseniz, e-İmarı aç deyin. ' + yakutImarGuidance;
+}
 function yakutKirazliRequest(message) {
  const t = normalizeYakutCommand(message.replace(/[â]/gi, "a"));
  const exact = /(?:\b0\s*[/–-]\s*2135\b|\b(?:ada\s+0|0\s+ada)\b.*\b(?:parsel\s+2135|2135\s+parsel)\b)/i.test(yakutParcelSpeech(message));
@@ -654,8 +721,8 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutKirazliCase=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutKirazliCase=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -670,6 +737,13 @@ if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingS
 if(yakutKirazliRequest(q)){
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  const answer=yakutKirazliAnswer(q);
+ if(answer)react('agree',answer,'center');
+ return;
+}
+const districtImar = yakutDistrictImarCommand(q);
+if(districtImar){
+ yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
+ const answer=yakutDistrictImarAnswer(districtImar);
  if(answer)react('agree',answer,'center');
  return;
 }
