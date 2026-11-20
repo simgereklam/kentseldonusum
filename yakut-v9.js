@@ -29,6 +29,7 @@ document.body.append(stage,caption,ui);
 const voiceButton=ui.querySelector('#yakut-voice'),talk=ui.querySelector('#yakut-talk'),inp=ui.querySelector('#yakut-text'),send=ui.querySelector('#yakut-send'),close=ui.querySelector('#yakut-close');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=false,micStarting=false,listenRetry=null,visitorInteracted=false;
 let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null,openingGreeted=false,openingSpoken=false,voiceEnabled=false;
+let micFailureCount=0,micLastError='',micRestartAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){caption.textContent=text;caption.classList.add('shown');clearTimeout(dialogTimer);if(ms)dialogTimer=setTimeout(()=>caption.classList.remove('shown'),ms)}
@@ -174,50 +175,75 @@ if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
 }
 react(clip,answer);
 }
-function queueListen(delay=250){
-clearTimeout(listenRetry);if(!listenEnabled||hidden||speaking||recognition||micStarting)return;
-listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!recognition)startSpeech()},delay)
+function queueListen(delay=600){
+ clearTimeout(listenRetry);
+ if(!listenEnabled||hidden||speaking||recognition||micStarting)return;
+ const ms=Math.max(delay,micRestartAt-Date.now(),0);
+ listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!recognition)startSpeech()},ms)
 }
 function stopListening(){
-listenEnabled=false;clearTimeout(listenRetry);
-if(recognition){try{recognition.abort()}catch(e){}}
-talk.textContent='🎤 YAKUT';
+ listenEnabled=false;clearTimeout(listenRetry);micStarting=false;
+ if(recognition){try{recognition.abort()}catch(e){}}
+ talk.textContent='🎤 YAKUT';
 }
-function startSpeech(){
-const API=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!API){stopListening();ui.classList.add('open');send.hidden=false;show('Bu tarayıcıda ses algılama desteklenmiyor. Mesajınızı yazarak iletebilirsiniz.');return}
-if(!ready||!listenEnabled||hidden||speaking||recognition||micStarting)return;
-let rec=new API();recognition=rec;micStarting=true;
-rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
-rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
-rec.onresult=e=>{
- const spoken=e.results?.[0]?.[0]?.transcript;
- if(!spoken)return;
- show('Siz: '+spoken,2600);
- handle(spoken);
-};
-rec.onerror=e=>{
- micStarting=false;
- if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture'){
-  stopListening();show('Mikrofon izni gerekli. Adres çubuğundan mikrofon erişimine izin verin. Yazılı mesaj da gönderebilirsiniz.',9000);
+function speechProblem(err){
+ if(!listenEnabled||hidden)return;
+ if(err==='not-allowed'||err==='service-not-allowed'){
+  stopListening();show('Mikrofon erişimi engellendi. Tarayıcı adres çubuğundaki kilit simgesinden bu site için mikrofon izni verin.',10000);
   ui.classList.add('open');send.hidden=false;return;
  }
- if(e.error==='no-speech')return;
- show('Ses algılama geçici olarak durdu; bağlantıyı yeniden deniyorum.',3000)
-};
-rec.onend=()=>{
- micStarting=false;if(recognition===rec)recognition=null;
- if(listenEnabled&&!hidden&&!speaking){talk.textContent='🟢 Dinliyorum';queueListen(450)}
- else if(!listenEnabled)talk.textContent='🎤 YAKUT';
-};
-try{rec.start()}catch(e){micStarting=false;if(recognition===rec)recognition=null;queueListen(1000)}
+ if(err==='audio-capture'){
+  stopListening();show('Mikrofon bulunamadı veya başka bir uygulama tarafından kullanılıyor. Mikrofonu kontrol edin; isterseniz yazarak devam edin.',11000);
+  ui.classList.add('open');send.hidden=false;return;
+ }
+ if(err==='no-speech'||err==='aborted'){return}
+ // SpeechRecognition may rely on a browser speech server and cannot always run offline.
+ micFailureCount++;
+ if(err==='network'||err==='language-not-supported'||err==='language-unavailable'){
+  if(micFailureCount>=3){
+   stopListening();show('Tarayıcının ses tanıma bağlantısı çalışmıyor. İnternet bağlantısını kontrol edin veya mesajı yazın. Tekrar denemek için 🎤 YAKUT düğmesine basın.',11000);
+   ui.classList.add('open');send.hidden=false;return;
+  }
+  micRestartAt=Date.now()+Math.min(12000,2000*micFailureCount);
+  show('Ses bağlantısı kontrol ediliyor. Sorun devam ederse yazılı mesaj kullanabilirsiniz.',4000);
+ }else{
+  if(micFailureCount>=4){
+   stopListening();show('Ses algılama başlatılamadı. Mikrofon iznini ve tarayıcı ayarlarını kontrol edin. Yazılı mesaj gönderebilirsiniz.',10000);ui.classList.add('open');send.hidden=false;return;
+  }
+  micRestartAt=Date.now()+Math.min(8000,1500*micFailureCount);
+ }
+}
+function startSpeech(){
+ const API=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!API){stopListening();ui.classList.add('open');send.hidden=false;show('Bu tarayıcı ses tanımayı desteklemiyor. Yazarak konuşabilirsiniz.',8000);return}
+ if(!ready||!listenEnabled||hidden||speaking||recognition||micStarting)return;
+ const rec=new API();recognition=rec;micStarting=true;
+ rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
+ rec.onstart=()=>{micStarting=false;micFailureCount=0;talk.textContent='🟢 Dinliyorum'};
+ rec.onresult=e=>{
+  const spoken=e.results?.[0]?.[0]?.transcript;
+  if(!spoken)return;
+  micFailureCount=0;
+  show('Siz: '+spoken,2600);
+  handle(spoken);
+ };
+ rec.onerror=e=>{micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
+ rec.onend=()=>{
+  micStarting=false;if(recognition===rec)recognition=null;
+  if(listenEnabled&&!hidden&&!speaking){talk.textContent='🟢 Dinliyorum';queueListen(700)}
+  else if(!listenEnabled)talk.textContent='🎤 YAKUT';
+ };
+ try{rec.start()}catch(e){
+  micStarting=false;if(recognition===rec)recognition=null;
+  speechProblem('start-failed');if(listenEnabled)queueListen(1500);
+ }
 }
 talk.onclick=()=>{
  if(!ready)return;
  voiceEnabled=true;visitorInteracted=true;
  ui.classList.add('open');send.hidden=false;
  if(listenEnabled){stopListening();show('Mikrofon kapatıldı. İsterseniz yazarak devam edebilirsiniz.',4000);return}
- listenEnabled=true;visitorInteracted=true;talk.textContent='🟢 Dinliyorum';
+ listenEnabled=true;micFailureCount=0;micRestartAt=0;visitorInteracted=true;talk.textContent='🟢 Dinliyorum';
  if(!openingSpoken){openingSpoken=true;play('greet_02',true);speak(welcome)}
  else{speak('Seni dinliyorum. Bana bir şey sorabilirsin.')}
  if(!window.speechSynthesis)queueListen(250);
