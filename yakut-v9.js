@@ -4,7 +4,7 @@
 'use strict';
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
-const welcome='Merhaba, ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Size nasıl yardımcı olabilirim?';
+const welcome='Merhaba, hoş geldiniz. Ben KUMTAŞ İnşaat dijital asistanınız YAKUT.';
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(190px,20vw,265px);height:clamp(300px,37vw,410px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -36,7 +36,7 @@ let processingSpeech=false;
 let yakutReturnLeftAfterSpeech=false;
 let yakutFirstInteraction=false,yakutWelcomeRequested=false,yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
-let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0;
+let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -318,13 +318,15 @@ function openingGreeting(){
  beginYakutVisit();
 }
 function finishYakutGreetingWalk(){
- yakutIsGreetingWalking=false;
- yakutGreetingInProgress=true;
- phase='greeting';
+ yakutIsGreetingWalking=false;yakutGreetingInProgress=true;phase='greeting';model.rotation.y=0;
+ const bow=findYakutGesture('bow');
+ if(bow&&clips[bow]){yakutOpeningBow=true;play(bow,true)}
+ else {console.warn('YAKUT: Eğilme animasyonu dosyada bulunamadı');completeYakutOpening()}
+}
+function completeYakutOpening(){
+ yakutOpeningBow=false;
  try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
- pendingSpeechGesture=findYakutGesture('greet_02');
- speak(welcome);
- yakutReturnLeftAfterSpeech=true;
+ phase='idle';play('wait');speak(welcome);yakutReturnLeftAfterSpeech=false;
 }
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
@@ -332,11 +334,10 @@ voiceButton.onclick=()=>{
  if(!openingGreeted)openingGreeting();
  else queueListen(250);
 };
-function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{console.warn('YAKUT: yürüme animasyonu bulunamadı, kayma yerine sabit kalıyor');targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{console.warn('YAKUT: yürüme animasyonu bulunamadı, kayma yerine sabit kalıyor');targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
- if(preferred==='bow')return Object.keys(clips).find(n=>/^(bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))
-   ||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||'agree';
+ if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
  return clips[preferred]?preferred:(clips.agree?'agree':'wait');
 }
 function react(clip,text,placement='left'){
@@ -409,7 +410,7 @@ function collectYakutPageSpeech(){
   if(/^(h1|h2|h3|h4)$/i.test(el.tagName) && text.length>135)continue;
   seen.add(text);pieces.push(text);
  }
- return pieces.join('. ').replace(/\.{2,}/g,'.').replace(/\s+/g,' ').trim();
+ return pieces.filter(t=>t.length>60).slice(0,6).join('. ').slice(0,1400).replace(/\.{2,}/g,'.').replace(/\s+/g,' ').trim();
 }
 function yakutPageIntro(path){
  const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','hakkimizda.html':'hakkımızda','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgeler'};
@@ -419,8 +420,8 @@ function yakutPageIntro(path){
  return 'Memnuniyetle. '+title+' sayfasını birlikte inceleyelim. ';
 }
 function prepareYakutPageOffer(){
- // No unsolicited page/image narration: YAKUT answers only when asked.
- yakutPageOfferPending=false;yakutOfferSpoken=false;
+ yakutPageOfferPending=true;yakutOfferSpoken=false;
+ if(ready&&audioUnlocked&&!speaking)offerYakutPage();
 }
 function offerYakutPage(){
  if(!ready||!yakutPageOfferPending||yakutOfferSpoken||speaking||yakutIsGreetingWalking||!audioUnlocked)return;
@@ -428,8 +429,8 @@ function offerYakutPage(){
  const page=getYakutCurrentPage();
  const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(/ sayfasını birlikte inceleyelim\.\s*$/,'');
  const offer=page==='iletisim.html'
-  ?'İletişim sayfasındayız. Size iletişim bilgilerini paylaşmamı ister misiniz?'
-  :topic+' sayfasındayız. Bu sayfa hakkında bilgi vermemi ister misiniz?';
+  ?'İletişim sayfasındayız. Size adres tarif etmemi ister misiniz?'
+  :topic+' sayfasındayız. Size yardımcı olabilir miyim?';
  yakutLastOfferAt=Date.now();
  react('agree',offer,'left');
 }
@@ -450,7 +451,7 @@ function handleYakutOfferAnswer(t){
 }
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage();
- if(page==='iletisim.html'){react('agree',Object.values(yakutContact).join(' '),'left');return}
+ if(page==='iletisim.html'){react('agree',yakutContact.address,'left');return}
  const content=collectYakutPageSpeech();
  const text=yakutPageIntro(page)+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
  react('agree',text,'left');
@@ -678,7 +679,7 @@ basePosition=model.position.clone();
 model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary)face=o}});
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
-mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
+mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);posX=leftGreetingX();targetX=leftGreetingX();
  // Share the first greeting across the site. All other pages ask before narrating.
  let arrivalOffer=false;
@@ -722,7 +723,7 @@ if(yakutAudioPlaying && phase==='idle'){
 }
 if(phase==='walking'){
 const step=(innerWidth<650?105:175)*dt;
-if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
+if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
  // Finish walking with actual footstep motion before any response gesture.
  if(pendingSpeechGesture&&yakutAudioPlaying){const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);phase='reacting'}
  if(yakutIsGreetingWalking)finishYakutGreetingWalk()
