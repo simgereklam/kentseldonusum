@@ -4,10 +4,11 @@
 'use strict';
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
+const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Sizin için ne yapabilirim?';
 const css=document.createElement('style');
 css.textContent=`
-#yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(190px,20vw,265px);height:clamp(300px,37vw,410px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
+#yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(230px,25vw,330px);height:clamp(340px,48vw,520px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
 #yakut-enable-audio{position:fixed;z-index:135;bottom:18px;left:14px;border:0;background:#09638c;color:white;padding:11px 15px;border-radius:24px;font:700 14px Arial,sans-serif;box-shadow:0 5px 16px #0005;cursor:pointer}
 #yakut-enable-audio[hidden]{display:none!important}
@@ -20,7 +21,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-@media(max-width:650px){#yakut-v9{width:clamp(185px,53vw,250px);height:clamp(295px,83vw,390px);bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
+@media(max-width:650px){#yakut-v9{width:clamp(210px,60vw,300px);height:min(56dvh,clamp(330px,94vw,460px));bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
 document.head.appendChild(css);
@@ -704,42 +705,50 @@ if(hidden){enableAudio.hidden=true;stopListening();cancelYakutSpeech();window.sp
 close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';voiceButton.style.display=hidden?'none':'';if(!hidden){positionStage();listenEnabled=true;queueListen(400);show('YAKUT dinlemeye devam ediyor.',3500)}
 };
 window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
-function addYakutChestInscription() {
+function addYakutChestLogo() {
  const chest = model.getObjectByName('mixamorigSpine2');
  if (!chest) return;
 
  const artwork = document.createElement('canvas');
- artwork.width = 512;
- artwork.height = 224;
- const paint = artwork.getContext('2d');
+ artwork.width = 336;
+ artwork.height = 368;
+ const paint = artwork.getContext('2d', {willReadFrequently: true});
  if (!paint) return;
- paint.fillStyle = '#0049cc';
- paint.font = '900 100px Arial, sans-serif';
- paint.textAlign = 'center';
- paint.textBaseline = 'middle';
- paint.fillText('KUMTAŞ', 256, 58, 490);
- paint.fillText('İNŞAAT', 256, 162, 490);
 
  const texture = new THREE.CanvasTexture(artwork);
  texture.colorSpace = THREE.SRGBColorSpace;
  texture.anisotropy = 4;
- const geometry = new THREE.PlaneGeometry(0.116, 0.045, 12, 6);
+ const geometry = new THREE.PlaneGeometry(0.068, 0.0745, 12, 12);
  const vertices = geometry.attributes.position;
- // Follow the chest plate's curvature in the GLB's rest pose.
  for (let i = 0; i < vertices.count; i++) {
   const x = vertices.getX(i);
   const y = vertices.getY(i);
-  vertices.setXYZ(i, x, 0.65 + y, 0.113 - 0.29 * y - 2.7 * x * x);
+  vertices.setXYZ(i, x, 0.652 + y, 0.116 - 0.29 * y - 2.7 * x * x);
  }
  const material = new THREE.MeshBasicMaterial({
   map: texture,
   alphaTest: 0.35,
   toneMapped: false
  });
- const inscription = new THREE.Mesh(geometry, material);
- inscription.frustumCulled = false;
- model.add(inscription);
- chest.attach(inscription);
+ const logo = new THREE.Mesh(geometry, material);
+ logo.frustumCulled = false;
+ model.add(logo);
+ chest.attach(logo);
+
+ const source = new Image();
+ source.onload = () => {
+  paint.drawImage(source, 840, 86, 336, 368, 0, 0, artwork.width, artwork.height);
+  const pixels = paint.getImageData(0, 0, artwork.width, artwork.height);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+   pixels.data[i + 3] = 255 - pixels.data[i];
+   pixels.data[i] = 12;
+   pixels.data[i + 1] = 47;
+   pixels.data[i + 2] = 109;
+  }
+  paint.putImageData(pixels, 0, 0);
+  texture.needsUpdate = true;
+ };
+ source.src = chestLogoUrl;
 }
 async function init(){
 try{
@@ -757,7 +766,7 @@ const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,5,6);sc
 const fill=new THREE.DirectionalLight(0x46bbff,1.6);fill.position.set(4,4,-2);scene.add(fill);
 const gltf=await new GLTFLoader().loadAsync(url);model=gltf.scene;
 const bbox=new THREE.Box3().setFromObject(model);
-addYakutChestInscription();
+addYakutChestLogo();
 const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
 normalScale=1.55/Math.max(size.y,0.01);
 model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
