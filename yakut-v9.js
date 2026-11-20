@@ -9,6 +9,8 @@ const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:-35px;bottom:70px;width:clamp(195px,22vw,290px);height:clamp(315px,40vw,445px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
+/* YAKUT is a voice-only on-page character: no caption, chat box, or buttons. */
+#yakut-v9-ui,#yakut-v9-caption{display:none!important}
 #yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
 #yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
 #yakut-v9-ui button:hover{background:#137aaa}
@@ -32,7 +34,7 @@ let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null,op
 let micFailureCount=0,micLastError='',micRestartAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function show(text,ms=7000){caption.textContent=text;caption.classList.add('shown');clearTimeout(dialogTimer);if(ms)dialogTimer=setTimeout(()=>caption.classList.remove('shown'),ms)}
+function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
 function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
 const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
 next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
@@ -118,7 +120,7 @@ speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voice=chooseVoice();
-if(!voice){speaking=false;voiceButton.hidden=true;show(text,6500);if(listenEnabled)queueListen(600);return}
+if(!voice){speaking=false;console.info('YAKUT: Türkçe kadın ses motoru henüz bağlı değil.');if(listenEnabled)queueListen(600);return}
 u.voice=voice;
 u.onstart=()=>{speaking=true;voiceButton.hidden=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
@@ -280,7 +282,7 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);posX=-stage.offsetWidth;targetX=leftGreetingX();
-listenEnabled=true;queueListen(1300);voiceButton.hidden=!!sessionStorage.getItem('yakutVoiceWelcomed')||!chooseVoice();
+listenEnabled=true;queueListen(1300);voiceButton.hidden=true;
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
 positionStage();
