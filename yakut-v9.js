@@ -421,7 +421,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
- if(yakutKirazliRequest(message)||yakutDistrictImarCommand(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
+ if(yakutKirazliRequest(message)||yakutParcelIntakeCommand(message)||yakutDistrictImarCommand(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -595,12 +595,47 @@ const yakutDistrictImarSources = [
  ['Zeytinburnu', 'https://www.turkiye.gov.tr/zeytinburnu-belediyesi?belediye=kategori&kategori=ARSA']
 ];
 let yakutImarDistrict = null;
-function yakutDistrictImarCommand(message) {
- const t = normalizeYakutCommand(message);
- const district = yakutDistrictImarSources.find(([name]) => {
+function yakutFindImarDistrict(t) {
+ return yakutDistrictImarSources.find(([name]) => {
   const key = name.toLocaleLowerCase('tr-TR');
   return new RegExp('(?:^| )' + key + '(?: |$|da(?: |$)|de(?: |$)|ta(?: |$)|te(?: |$))').test(t);
  });
+}
+let yakutParcelIntake = null;
+const yakutTeklifGuidance = 'İsterseniz Kumtaş İnşaat’a inceleme için vekâlet verebilirsiniz. Ekibimiz belediyedeki güncel belgeleri ve yapılaşma koşullarını kontrol eder. Kat ve alan bilgileri netleşince proje ve maliyet çalışması yapar, ardından teklif hazırlar.';
+function yakutParcelIntakeCommand(message) {
+ const t = normalizeYakutCommand(message);
+ if (/(?:^| )(?:aç|git|bağlan|bağla)(?: |$)/.test(t)) return null;
+ const district = yakutFindImarDistrict(t);
+ const raw = yakutParcelSpeech(message);
+ const pair = raw.match(/(?:^|\D)(\d+)\s*[/-]\s*(\d+)(?:\D|$)/);
+ const ada = raw.match(/(?:\bada\s*[:=]?\s*(\d+)\b|\b(\d+)\s+ada\b)/);
+ const parsel = raw.match(/(?:\bparsel\s*[:=]?\s*(\d+)\b|\b(\d+)\s+parsel\b)/);
+ const numbered = pair ? pair.slice(1) : [ada?.[1] || ada?.[2], parsel?.[1] || parsel?.[2]];
+ if (/(?:vekalet|vek let|teklif|fiyatlandırma)/.test(t) && (yakutParcelIntake || yakutKirazliCase === 'kirazli')) return {guidance:true};
+ if (!/(?:arsam|arsamız) var/.test(t) &&
+     !(yakutParcelIntake?.waiting && (district || numbered.some(Boolean))) &&
+     !(numbered.every(Boolean) && (district || yakutParcelIntake))) return null;
+ return {district, numbered};
+}
+function yakutParcelIntakeAnswer({district, numbered, guidance}) {
+ if (guidance) return yakutTeklifGuidance;
+ if (district && district !== yakutParcelIntake?.district) yakutParcelIntake = null;
+ const state = yakutParcelIntake ??= {district:null, ada:null, parsel:null, waiting:true};
+ state.district = district || state.district;
+ state.ada = numbered[0] || state.ada;
+ state.parsel = numbered[1] || state.parsel;
+ if (!state.district) return 'Tabii, bakalım. Arsanız hangi ilçede?';
+ yakutImarDistrict = state.district;
+ if (state.ada === null && state.parsel === null) return state.district[0] + ' için ada ve parsel numarasını söyler misiniz?';
+ if (state.ada === null) return 'Parsel numarasını aldım. Ada numarası nedir?';
+ if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
+ state.waiting = false;
+ return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parseli aldım. Bu parselin belediye verisini konuşma içinde doğrulayamıyorum. İsterseniz e-İmarı aç diyerek resmî sorguya gidebilirsiniz. Arsa alanınızı biliyorsanız varsayımlarla ön hesap yapabilirim. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
+}
+function yakutDistrictImarCommand(message) {
+ const t = normalizeYakutCommand(message);
+ const district = yakutFindImarDistrict(t);
  if (/(?:^| )(?:ibb|i bb|istanbul büyükşehir)(?: |$)/.test(t) && /(?:imar|e plan|plan sorgu)/.test(t)) {
   return {district: ['İBB', 'https://eplan.ibb.istanbul/sorgu/plansorgu'], open: true};
  }
@@ -724,8 +759,8 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutKirazliCase=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -737,10 +772,16 @@ const contactNavigation=/(?:iletişim\s+(?:bilgi(?:si|leri|lerini)?|sayfa(?:sı|
 if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
 const contactAnswer=yakutContactRequest(q);
 if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
-if(yakutKirazliRequest(q)){
+if(yakutKirazliRequest(q) && (!yakutParcelIntake?.district || yakutParcelIntake.district[0] === 'Bağcılar')){
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  const answer=yakutKirazliAnswer(q);
  if(answer)react('agree',answer,'center');
+ return;
+}
+const intake = yakutParcelIntakeCommand(q);
+if(intake){
+ yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
+ react('agree',yakutParcelIntakeAnswer(intake),'center');
  return;
 }
 const districtImar = yakutDistrictImarCommand(q);
@@ -757,6 +798,9 @@ if(yakutImarHelpRequest(q)){
  return;
 }
 if(yakutScenarioRequest(q)){
+ if (!yakutScenario && yakutParcelIntake?.district) {
+  yakutScenario = {district:yakutParcelIntake.district[0], area:null, floors:null, flat:null, shop:0, waiting:null};
+ }
  yakutKirazliCase=null;
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  react('agree',yakutScenarioAnswer(q),'center');return;
