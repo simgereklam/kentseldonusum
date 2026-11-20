@@ -219,6 +219,11 @@ let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,y
 let yakutSpeechQueue=[],yakutAudioPlaying=false,yakutReadyChunk=null,yakutVoiceGeneration=0,yakutRequests=new Map();
 let yakutAudioStartTime=0,yakutGestureClock=0;
 function splitYakutSpeech(text){
+ // For the initial greeting, synthesize a short first phrase so it can be ready
+ // before the bow finishes instead of waiting for the entire greeting audio.
+ if(String(text).trim()===welcome){
+  return ['Merhaba, hoş geldiniz.', 'Ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Sizin için ne yapabilirim?'];
+ }
  const sentences=String(text).replace(/\s+/g,' ').trim().match(/[^.!?;:]+[.!?;:]?/g)||[];
  const chunks=[];let part='';
  for(const sentence of sentences)for(const word of sentence.trim().split(/\s+/)){
