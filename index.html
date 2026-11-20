@@ -83,7 +83,7 @@
             justify-content: space-between;
         }
 
-        /* ÜST ALAN: MAVİ VE BÜYÜK KUMTAŞ İNŞAAT LTD ŞTİ */
+        /* ÜST ALAN: KUMTAŞ İNŞAAT LOGOSU */
         .hero-top-area {
             text-align: center;
             max-width: 950px;
@@ -91,14 +91,10 @@
             padding-top: 4px;
         }
 
-        .hero-company-title {
-            font-size: clamp(24px, 3.8vw, 52px);
-            font-weight: 950;
-            color: #38bdf8;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.95);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            line-height: 1.15;
+        .hero-company-logo {
+            display: block;
+            width: min(576px, 82vw, 66dvh);
+            height: auto;
         }
 
         .hero-middle-spacer {
@@ -178,10 +174,6 @@
                 height: calc(100dvh - 54px);
                 padding: 14px 0 36px 0;
             }
-            .hero-company-title {
-                font-size: 22px;
-                letter-spacing: 0.3px;
-            }
             .hero h1 {
                 font-size: 21px;
                 padding: 0 6px;
@@ -236,9 +228,9 @@
 
     <div class="container">
         
-        <!-- ÜST ALAN: MAVİ VE BÜYÜK KUMTAŞ İNŞAAT LTD ŞTİ -->
+        <!-- ÜST ALAN: KUMTAŞ İNŞAAT LOGOSU -->
         <div class="hero-top-area">
-            <div class="hero-company-title">KUMTAŞ İNŞAAT LTD ŞTİ</div>
+            <img class="hero-company-logo" src="kumtas-altin-logo.webp" width="1152" height="648" alt="Kumtaş İnşaat" fetchpriority="high">
         </div>
 
         <!-- ORTA BOŞLUK: ŞANTİYE VİDEOSUNU TAM AÇIK BIRAKIR -->
