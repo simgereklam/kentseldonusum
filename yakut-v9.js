@@ -421,6 +421,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
+ if(yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -529,12 +530,83 @@ function openYakutPage(path){
  location.assign(new URL(path,location.origin+'/').href);
  return true;
 }
+let yakutScenario = null;
+const yakutAreaUnit = '(?:m²|m2|metre\\s*kare|metrekare)';
+function yakutScenarioRequest(message) {
+ const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
+ if (/(?:^| )(?:aç|git|götür|sayfasına|sayfasını)(?: |$)/.test(t)) return false;
+ return /(?:kaç daire|kaç konut|kaç dükk[aâ]n|taban oturumu|inşaat alanı|(?:arsa|daire|dükk[aâ]n).{0,35}hesap)/.test(t) ||
+  Boolean(yakutScenario && (
+   /^(?:peki )?(?:dükk[aâ]n|mağaza)/.test(t) ||
+   /(?:kat|brüt|arsam|arsa alanı)/.test(t) && /\d/.test(message) ||
+   (yakutScenario.waiting && (/^\d+(?:[.,]\d+)?$/.test(message.trim()) ||
+    new RegExp(yakutAreaUnit, 'i').test(message) ||
+    Object.keys(yakutDistrictPages).some(name => t.startsWith(name))))
+  ));
+}
+function yakutScenarioAnswer(message) {
+ const original = message.toLocaleLowerCase('tr-TR');
+ const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
+ const namedDistrict = Object.keys(yakutDistrictPages).find(name =>
+  new RegExp('(?:^| )' + name + '(?:$| |da|de|ta|te)').test(t));
+ const state = yakutScenario ??= {district:null, area:null, floors:null, flat:null, shop:0, waiting:null};
+ if (namedDistrict && state.district && namedDistrict !== state.district) {
+  Object.assign(state, {area:null, floors:null, flat:null, shop:0, waiting:null});
+ }
+ state.district = namedDistrict || state.district;
+ const number = '(\\d+(?:[.,]\\d+)*)';
+ const read = value => value && Number(value.replace(/\.(?=\d{3}(?:[.,]|$))/g,'').replace(',','.'));
+ const area = original.match(new RegExp(number + '\\s*' + yakutAreaUnit, 'i'));
+ const bare = original.trim().match(new RegExp('^' + number + '$'));
+ const floors = original.match(/\b(\d+)\s*kat(?:lı|lıysa)?(?:[\s.,!?]|$)/);
+ const flat = /(?:brüt|daire başına)/.test(t);
+ const shop = /dükk[aâ]n|mağaza/.test(t);
+ const value = read(area?.[1] || bare?.[1]);
+ if (floors && Number(floors[1]) > 0) state.floors = Number(floors[1]);
+ if (Number.isFinite(value) && value > 0) {
+  if (shop && !/arsa/.test(t) || state.waiting === 'shop' && !/arsa|brüt/.test(t)) state.shop = value;
+  else if (flat || state.waiting === 'flat' && !/arsa/.test(t)) state.flat = value;
+  else if (state.waiting === 'area' || area && (!state.area || /arsa/.test(t))) state.area = value;
+  else if (bare && state.waiting === 'floors' && Number.isInteger(value)) state.floors = value;
+ }
+ if (!state.district) {
+  state.waiting = 'district';
+  return 'Arsanız hangi ilçede?';
+ }
+ if (!state.area) {
+  state.waiting = 'area';
+  return 'Arsanız kaç metrekare?';
+ }
+ const fmt = value => value.toLocaleString('tr-TR', {maximumFractionDigits:2});
+ const scenarios = [30,40,50].map(percent => ({percent, base:state.area * percent / 100}));
+ const describe = fn => scenarios.map(({percent,base}) => 'yüzde ' + percent + ' için ' + fn(base)).join(', ');
+ const base = 'Taban oturumu ön hesabı: ' + describe(base => fmt(base) + ' metrekare') + '.';
+ if (shop && !state.shop) {
+  state.waiting = 'shop';
+  return base + ' Dükkân için zeminde kaç metrekare ayıralım?';
+ }
+ if (!state.floors) {
+  state.waiting = 'floors';
+  return base + ' Bunlar varsayımsal oranlar. Daire hesabı için zemin dahil kaç kat varsayalım?';
+ }
+ const total = 'Zemin dahil ' + state.floors + ' kat varsayımıyla toplam brüt alan: ' +
+  describe(base => fmt(base * state.floors) + ' metrekare') + '.';
+ if (!state.flat) {
+  state.waiting = 'flat';
+  return total + ' Bir daireyi brüt kaç metrekare varsayalım?';
+ }
+ state.waiting = null;
+ return (state.shop ? 'Zeminde ' + fmt(state.shop) + ' metrekare dükkân ayırarak: ' : 'Daire ön hesabı: ') +
+  describe(base => state.shop > base ? 'dükkân zemine sığmaz' :
+   Math.floor(base / state.flat) * (state.floors - 1) + Math.floor((base - state.shop) / state.flat) + ' daire') +
+  '. Ortak alanlar ve imar koşulları sonucu değiştirebilir.';
+}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -546,6 +618,10 @@ const contactNavigation=/(?:iletişim\s+(?:bilgi(?:si|leri|lerini)?|sayfa(?:sı|
 if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
 const contactAnswer=yakutContactRequest(q);
 if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
+if(yakutScenarioRequest(q)){
+ yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
+ react('agree',yakutScenarioAnswer(q),'center');return;
+}
 if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
 const destination=yakutIsPageRequest(q);
 if(destination){openYakutPage(destination);return;}
