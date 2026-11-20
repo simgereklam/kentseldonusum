@@ -7,16 +7,16 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const welcome='Hoş geldiniz! Ben KUMTAŞ İnşaat yapay zekâ asistanınız YAKUT. Size yardımcı olmak için buradayım.';
 const css=document.createElement('style');
 css.textContent=`
-#yakut-v9{position:fixed;left:0;bottom:70px;width:clamp(195px,22vw,290px);height:clamp(315px,40vw,445px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
+#yakut-v9{position:fixed;left:-35px;bottom:70px;width:clamp(195px,22vw,290px);height:clamp(315px,40vw,445px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
-#yakut-v9-ui{position:fixed;bottom:14px;left:12px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
+#yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
 #yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
 #yakut-v9-ui button:hover{background:#137aaa}
 #yakut-v9-ui input{display:none;width:min(320px,45vw);padding:9px;border:1px solid #71c8fa;border-radius:14px;background:#fff;color:#122f44;font:13px Arial,sans-serif}
 #yakut-v9-ui.open input{display:block}
-#yakut-v9-caption{position:fixed;bottom:64px;left:12px;max-width:min(350px,85vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:11px 13px;border:1px solid #6dccff;border-radius:13px;font:13px/1.5 Arial,sans-serif;box-shadow:0 5px 15px #0004}
+#yakut-v9-caption{position:fixed;bottom:64px;left:4px;max-width:min(350px,85vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:11px 13px;border:1px solid #6dccff;border-radius:13px;font:13px/1.5 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-@media(max-width:650px){#yakut-v9{width:175px;height:282px;bottom:62px}#yakut-v9-ui{bottom:8px;left:7px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:7px;max-width:80vw}}
+@media(max-width:650px){#yakut-v9{width:175px;height:282px;bottom:62px;left:-23px}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
 document.head.appendChild(css);
@@ -28,6 +28,7 @@ const caption=document.createElement('div');caption.id='yakut-v9-caption';
 document.body.append(stage,caption,ui);
 const talk=ui.querySelector('#yakut-talk'),inp=ui.querySelector('#yakut-text'),send=ui.querySelector('#yakut-send'),close=ui.querySelector('#yakut-close');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=false,micStarting=false,listenRetry=null,visitorInteracted=false;
+let siteSections=[],siteLoaded=false,siteLoadPromise=null,preferredVoice=null;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){caption.textContent=text;caption.classList.add('shown');clearTimeout(dialogTimer);if(ms)dialogTimer=setTimeout(()=>caption.classList.remove('shown'),ms)}
@@ -36,21 +37,95 @@ const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
 next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
+
+/* KUMTAS site knowledge: searchable extracts from the actual published pages.
+   This is grounded retrieval, not a connection to a general-purpose AI model. */
+const sitePages=[
+'index.html','kurumsal.html','hakkimizda.html','kentsel-donusum.html',
+'hizmetlerimiz.html','sss.html','projelerimiz.html','iletisim.html',
+'bolgelerimiz.html','yenibosna-kentsel-donusum.html','bahcelievler-kentsel-donusum.html',
+'bakirkoy-kentsel-donusum.html','bagcilar-kentsel-donusum.html',
+'gungoren-kentsel-donusum.html','avcilar-kentsel-donusum.html',
+'esenler-kentsel-donusum.html','kucukcekmece-kentsel-donusum.html',
+'zeytinburnu-kentsel-donusum.html'
+];
+const stopWords=new Set('ben sen siz bize bana sana nasıl nedir ne neden nerede hangi hakkında bilgi verir misin istiyorum anlat açıkla açıklar mısın olabilir için ile veya daha biraz bir iki çok bu şu o da de ve ya da olan olarak var mı mı mu mü dir dır'.split(/\s+/));
+function tokens(s){return [...new Set(String(s).toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').split(/\s+/).filter(w=>w.length>2&&!stopWords.has(w)))];}
+function cleanText(el){return (el.textContent||'').replace(/\s+/g,' ').trim();}
+async function loadSiteKnowledge(){
+ if(siteLoadPromise)return siteLoadPromise;
+ siteLoadPromise=(async()=>{
+  const pages=await Promise.allSettled(sitePages.map(async path=>{
+   const response=await fetch(new URL(path,location.origin+'/'),{cache:'no-store'});
+   if(!response.ok)throw Error(path+' '+response.status);
+   const html=await response.text();
+   const doc=new DOMParser().parseFromString(html,'text/html');
+   doc.querySelectorAll('script,style,nav,header,footer,form,button,svg,noscript,aside,select,option').forEach(n=>n.remove());
+   let heading='',output=[];
+   doc.body?.querySelectorAll('h1,h2,h3,h4,p,li,dt,dd').forEach(el=>{
+    if(el.closest('p,li,dd,dt')!==null && el.closest('p,li,dd,dt')!==el)return;
+    const txt=cleanText(el);if(!txt||txt.length<20||txt.length>700)return;
+    if(/^H[1-4]$/.test(el.tagName)){heading=txt;return}
+    if(/^(ana sayfa|whatsapp|telefon|tüm hakları saklıdır)/i.test(txt))return;
+    output.push({path,heading,text:txt});
+   });
+   return output.slice(0,90)
+  }));
+  siteSections=pages.filter(p=>p.status==='fulfilled').flatMap(p=>p.value).slice(0,850);
+  siteLoaded=siteSections.length>0;
+  return siteSections;
+ })();
+ return siteLoadPromise;
+}
+function siteAnswer(q){
+ const words=tokens(q);
+ if(!siteLoaded||words.length===0)return null;
+ const ranked=siteSections.map(x=>{
+  const all=(x.heading+' '+x.text+' '+x.path.replace(/[-.]/g,' ')).toLocaleLowerCase('tr-TR');
+  let score=0;
+  for(const word of words){
+   const stem=word.length>5?word.slice(0,-2):word;
+   if(all.includes(word))score+=4;
+   else if(stem.length>3&&all.includes(stem))score+=2;
+   if(x.heading.toLocaleLowerCase('tr-TR').includes(stem))score+=4;
+  }
+  if(x.path.includes('sss'))score+=.2;
+  return {...x,score};
+ }).filter(x=>x.score>=Math.max(3,words.length*1.6)).sort((a,b)=>b.score-a.score);
+ if(!ranked.length)return null;
+ const top=ranked[0],extra=ranked.find(x=>x.path!==top.path&&x.score>=top.score*.75&&x.text!==top.text);
+ let result=top.text+(extra?' '+extra.text:'');
+ result=result.slice(0,550).replace(/\s+\S*$/,'').trim();
+ return {text:result,path:top.path};
+}
+function chooseVoice(){
+ const voices=window.speechSynthesis?.getVoices()||[];
+ const turkish=voices.filter(v=>/^tr(-|$)/i.test(v.lang));
+ if(!turkish.length)return null;
+ // The browser does not expose a voice gender field: select only known feminine voice names.
+ const selected=turkish.find(v=>/emel|selin|zeynep|ayla|dilara|filiz|esra|female|kadın/i.test(v.name));
+ preferredVoice=selected||null;
+ return selected||null;
+}
+window.speechSynthesis?.addEventListener?.('voiceschanged',chooseVoice);
+chooseVoice();
+
 function speak(text){show(text,Math.max(7000,text.length*85));
 if(!window.speechSynthesis)return;
 // Do not let YAKUT hear its own spoken response.
 speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
 speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
 u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
-const voices=speechSynthesis.getVoices().filter(v=>/^tr/i.test(v.lang));
-u.voice=voices.find(v=>/emel|selin|zeynep|ayla|female|kadın/i.test(v.name))||voices[0]||null;
+const voice=chooseVoice();
+if(!voice){speaking=false;show('Kadın Türkçe ses tarayıcıda bulunamadı. Windows ses ayarlarından Türkçe kadın sesi (örneğin Emel) kurulmalı; erkek sesini otomatik seçmiyorum.',12000);if(listenEnabled)queueListen(600);return}
+u.voice=voice;
 u.onstart=()=>{speaking=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
 speechSynthesis.speak(u);
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
 function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;play(clip,true,1);speak(text)}
-function handle(message){
+async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 inp.value='';const t=q.toLocaleLowerCase('tr-TR');
 let clip='agree',answer='';
@@ -64,6 +139,8 @@ if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
  clip='frustrated_01';answer='Seni anlıyorum. Ne olduğunu anlatırsan birlikte çözmeye çalışabiliriz.';
 }else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne)/i.test(t)){
  clip='greet_02';answer='Merhaba! Ben YAKUT. KUMTAŞ İnşaat için buradayım. Nasıl yardımcı olabilirim?';
+}else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
+ clip='agree';answer='6306 sayılı Kanun kapsamındaki dönüşüm kararlarında, oybirliği sağlanamazsa maliklerin arsa paylarına göre salt çoğunluğu esas alınabilir. Maliklerin sözleşme şartlarını ve haklarını incelemesi, riskli yapı tespitini, tebligatları ve uygunluk varsa kira yardımını resmi kurumlardan doğrulaması önemlidir. Ayrıntılar yapının durumuna göre değişir. Resmi bilgi için Kentsel Dönüşüm Başkanlığının mevzuat ve bilgi merkezine bakılmalıdır.';
 }else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
  clip='agree';answer='Kentsel dönüşüm konusunda yardımcı olabilirim. Arsa alanını, ilçeyi ve biliyorsan geçerli imar koşullarını yaz. Kesin yapılaşma hakkı için belediyenin güncel imar durumunu kontrol etmek gerekir.';
 }else if(/(el salla|selam ver|selamla)/i.test(t)){
@@ -75,7 +152,12 @@ if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
 }else if(/(yürü|gez|dolaş|sola git|sağa git)/i.test(t)){
  const x=/sola/.test(t)?innerWidth*.07:/sağa/.test(t)?innerWidth*.72:innerWidth*(.15+Math.random()*.6);
  moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
-}else{clip='agree';answer='Seni duydum. İnşaat ve kentsel dönüşümle ilgili sorularında yardımcı olabilirim. Sorunu biraz daha ayrıntılı anlatır mısın?'}
+}else{
+ clip='agree';
+ await loadSiteKnowledge();
+ const match=siteAnswer(q);
+ answer=match?match.text+' Bu bilgi KUMTAŞ internet sitesindeki '+match.path.replace('.html','')+' sayfasından alınmıştır.':'Bu konuda sitemizde doğrulanmış bilgi bulamadım. Kentsel dönüşüm ve malik haklarıyla ilgili bir soruyu daha ayrıntılı sorabilir veya KUMTAŞ ile görüşebilirsiniz.';
+}
 react(clip,answer);
 }
 function queueListen(delay=250){
@@ -156,7 +238,7 @@ model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDic
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
-ready=true;posX=-stage.offsetWidth;targetX=Math.min(innerWidth*.25,innerWidth-stage.offsetWidth);
+ready=true;loadSiteKnowledge().catch(console.warn);posX=-stage.offsetWidth;targetX=Math.min(innerWidth*.25,innerWidth-stage.offsetWidth);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait')}else{phase='walking';play('walk',false,.95)}
 positionStage();
