@@ -182,7 +182,7 @@ const YAKUT_SPEECH_SPEED=0.94;
 let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
 let yakutSpeechQueue=[],yakutAudioPlaying=false,yakutReadyChunk=null,yakutVoiceGeneration=0,yakutRequests=new Map();
-let yakutAudioStartTime=0;
+let yakutAudioStartTime=0,yakutGestureClock=0;
 function splitYakutSpeech(text){
  const sentences=String(text).replace(/\s+/g,' ').trim().match(/[^.!?;:]+[.!?;:]?/g)||[];
  const chunks=[];let part='';
@@ -226,8 +226,8 @@ function yakutPlaySpeech(data){
    limiter.ratio.value=4;limiter.attack.value=0.008;limiter.release.value=0.22;
    src.connect(gain);gain.connect(yakutTtsContext.destination); // Avoid compressor pumping/distortion.
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
-  src.start();yakutAudioPlaying=true;yakutAudioStartTime=performance.now();if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
-   if(pendingSpeechGesture){play(pendingSpeechGesture,true);pendingSpeechGesture=null}
+  src.start();yakutAudioPlaying=true;yakutAudioStartTime=performance.now();yakutGestureClock=0;if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
+   if(pendingSpeechGesture){const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);if(phase!=='walking')phase='reacting'}
  }catch(e){yakutTtsFailure(e)}
 }
 function yakutTtsSayNow(text){
@@ -604,6 +604,13 @@ renderer.setSize(Math.max(rect.width,1),Math.max(rect.height,1),false);
 camera.aspect=Math.max(rect.width,1)/Math.max(rect.height,1);camera.updateProjectionMatrix();
 if(!hidden){
 mixer.update(dt);
+if(yakutAudioPlaying && phase==='idle'){
+ yakutGestureClock+=dt;
+ if(yakutGestureClock>7.5){
+  yakutGestureClock=0;
+  if(clips.agree){phase='reacting';play('agree',true)}
+ }
+}
 if(phase==='walking'){
 const step=(innerWidth<650?56:94)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
