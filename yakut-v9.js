@@ -176,7 +176,7 @@ document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
 // Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
 // Upstream ES modules and the ONNX model are loaded only when speech is requested.
 const yakutAhenkRoot='https://ozguradmin.github.io/ahenk-turkish-tts/';
-const YAKUT_SPEECH_SPEED=0.9;
+const YAKUT_SPEECH_SPEED=0.94;
 let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
 let yakutSpeechQueue=[];
@@ -219,10 +219,10 @@ function yakutPlaySpeech(data){
   const src=yakutTtsContext.createBufferSource();
   yakutTtsSource=src;src.buffer=buf;// Make the voice present and clear without clipping at higher volumes.
    const gain=yakutTtsContext.createGain();
-   gain.gain.value=1.75;
+   gain.gain.value=1.22;
    const limiter=yakutTtsContext.createDynamicsCompressor();
-   limiter.threshold.value=-14;limiter.knee.value=8;
-   limiter.ratio.value=12;limiter.attack.value=0.003;limiter.release.value=0.18;
+   limiter.threshold.value=-10;limiter.knee.value=12;
+   limiter.ratio.value=4;limiter.attack.value=0.008;limiter.release.value=0.22;
    src.connect(gain);gain.connect(limiter);limiter.connect(yakutTtsContext.destination);
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
   src.start();
@@ -271,7 +271,7 @@ function speak(text){
  show(text,Math.max(7000,text.length*85));
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;
- if(recognition){try{recognition.abort()}catch(e){}}
+ // Keep the microphone active for navigation during speech.
  if(yakutTtsFailed&&Date.now()-yakutTtsLastFailure<12000){
   // Avoid rapid repeated network retries, but never disable speech for the entire visit.
   finishYakutSpeech();return;
@@ -283,6 +283,7 @@ function speak(text){
  yakutTtsPending=segments[0]||'';
  startYakutAhenk();
  if(yakutTtsReady&&yakutTtsPending){const first=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(first)}
+ if(listenEnabled&&!recognition)queueListen(500);
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
 function leftGreetingX(){return innerWidth<650?23:35}
@@ -319,6 +320,27 @@ const yakutTopics=[
  intro:'İlgilendiğiniz bölgenin kentsel dönüşüm sayfasını açtım. Burada bölgenin imar koşulları ve binanızın durumunun ayrıca değerlendirilmesi gerektiğini görebilirsiniz. Ada parsel ve arsa alanını biliyorsanız ön değerlendirme için paylaşabilirsiniz.'}
 ];
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
+// Handle direct navigation while spoken narration is still playing.
+function normalizeYakutCommand(message){
+ return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü\s]/gi,' ').replace(/\s+/g,' ').trim();
+}
+function isYakutHomeCommand(message){
+ const t=normalizeYakutCommand(message);
+ return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
+}
+function cancelYakutSpeech(){
+ ++yakutTtsId;yakutSpeechQueue=[];yakutTtsPending='';
+ clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
+ if(yakutTtsSource){const source=yakutTtsSource;yakutTtsSource=null;source.onended=null;try{source.stop()}catch(_){}}
+ pendingSpeechGesture=null;speaking=false;processingSpeech=false;
+}
+function goYakutHome(){
+ cancelYakutSpeech();
+ try{sessionStorage.removeItem('yakutNextTopic');sessionStorage.setItem('yakutAudioApproved',audioUnlocked?'1':'0')}catch(_){}
+ const home=new URL('index.html',location.origin+'/');
+ if(location.pathname==='/'||location.pathname.endsWith('/index.html'))react('agree','Tabii, ana sayfadayız. Size nasıl yardımcı olabilirim?');
+ else location.assign(home.href);
+}
 function openYakutTopic(topic,spoken){
  const name=decodeURIComponent(location.pathname.split('/').pop()||'index.html');
  if(name.toLowerCase()===topic.path.toLowerCase())return false;
@@ -335,6 +357,7 @@ const q=String(message||'').trim();if(!q||!ready)return;
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+if(isYakutHomeCommand(q)){goYakutHome();return;}
 let clip='agree',answer='';
  const requestedTopic=yakutTopics.find(topic=>topic.test.test(t));
  if(requestedTopic && !/(dans|gül|alkış|yürü|selam|teşekkür)/i.test(t)){
@@ -396,9 +419,9 @@ react(clip,answer);
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
- if(!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
+ if(!listenEnabled||hidden||processingSpeech||recognition||micStarting)return;
  const ms=Math.max(delay,micRestartAt-Date.now(),0);
- listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!processingSpeech&&!recognition)startSpeech()},ms)
+ listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!processingSpeech&&!recognition)startSpeech()},ms)
 }
 function stopListening(){
  listenEnabled=false;clearTimeout(listenRetry);micStarting=false;
@@ -435,7 +458,7 @@ function speechProblem(err){
 function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;show('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın.',9000);return}
- if(!ready||!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
+ if(!ready||!listenEnabled||hidden||processingSpeech||recognition||micStarting)return;
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
  rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
@@ -443,13 +466,15 @@ function startSpeech(){
   const spoken=e.results?.[0]?.[0]?.transcript;
   if(!spoken)return;
   micFailureCount=0;
+  if(isYakutHomeCommand(spoken)){goYakutHome();return}
+  if(speaking||processingSpeech)return; // Ignore our own voice during narration.
   show('Siz: '+spoken,2600);
   handle(spoken);
  };
  rec.onerror=e=>{micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
  rec.onend=()=>{
   micStarting=false;if(recognition===rec)recognition=null;
-  if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(700)}
+  if(listenEnabled&&!hidden&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(900)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
  try{rec.start()}catch(e){
