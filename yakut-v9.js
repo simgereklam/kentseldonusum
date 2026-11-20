@@ -7,7 +7,7 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const welcome='Hoş geldiniz! Ben KUMTAŞ İnşaat yapay zekâ asistanınız YAKUT. Size yardımcı olmak için buradayım.';
 const css=document.createElement('style');
 css.textContent=`
-#yakut-v9{position:fixed;left:0;bottom:70px;width:clamp(155px,19vw,250px);height:clamp(240px,36vw,375px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
+#yakut-v9{position:fixed;left:0;bottom:70px;width:clamp(195px,22vw,290px);height:clamp(315px,40vw,445px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
 #yakut-v9-ui{position:fixed;bottom:14px;left:12px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
 #yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
@@ -16,7 +16,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:64px;left:12px;max-width:min(350px,85vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:11px 13px;border:1px solid #6dccff;border-radius:13px;font:13px/1.5 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-@media(max-width:650px){#yakut-v9{width:155px;height:238px;bottom:70px}#yakut-v9-ui{bottom:8px;left:7px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:7px;max-width:80vw}}
+@media(max-width:650px){#yakut-v9{width:175px;height:282px;bottom:62px}#yakut-v9-ui{bottom:8px;left:7px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:7px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
 document.head.appendChild(css);
@@ -104,15 +104,15 @@ import('https://esm.sh/three@0.164.1/examples/jsm/loaders/GLTFLoader.js')
 const renderer=new THREE.WebGLRenderer({canvas:stage.querySelector('canvas'),alpha:true,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
-const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(33,1,.1,50);
-camera.position.set(0,.45,2.8);camera.lookAt(0,.35,0);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(36,1,.1,50);
+camera.position.set(0,0,3.3);camera.lookAt(0,0,0);
 scene.add(new THREE.HemisphereLight(0xe7f8ff,0x273c57,2.6));
 const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,5,6);scene.add(light);
 const fill=new THREE.DirectionalLight(0x46bbff,1.6);fill.position.set(4,4,-2);scene.add(fill);
 const gltf=await new GLTFLoader().loadAsync(url);model=gltf.scene;
 const bbox=new THREE.Box3().setFromObject(model);
 const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
-normalScale=1.6/size.y;
+normalScale=1.55/Math.max(size.y,0.01);
 model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
 basePosition=model.position.clone();
 model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary)face=o}});
