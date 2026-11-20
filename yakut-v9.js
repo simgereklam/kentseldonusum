@@ -320,11 +320,14 @@ const yakutTopics=[
 ];
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 function openYakutTopic(topic,spoken){
- const name=location.pathname.split('/').pop()||'index.html';
- if(name===topic.path)return false;
+ const name=decodeURIComponent(location.pathname.split('/').pop()||'index.html');
+ if(name.toLowerCase()===topic.path.toLowerCase())return false;
  // Carry only the next, short voice reply across this same-origin page navigation.
- sessionStorage.setItem('yakutNextTopic',JSON.stringify({path:topic.path,reply:spoken}));
- location.assign(new URL(topic.path,location.href).href);
+ try{
+  sessionStorage.setItem('yakutNextTopic',JSON.stringify({path:topic.path,reply:spoken}));
+  if(audioUnlocked)sessionStorage.setItem('yakutAudioApproved','1');
+ }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
+ location.assign(new URL(topic.path,location.origin+'/').href);
  return true;
 }
 async function handle(message){
@@ -496,24 +499,33 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage.offsetWidth;targetX=leftGreetingX();
+ // Continue the same voice response after page navigation without a second welcome.
+ let arrivalReply='';
  try{
-  const saved=sessionStorage.getItem('yakutNextTopic');
-  if(saved){
-   sessionStorage.removeItem('yakutNextTopic');
-   const state=JSON.parse(saved);
-   if(state.path===(location.pathname.split('/').pop()||'index.html')){
-    openingSpoken=true;
-    const sayOnArrival=()=>{
-     if(!audioUnlocked)return;
-     if(!openingGreeted)openingGreeted=true;
-     react('agree',state.reply);
-    };
-    document.addEventListener('pointerdown',sayOnArrival,{once:true,capture:true});
-    if(audioUnlocked)queueMicrotask(sayOnArrival);
+  const stored=sessionStorage.getItem('yakutNextTopic');
+  if(stored){
+   const state=JSON.parse(stored);
+   if(state.path===(decodeURIComponent(location.pathname.split('/').pop())||'index.html')){
+    arrivalReply=state.reply||'';
+    sessionStorage.removeItem('yakutNextTopic');
+    openingSpoken=true;openingGreeted=true;
    }
   }
- }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
-
+  if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
+ }catch(e){console.warn('YAKUT sayfa konuşması:',e)}
+ if(arrivalReply){
+  const reply=arrivalReply;
+  const continueOnArrival=()=>{
+   if(!ready||!audioUnlocked||speaking)return;
+   pendingSpeechGesture='agree';
+   speak(reply);
+  };
+  if(audioUnlocked){queueMicrotask(continueOnArrival)}
+  else{
+   document.addEventListener('pointerdown',continueOnArrival,{once:true,capture:true});
+   document.addEventListener('keydown',continueOnArrival,{once:true,capture:true});
+  }
+ }
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
