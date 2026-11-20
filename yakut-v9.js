@@ -421,7 +421,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
- if(yakutScenarioRequest(message))return null;
+ if(yakutKirazliRequest(message)||yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -532,6 +532,36 @@ function openYakutPage(path){
 }
 let yakutScenario = null;
 const yakutAreaUnit = '(?:m²|m2|metre\\s*kare|metrekare)';
+let yakutKirazliCase = null;
+const yakutKirazliSource = 'https://bbgis.bagcilar.bel.tr/imardurumu/imar.aspx?parselid=6423';
+function yakutKirazliRequest(message) {
+ const t = normalizeYakutCommand(message.replace(/[â]/gi, "a"));
+ const exact = /(?:\b0\s*[/–-]\s*2135\b|\b(?:ada\s+0|0\s+ada)\b.*\b(?:parsel\s+2135|2135\s+parsel)\b)/i.test(message);
+ return exact || (yakutKirazliCase === 'neighborhood' && /^(?:yakut )?(?:kirazlı|mahmutbey|bağcılar)(?: mahallesi)?$/.test(t)) ||
+  (yakutKirazliCase === 'kirazli' && !/\b(?:ada|parsel)\b/.test(t) &&
+   /(?:bonus|ilave emsal|mânia|mania|zemin|kaç kat|kaç daire|imar kaydını aç)/.test(t));
+}
+function yakutKirazliAnswer(message) {
+ const t = normalizeYakutCommand(message.replace(/[â]/gi,'a'));
+ if (/mahmutbey/.test(t) || yakutKirazliCase === 'neighborhood' && /^bağcılar(?: mahallesi)?$/.test(t)) {
+  yakutKirazliCase = null;
+  return 'Bu mahalle için doğrulanmış imar verim yok. Bağcılar Belediyesi e-İmar ekranından mahalleye ait kaydı açabilirsiniz.';
+ }
+ if (!t.includes('kirazlı') && yakutKirazliCase !== 'kirazli') {
+  yakutKirazliCase = 'neighborhood';
+  return 'Sıfır ada, iki bin yüz otuz beş parsel için üç eşleşme var. Kirazlı, Mahmutbey veya Bağcılar mahallelerinden hangisi?';
+ }
+ yakutKirazliCase = 'kirazli';
+ if (/imar kaydını aç/.test(t)) {
+  location.assign(yakutKirazliSource);
+  return '';
+ }
+ if (/mania/.test(t)) return 'Bu parselin havaalanı mânia sınırı doğrulanmadı. Kat hesabından önce konum, zemin kotu ve ilgili yükseklik sınırı belediyeden kontrol edilmeli.';
+ if (/zemin/.test(t)) return 'Belediyenin imar kaydı zemin etüdü yapılmadan uygulama yapılamayacağını belirtiyor. Zemin iyileştirmesi gerekip gerekmediği etüt sonucunda belirlenir.';
+ if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) return 'Belediye ekranında TAKS, kat adedi ve bina yüksekliği gösterilmiyor. Kat ve daire sayısı için geçerli yükseklik sınırı ve yerleşim bilgileri gerekiyor.';
+ if (/bonus|ilave emsal/.test(t)) return 'Sunumda üç bin yedi yüz yetmiş yedi metrekare net arsa için dokuz bin sekiz yüz yirmi metrekare emsale esas alan gösteriliyor. Bu yaklaşık iki virgül altmış emsale denk geliyor. Artışın parseldeki uygulanma şartı teyit edilmeli. Sunumda brüt alan on iki bin yedi yüz altmış altı; mevcut brüt alan düşüldüğünde kalan alan üç bin iki yüz seksen dört metrekare.';
+ return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. İncelediğimiz belediye kaydında konut alanı, hesap alanı üç bin yedi yüz elli bir virgül on iki metrekare ve emsal iki. Bu değerlerle emsale esas ön hesap yedi bin beş yüz iki virgül yirmi dört metrekare. Kat sınırı ve taban oturumu ekranda gösterilmiyor. Sunumdaki bonus hesabını sorabilir ya da imar kaydını açmamı isteyebilirsiniz.';
+}
 function yakutScenarioRequest(message) {
  const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
  if (/(?:^| )(?:aç|git|götür|sayfasına|sayfasını)(?: |$)/.test(t)) return false;
@@ -605,8 +635,8 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutKirazliCase=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutKirazliCase=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -618,7 +648,14 @@ const contactNavigation=/(?:iletişim\s+(?:bilgi(?:si|leri|lerini)?|sayfa(?:sı|
 if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
 const contactAnswer=yakutContactRequest(q);
 if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
+if(yakutKirazliRequest(q)){
+ yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
+ const answer=yakutKirazliAnswer(q);
+ if(answer)react('agree',answer,'center');
+ return;
+}
 if(yakutScenarioRequest(q)){
+ yakutKirazliCase=null;
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  react('agree',yakutScenarioAnswer(q),'center');return;
 }
