@@ -577,6 +577,14 @@ function startSpeech(){
   const answerText=normalizeYakutCommand(spoken);
   // Spoken page title inside YAKUT's own offer is not a visitor navigation request.
   const navigationIntent=/(?:^|\s)(?:yakut|aç|git|geç|göster|sayfaya|sayfasına)(?:\s|$)/.test(answerText);
+  // Permit a short yes/no reply to interrupt YAKUT's page offer immediately.
+  // Its own spoken prompt is never an exact "evet", "anlat" or "hayır".
+  if(speaking && yakutPageOfferPending && yakutOfferSpoken &&
+     /^(?:yakut\s+)?(?:evet|istiyorum|isterim|olur|tamam|anlat|anlatsana|anlatır mısın|bilgi ver|evet anlat|evet istiyorum|hayır|istemiyorum|gerek yok|istemem|sonra|şimdi değil)(?:\s+lütfen)?$/.test(answerText)){
+    cancelYakutSpeech();
+    handleYakutOfferAnswer(answerText);
+    return;
+  }
   if(speaking||processingSpeech){
    if(navigationIntent){
     const wanted=yakutIsPageRequest(spoken,true);
