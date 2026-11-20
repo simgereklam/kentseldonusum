@@ -8,7 +8,7 @@ const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Sizin için ne yapabilirim?';
 const css=document.createElement('style');
 css.textContent=`
-#yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(230px,25vw,330px);height:clamp(340px,48vw,520px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
+#yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
 #yakut-v9 canvas{display:block;width:100%;height:100%}
 #yakut-enable-audio{position:fixed;z-index:135;bottom:18px;left:14px;border:0;background:#09638c;color:white;padding:11px 15px;border-radius:24px;font:700 14px Arial,sans-serif;box-shadow:0 5px 16px #0005;cursor:pointer}
 #yakut-enable-audio[hidden]{display:none!important}
@@ -21,7 +21,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-@media(max-width:650px){#yakut-v9{width:clamp(210px,60vw,300px);height:min(56dvh,clamp(330px,94vw,460px));bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
+@media(max-width:650px){#yakut-v9{width:clamp(225px,65vw,325px);height:min(62dvh,clamp(355px,101vw,500px));bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
 document.head.appendChild(css);
@@ -710,8 +710,8 @@ function addYakutChestLogo() {
  if (!chest) return;
 
  const artwork = document.createElement('canvas');
- artwork.width = 336;
- artwork.height = 368;
+ artwork.width = 400;
+ artwork.height = 350;
  const paint = artwork.getContext('2d', {willReadFrequently: true});
  if (!paint) return;
 
@@ -720,14 +720,14 @@ function addYakutChestLogo() {
  texture.anisotropy = 4;
  // Depth at the center and sides of each row on the GLB's chest plate.
  const centerDepth = [0.0788, 0.0916, 0.0998, 0.1051, 0.1085, 0.1109, 0.1118, 0.1114, 0.1087];
- const sideDepth = [0.0742, 0.0880, 0.0956, 0.1014, 0.1051, 0.1064, 0.1058, 0.1040, 0.1010];
- const geometry = new THREE.PlaneGeometry(0.088, 0.092, 12, centerDepth.length - 1);
+ const sideDepth = [0.0696, 0.0850, 0.0930, 0.0991, 0.1028, 0.1036, 0.1024, 0.1001, 0.0958];
+ const geometry = new THREE.PlaneGeometry(0.105, 0.092, 12, centerDepth.length - 1);
  const vertices = geometry.attributes.position;
  for (let i = 0; i < vertices.count; i++) {
   const x = vertices.getX(i);
   const y = vertices.getY(i);
   const row = Math.floor(i / 13);
-  const edgeWeight = (x / 0.044) ** 2;
+  const edgeWeight = (x / 0.0525) ** 2;
   const depth = THREE.MathUtils.lerp(centerDepth[row], sideDepth[row], edgeWeight);
   vertices.setXYZ(i, x, 0.648 + y, depth + 0.0035);
  }
@@ -743,7 +743,8 @@ function addYakutChestLogo() {
 
  const source = new Image();
  source.onload = () => {
-  paint.drawImage(source, 840, 86, 336, 368, 0, 0, artwork.width, artwork.height);
+  paint.drawImage(source, 942, 86, 133, 183, 162, 16, 76, 105);
+  paint.drawImage(source, 840, 296, 336, 158, 6, 129, 388, 182);
   const pixels = paint.getImageData(0, 0, artwork.width, artwork.height);
   for (let i = 0; i < pixels.data.length; i += 4) {
    pixels.data[i + 3] = 255 - pixels.data[i];
