@@ -52,6 +52,7 @@
             height: 100%;
             object-fit: contain;
             object-position: center;
+            filter: url(#kumtas-blue-background);
         }
 
         @media (min-width: 981px) {
@@ -66,7 +67,6 @@
                 height: auto;
                 max-width: 100%;
                 max-height: 100%;
-                mask-image: linear-gradient(to right, transparent, black 3%, black 97%, transparent);
             }
         }
 
@@ -157,6 +157,17 @@
     </style>
 </head>
 <body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <defs>
+        <filter id="kumtas-blue-background" color-interpolation-filters="sRGB">
+            <feColorMatrix type="matrix" values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                9 0 -9 0 1.9"/>
+        </filter>
+    </defs>
+</svg>
 
 <header class="header">
     <div class="container navwrap">
@@ -299,6 +310,6 @@
         window.location.href = `https://wa.me/905431813485?text=${encodedText}`;
     });
 </script>
-<script defer src="yakut-v9.js?v=yakut-net"></script>
+<script defer src="yakut-v9.js?v=yakut-ince"></script>
 </body>
 </html>
