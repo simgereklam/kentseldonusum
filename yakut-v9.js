@@ -35,6 +35,7 @@ let micFailureCount=0,micLastError='',micRestartAt=0;
 let processingSpeech=false;
 let yakutReturnLeftAfterSpeech=false;
 let yakutFirstInteraction=false,yakutWelcomeRequested=false,yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
+let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
@@ -177,9 +178,8 @@ function beginYakutVisit(){
  try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(!greeted && getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone){
   yakutFirstGreetingDone=true;yakutWelcomeRequested=false;openingSpoken=true;openingGreeted=true;
-  yakutIsGreetingWalking=true;
-  moveTo(centerAnswerX());
-  if(phase!=='walking')finishYakutGreetingWalk();
+  if(phase==='walking')yakutIsGreetingWalking=true;
+  else finishYakutGreetingWalk();
   return;
  }
  if(yakutPageOfferPending){offerYakutPage();return}
@@ -215,6 +215,7 @@ function finishYakutSpeech(){
  if(yakutRequests.size||yakutSpeechQueue.length)return;
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
  yakutSpeechQueue=[];speaking=false;
+ if(yakutGreetingInProgress){yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now()}
  if(yakutReturnLeftAfterSpeech){yakutReturnLeftAfterSpeech=false;moveTo(leftGreetingX())}
  if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
  if(listenEnabled&&!hidden)queueListen(400);
@@ -314,6 +315,7 @@ function openingGreeting(){
 }
 function finishYakutGreetingWalk(){
  yakutIsGreetingWalking=false;
+ yakutGreetingInProgress=true;
  phase='greeting';
  try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
  pendingSpeechGesture=findYakutGesture('greet_02');
@@ -323,8 +325,8 @@ function finishYakutGreetingWalk(){
 voiceButton.onclick=()=>{
  voiceEnabled=true;visitorInteracted=true;
  if(!ready){show('YAKUT yükleniyor. Ses birazdan başlayacak.',3000);return}
- if(!openingGreeted){posX=leftGreetingX();targetX=posX;positionStage();openingGreeting()}
- else speak(welcome);
+ if(!openingGreeted)openingGreeting();
+ else queueListen(250);
 };
 function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{posX=targetX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
@@ -422,7 +424,7 @@ function offerYakutPage(){
  yakutOfferSpoken=true;
  const page=getYakutCurrentPage();
  const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(/ sayfasını birlikte inceleyelim\.\s*$/,'');
- react('agree',topic+' hakkında size bilgi verebilirim. İster misiniz?','left');
+ react('agree',topic+' sayfasındayız. Size yardımcı olabilir miyim? İsterseniz bu sayfadaki bilgileri anlatabilirim.','left');
 }
 function handleYakutOfferAnswer(t){
  if(!yakutPageOfferPending||!yakutOfferSpoken)return false;
@@ -563,6 +565,10 @@ function startSpeech(){
   const spoken=e.results?.[0]?.[0]?.transcript;
   if(!spoken)return;
   micFailureCount=0;
+  const heard=normalizeYakutCommand(spoken);
+  // Prevent the recognition engine from replying to YAKUT's own welcome.
+  if((yakutGreetingInProgress||Date.now()-yakutGreetingEndAt<3500)
+    && /(?:merhaba|kumtaş|dijital asistan|nasıl yardımcı olabilirim)/i.test(heard))return;
   const wanted=yakutIsPageRequest(spoken,speaking||processingSpeech);
   if(wanted){openYakutPage(wanted);return}
   if(speaking||processingSpeech)return; // Ignore YAKUT output except explicit page commands.
@@ -586,8 +592,8 @@ talk.onclick=()=>{
  talk.hidden=false;
  if(listenEnabled&&recognition){stopListening();show('Dinleme durduruldu.',3000);return}
  listenEnabled=true;micFailureCount=0;micRestartAt=0;visitorInteracted=true;talk.hidden=true;talk.textContent='🟢 Dinliyorum';
- if(!openingSpoken){openingSpoken=true;openingGreeted=true;try{sessionStorage.setItem('yakutVisited','1')}catch(_){}pendingSpeechGesture='greet_02';speak(welcome)}
- else{speak('Seni dinliyorum. Bana bir şey sorabilirsin.')}
+ if(!openingSpoken)beginYakutVisit();
+ else queueListen(250);
  if(!window.speechSynthesis)queueListen(250);
 };
 
@@ -643,6 +649,8 @@ ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=leftGr
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 posX=targetX;phase='idle';play('wait');
+ // Walk to the homepage center on load. Do not speak until the first interaction.
+ if(getYakutCurrentPage()==='index.html'&&!openingGreeted)moveTo(centerAnswerX());
  if(yakutFirstInteraction||yakutWelcomeRequested)queueMicrotask(beginYakutVisit);
 positionStage();
 const clock=new THREE.Clock();
