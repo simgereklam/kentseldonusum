@@ -336,7 +336,7 @@ function cancelYakutSpeech(){
 }
 function goYakutHome(){
  cancelYakutSpeech();
- try{sessionStorage.removeItem('yakutNextTopic');sessionStorage.setItem('yakutAudioApproved',audioUnlocked?'1':'0')}catch(_){}
+ try{sessionStorage.setItem('yakutNextTopic',JSON.stringify({path:'index.html',reply:'Ana sayfaya geldik. Size nasıl yardımcı olabilirim?'}));sessionStorage.setItem('yakutAudioApproved',audioUnlocked?'1':'0')}catch(_){}
  const home=new URL('index.html',location.origin+'/');
  if(location.pathname==='/'||location.pathname.endsWith('/index.html'))react('agree','Tabii, ana sayfadayız. Size nasıl yardımcı olabilirim?');
  else location.assign(home.href);
