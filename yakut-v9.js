@@ -753,11 +753,11 @@ function addYakutChestLogo() {
   }
   paint.putImageData(pixels, 0, 0);
   paint.fillStyle = '#0045b6';
-  paint.font = '900 101px Arial, sans-serif';
+  paint.font = '600 96px Arial, sans-serif';
   paint.textAlign = 'center';
   paint.textBaseline = 'alphabetic';
-  paint.fillText('KUMTAŞ', 200, 207, 392);
-  paint.fillText('İNŞAAT', 200, 305, 392);
+  paint.fillText('KUMTAŞ', 200, 201, 382);
+  paint.fillText('İNŞAAT', 200, 309, 382);
   texture.needsUpdate = true;
  };
  source.src = chestLogoUrl;
