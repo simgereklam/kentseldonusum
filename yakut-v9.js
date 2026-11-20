@@ -219,7 +219,7 @@ function startSpeech(){
  if(!ready||!listenEnabled||hidden||speaking||recognition||micStarting)return;
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
- rec.onstart=()=>{micStarting=false;micFailureCount=0;talk.textContent='🟢 Dinliyorum'};
+ rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
  rec.onresult=e=>{
   const spoken=e.results?.[0]?.[0]?.transcript;
   if(!spoken)return;
