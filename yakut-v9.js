@@ -538,6 +538,11 @@ if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+// Navigate to the contact page for explicit contact-information and directions requests.
+// Keep direct phone-number and email questions as spoken answers.
+const contactNavigation=/(?:iletişim\s+(?:bilgi(?:si|leri|lerini)?|sayfa(?:sı|sını)?|bölümü)|adres\s+tarif(?:i|ini)?|yol\s+tarif(?:i|ini)?|konum(?:umu|umuzu)?\s+göster)/.test(command)
+ || /(?:iletişim|adres)\s+sayfas(?:ını|ına)\s+(?:aç|git|göster|geç)/.test(command);
+if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
 const contactAnswer=yakutContactRequest(q);
 if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
 if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
