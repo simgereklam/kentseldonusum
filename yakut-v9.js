@@ -171,17 +171,88 @@ document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true
 document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
 // meSpeak robotik ses motoru devre dışı: doğal kadın sesi doğrulanana kadar yükleme yapma.
 
-function speak(text){show(text,Math.max(7000,text.length*85));
-if(!window.speechSynthesis){if(listenEnabled)queueListen(650);return}
-// Do not let YAKUT hear its own spoken response.
-speaking=true;if(recognition){try{recognition.abort()}catch(e){}}
-speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
-u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
-const voice=chooseVoice();
-if(!voice){speaking=false;console.info('YAKUT: Doğal Türkçe kadın sesi henüz bağlı değil; robotik meSpeak kullanılmayacak.');if(listenEnabled)queueListen(650);return}
-u.voice=voice;
-u.onstart=()=>{speaking=true;voiceButton.hidden=true};u.onend=u.onerror=()=>{speaking=false;if(listenEnabled&&!hidden)queueListen(550)};
-speechSynthesis.speak(u);
+// Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
+// Upstream ES modules and the ONNX model are loaded only when speech is requested.
+const yakutAhenkRoot='https://ozguradmin.github.io/ahenk-turkish-tts/';
+let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null;
+let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
+function finishYakutSpeech(){
+ clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
+ speaking=false;
+ if(listenEnabled&&!hidden)queueListen(650);
+}
+function yakutTtsFailure(e){
+ console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
+ yakutTtsFailed=true;yakutTtsReady=false;yakutTtsPending='';
+ clearTimeout(yakutTtsBootTimer);clearTimeout(yakutTtsSayTimer);
+ try{yakutTtsWorker?.terminate()}catch(_){}
+ yakutTtsWorker=null;finishYakutSpeech();
+}
+function yakutPlaySpeech(data){
+ try{
+  if(!yakutTtsContext)yakutTtsContext=new (window.AudioContext||window.webkitAudioContext)();
+  yakutTtsContext.resume().catch(()=>{});
+  const pcm=new Float32Array(data.audio);
+  const buf=yakutTtsContext.createBuffer(1,pcm.length,data.sampleRate);
+  buf.copyToChannel(pcm,0);
+  if(yakutTtsSource){try{yakutTtsSource.stop()}catch(_){}}
+  const src=yakutTtsContext.createBufferSource();
+  yakutTtsSource=src;src.buffer=buf;src.connect(yakutTtsContext.destination);
+  src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
+  src.start();
+ }catch(e){yakutTtsFailure(e)}
+}
+function yakutTtsSayNow(text){
+ if(!yakutTtsReady||!yakutTtsWorker)return;
+ const id=++yakutTtsId;
+ yakutTtsWorker.postMessage({type:'say',id,text:text.slice(0,600),style:'neutral',steps:8,speed:1,seed:0});
+ clearTimeout(yakutTtsSayTimer);
+ yakutTtsSayTimer=setTimeout(()=>yakutTtsFailure(Error('Ses üretimi zaman aşımı')),90000);
+}
+function startYakutAhenk(){
+ if(yakutTtsWorker||yakutTtsFailed)return;
+ try{
+  // Local blob-backed module worker avoids a cross-origin Worker constructor.
+  // The imported upstream module resolves its own relative dependencies at its real URL.
+  const script='import '+JSON.stringify(yakutAhenkRoot+'js/worker.js')+';';
+  const blobUrl=URL.createObjectURL(new Blob([script],{type:'text/javascript'}));
+  yakutTtsWorker=new Worker(blobUrl,{type:'module'});
+  URL.revokeObjectURL(blobUrl);
+  yakutTtsWorker.onerror=e=>yakutTtsFailure(Error(e.message||'Ses işçisi başlatılamadı'));
+  yakutTtsWorker.onmessage=({data})=>{
+   if(data.type==='ready'){
+    clearTimeout(yakutTtsBootTimer);yakutTtsReady=true;
+    if(yakutTtsPending){const text=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(text)}
+   }else if(data.type==='audio'){
+    if(data.id===yakutTtsId){clearTimeout(yakutTtsSayTimer);yakutPlaySpeech(data)}
+   }else if(data.type==='error'){
+    yakutTtsFailure(Error(data.message||'Ses motoru hatası'));
+   }
+  };
+  const ua=navigator.userAgent||'';
+  yakutTtsWorker.postMessage({
+   type:'init',modelBase:'https://huggingface.co/ozgurguler/ahenk-cep-tr/resolve/main/onnx/',
+   pyBase:yakutAhenkRoot+'py/',variant:'f16',ep:'wasm',
+   device:{ios:/iPhone|iPad|iPod/i.test(ua),mobile:/Android|iPhone|iPad|iPod/i.test(ua),webkit:/AppleWebKit/i.test(ua)},
+   maxThreads:1,front:'js'
+  });
+  yakutTtsBootTimer=setTimeout(()=>yakutTtsFailure(Error('Ahenk modeli yüklenemedi')),120000);
+ }catch(e){yakutTtsFailure(e)}
+}
+function speak(text){
+ show(text,Math.max(7000,text.length*85));
+ if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
+ speaking=true;
+ if(recognition){try{recognition.abort()}catch(e){}}
+ if(yakutTtsFailed){
+  // A failed remote engine must not hold the microphone indefinitely.
+  finishYakutSpeech();return;
+ }
+ if(yakutTtsSource){try{yakutTtsSource.stop()}catch(e){}yakutTtsSource=null}
+ if(!yakutTtsContext&&window.AudioContext){try{yakutTtsContext=new AudioContext();yakutTtsContext.resume().catch(()=>{})}catch(e){}}
+ yakutTtsPending=text;
+ startYakutAhenk();
+ if(yakutTtsReady){yakutTtsPending='';yakutTtsSayNow(text)}
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
 function leftGreetingX(){return innerWidth<650?23:35}
