@@ -18,7 +18,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-@media(max-width:650px){#yakut-v9{width:clamp(118px,32vw,155px);height:clamp(190px,51vw,250px);bottom:52px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
+@media(max-width:650px){#yakut-v9{width:clamp(185px,53vw,250px);height:clamp(295px,83vw,390px);bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
 document.head.appendChild(css);
@@ -448,9 +448,29 @@ function handleYakutOfferAnswer(t){
 }
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage();
+ if(page==='iletisim.html'){react('agree',Object.values(yakutContact).join(' '),'left');return}
  const content=collectYakutPageSpeech();
  const text=yakutPageIntro(page)+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
  react('agree',text,'left');
+}
+// Verified site contact details. Speak slash as 'A harfi', not a mathematical fraction.
+const yakutContact={
+ address:'Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, bina numarası iki yüz kırk beş, A harfi, Bahçelievler, İstanbul.',
+ landline:'Sabit telefon numaramız: sıfır, iki yüz on iki, dokuz yüz elli beş, elli beş, doksan dokuz.',
+ mobile:'Cep telefonu ve WhatsApp numaramız: sıfır, beş yüz kırk üç, yüz seksen bir, otuz dört, seksen beş.',
+ email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
+};
+function yakutContactRequest(message){
+ const t=normalizeYakutCommand(message);
+ const wantsContact=/(iletişim bilgi|iletişimimiz|iletişim adres|iletişim numara|bize nasıl ulaş|nasıl ulaşabilirim|irtibat|adresimiz|adresinizi|adresiniz|telefon numara|telefonunuz|telefonunuzu|telefonlarımız|mail adres|e posta adres|eposta adres|mailiniz|mailinizi|numaranız|numaranızı)/.test(t);
+ if(!wantsContact)return null;
+ const asksAddress=/adres|neredesiniz|nerede bulunuyorsunuz/.test(t);
+ const asksPhone=/telefon|numara|whatsapp|cep/.test(t);
+ const asksEmail=/mail|e posta|eposta/.test(t);
+ if(asksAddress&&!asksPhone&&!asksEmail&&!/iletişim bilgi/.test(t))return yakutContact.address;
+ if(asksPhone&&!asksAddress&&!asksEmail&&!/iletişim bilgi/.test(t))return yakutContact.landline+' '+yakutContact.mobile;
+ if(asksEmail&&!asksAddress&&!asksPhone&&!/iletişim bilgi/.test(t))return yakutContact.email;
+ return Object.values(yakutContact).join(' ');
 }
 function openYakutPage(path){
  const current=getYakutCurrentPage();
@@ -469,6 +489,8 @@ const q=String(message||'').trim();if(!q||!ready)return;
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
+const contactAnswer=yakutContactRequest(q);
+if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
 if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
 const destination=yakutIsPageRequest(q);
 if(destination){openYakutPage(destination);return;}
@@ -589,15 +611,16 @@ function startSpeech(){
     return;
   }
   if(speaking||processingSpeech){
-   if(navigationIntent){
+   // Short voice commands like 'kentsel dönüşüm' work during YAKUT speech.
+   if(!yakutContactRequest(spoken)){
     const wanted=yakutIsPageRequest(spoken,true);
-    if(wanted){openYakutPage(wanted);return}
+    if(wanted&&(navigationIntent||answerText.split(' ').length<=4)){openYakutPage(wanted);return}
    }
    return;
   }
   // Responses take precedence over page-name matching, including "anlat".
   if(yakutPageOfferPending && handleYakutOfferAnswer(answerText))return;
-  const wanted=yakutIsPageRequest(spoken,false);
+  const wanted=yakutContactRequest(spoken)?null:yakutIsPageRequest(spoken,false);
   if(wanted){openYakutPage(wanted);return}
   show('Siz: '+spoken,2600);
   handle(spoken);
@@ -690,7 +713,7 @@ if(!hidden){
 mixer.update(dt);
 if(yakutAudioPlaying && phase==='idle'){
  yakutGestureClock+=dt;
- if(yakutGestureClock>7.5){
+ if(yakutGestureClock>3.5){
   yakutGestureClock=0;
   if(clips.agree){phase='reacting';play('agree',true)}
  }
