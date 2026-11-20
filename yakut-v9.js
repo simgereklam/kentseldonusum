@@ -197,7 +197,13 @@ function yakutPlaySpeech(data){
   buf.copyToChannel(pcm,0);
   if(yakutTtsSource){try{yakutTtsSource.stop()}catch(_){}}
   const src=yakutTtsContext.createBufferSource();
-  yakutTtsSource=src;src.buffer=buf;src.connect(yakutTtsContext.destination);
+  yakutTtsSource=src;src.buffer=buf;// Make the voice present and clear without clipping at higher volumes.
+   const gain=yakutTtsContext.createGain();
+   gain.gain.value=1.75;
+   const limiter=yakutTtsContext.createDynamicsCompressor();
+   limiter.threshold.value=-14;limiter.knee.value=8;
+   limiter.ratio.value=12;limiter.attack.value=0.003;limiter.release.value=0.18;
+   src.connect(gain);gain.connect(limiter);limiter.connect(yakutTtsContext.destination);
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
   src.start();
  }catch(e){yakutTtsFailure(e)}
@@ -273,10 +279,10 @@ function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));
 function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;play(clip,true,1);speak(text)}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
-const t=q.toLocaleLowerCase('tr-TR');
+const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
-if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil)/i.test(t)){
+if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil|eğilir misin|selam duruşu)/i.test(t)){
  targetX=posX;walkTimer=0;phase='reacting';phaseTime=0;
  model.rotation.y=0;
  // GLB animation names can vary; prefer a real bow clip, never an unrelated 'agree' gesture.
@@ -286,28 +292,28 @@ if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam
  else {phase='idle';play('wait');console.warn('YAKUT modelinde eğilme animasyonu bulunamadı:',Object.keys(clips))}
  return;
 }
-if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
+if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|fıkra)/i.test(t)){
  clip='laugh_02';answer='Hahaha! Çok güldüm! Seninle sohbet etmek çok eğlenceli.';
-}else if(/(harika|mükemmel|süper|çok güzel|başarılı|tebrik|aferin|sevindim|mutlu|muhteşem|bravo)/i.test(t)){
+}else if(/(harika|mükemmel|süper|çok güzel|başarılı|tebrik|aferin|sevindim|sevin|mutlu|muhteşem|bravo|ne kadar güzel|çok iyisin)/i.test(t)){
  clip='dance_01';answer='Çok sevindim! Böyle güzel sözler duymak harika!';
 }else if(/(teşekkür|sağ ol|eyvallah|eline sağlık)/i.test(t)){
  clip='bow';answer='Ne demek! Yardımcı olabildiysem ne mutlu bana.';
 }else if(/(kızgın|sinirli|berbat|kötü|üzgün|saçma|yapamadın)/i.test(t)){
  clip='frustrated_01';answer='Seni anlıyorum. Ne olduğunu anlatırsan birlikte çözmeye çalışabiliriz.';
-}else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne)/i.test(t)){
+}else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne|yakut kimsin|kendini tanıt)/i.test(t)){
  clip='greet_02';answer='Merhaba! Ben YAKUT. KUMTAŞ İnşaat için buradayım. Nasıl yardımcı olabilirim?';
 }else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
  clip='agree';answer='6306 sayılı Kanun kapsamındaki dönüşüm kararlarında, oybirliği sağlanamazsa maliklerin arsa paylarına göre salt çoğunluğu esas alınabilir. Maliklerin sözleşme şartlarını ve haklarını incelemesi, riskli yapı tespitini, tebligatları ve uygunluk varsa kira yardımını resmi kurumlardan doğrulaması önemlidir. Ayrıntılar yapının durumuna göre değişir. Resmi bilgi için Kentsel Dönüşüm Başkanlığının mevzuat ve bilgi merkezine bakılmalıdır.';
 }else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
  clip='agree';await loadSiteKnowledge();const found=siteAnswer(q);
  answer=found?found.text+' Bu, KUMTAŞ internet sitesinin '+found.path.replace('.html','')+' sayfasındaki bilgidir. Kesin yapılaşma hakkı için belediyenin güncel imar durumu esas alınmalıdır.':'Kentsel dönüşümde arsa alanı, imar durumu, mevcut bina bilgileri ve maliklerin anlaşma şartları birlikte incelenir. Arsa alanını, ilçeyi ve biliyorsan ada parsel numaranı söyle. Kesin haklar için belediyenin güncel imar durumu gerekir.';
-}else if(/(el salla|selam ver|selamla)/i.test(t)){
+}else if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
  clip='greet_02';answer='Merhaba! Seni görmek güzel!';
-}else if(/(dans et|oyna)/i.test(t)){
+}else if(/(dans et|dans etsene|dans eder misin|oyna|dans yap)/i.test(t)){
  clip='dance_01';answer='Hadi biraz neşelenelim!';
-}else if(/(alkış|alkışla)/i.test(t)){
+}else if(/(alkış|alkışla|alkışlasana)/i.test(t)){
  clip='clap';answer='Bravo! Seni alkışlıyorum!';
-}else if(/(yürü|gez|dolaş|sola git|sağa git)/i.test(t)){
+}else if(/(yürü|yürüsene|yürüyebilir misin|gez|gezinsene|dolaş|sola git|sağa git)/i.test(t)){
  const x=/sola/.test(t)?innerWidth*.07:/sağa/.test(t)?innerWidth*.72:innerWidth*(.15+Math.random()*.6);
  moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
 }else{
@@ -423,7 +429,7 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);posX=-stage.offsetWidth;targetX=leftGreetingX();
-listenEnabled=false;voiceButton.hidden=true;
+listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
 positionStage();
