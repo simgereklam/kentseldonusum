@@ -99,7 +99,7 @@ function siteAnswer(q){
  if(!ranked.length)return null;
  const top=ranked[0],extra=ranked.find(x=>x.path!==top.path&&x.score>=top.score*.75&&x.text!==top.text);
  let result=top.text+(extra?' '+extra.text:'');
- result=result.slice(0,550).replace(/\s+\S*$/,'').trim();
+ result=result.trim();
  return {text:result,path:top.path};
 }
 function chooseVoice(){
@@ -180,11 +180,12 @@ const YAKUT_SPEECH_SPEED=0.94;
 let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
 let yakutSpeechQueue=[],yakutAudioPlaying=false,yakutReadyChunk=null,yakutVoiceGeneration=0,yakutRequests=new Map();
+let yakutAudioStartTime=0;
 function splitYakutSpeech(text){
  const sentences=String(text).replace(/\s+/g,' ').trim().match(/[^.!?;:]+[.!?;:]?/g)||[];
  const chunks=[];let part='';
  for(const sentence of sentences)for(const word of sentence.trim().split(/\s+/)){
-  if(part&&(part+' '+word).length>245){chunks.push(part);part=''}
+  if(part&&(part+' '+word).length>185){chunks.push(part);part=''}
   part=part?part+' '+word:word;
  }
  if(part)chunks.push(part);
@@ -215,13 +216,13 @@ function yakutPlaySpeech(data){
   const src=yakutTtsContext.createBufferSource();
   yakutTtsSource=src;src.buffer=buf;// Make the voice present and clear without clipping at higher volumes.
    const gain=yakutTtsContext.createGain();
-   gain.gain.value=1.22;
+   gain.gain.value=1.0;
    const limiter=yakutTtsContext.createDynamicsCompressor();
    limiter.threshold.value=-10;limiter.knee.value=12;
    limiter.ratio.value=4;limiter.attack.value=0.008;limiter.release.value=0.22;
-   src.connect(gain);gain.connect(limiter);limiter.connect(yakutTtsContext.destination);
+   src.connect(gain);gain.connect(yakutTtsContext.destination); // Avoid compressor pumping/distortion.
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
-  src.start();yakutAudioPlaying=true;if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
+  src.start();yakutAudioPlaying=true;yakutAudioStartTime=performance.now();if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
    if(pendingSpeechGesture){play(pendingSpeechGesture,true);pendingSpeechGesture=null}
  }catch(e){yakutTtsFailure(e)}
 }
@@ -298,31 +299,47 @@ voiceButton.onclick=()=>{
 function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;pendingSpeechGesture=clip;speak(text)}
-// Navigate to the relevant real website page, with a conversational introduction.
-const yakutTopics=[
- {test:/kentsel\s*d[oö]n[uü]ş[uü]m|riskli bina|riskli yapı|bina yenileme|dönüşüm süreci|kentsel haklar/i,path:'kentsel-donusum.html',
- intro:'Elbette, kentsel dönüşüm sürecini baştan sona anlatayım. Kentsel dönüşüm sadece binayı yıkıp yeniden yapmak değildir. Malik hakları, mevcut dairelerin metrekareleri, arsanın imar koşulları, sözleşmenin şartları ve teslim planı birlikte değerlendirilir. İlk adım ön görüşmedir. Binanın bulunduğu ilçe, mahalle, ada parsel, mevcut kat sayısı ve dairelerin büyüklükleri öğrenilir. İkinci adım imar ve fizibilitedir. Arsanın alanı, ruhsat durumu, kat adedi ve yapılabilecek proje incelenir. Üçüncü adım maliklerin bilgilendirilmesidir. Kat karşılığı model, yeni dairelerin metrekare dengesi ve teslim koşulları açıklanır. Dördüncü adım sözleşme ve teminattır. Noter onaylı sözleşmede teslim süresi, malzeme standardı, teminat ve tarafların sorumlulukları açıkça belirlenir. Beşinci adım yıkım ve ruhsat işlemleridir. Gerekli yasal süreçlerden ve ruhsat hazırlığından sonra kontrollü yıkım planlanır. Altıncı adım yeni binanın teslimidir. Temel, kaba inşaat, dış cephe ve ince işler tamamlanır, ardından anahtar teslim yapılır. Ön değerlendirmede mevcut daire sayısı, daire metrekareleri, arsanın alanı, imar koşulları, maliklerin beklentileri, ruhsat ve iskan belgeleri dikkate alınır. Sözlü vaatlerle yetinilmemeli; metrekare dengesi, teminat, teslim tarihi ve malzeme standardı yazılı sözleşmede bulunmalıdır. Kumtaş İnşaat ile binanız için ön değerlendirme yapılabilir. Ancak kesin yapılaşma hakkı belediyenin güncel imar durumuyla ve ilgili resmi belgelerle belirlenir. Kentsel dönüşümde özellikle merak ettiğiniz bir hakkınız varsa onu da açıklayabilirim.'},
- {test:/malik hakk|maliklerin hak|haklarım|haklarımız|arsa payı|çoğunluk|oy birliği|kira yardım/i,path:'kentsel-donusum.html',
- intro:'Malik hakları dönüşümün en önemli konularından biridir. Önce arsa payınızı, mevcut dairenizin metrekarelerini ve yeni projede size önerilen bağımsız bölümün özelliklerini incelemek gerekir. Kat karşılığı sözleşmede teslim edilecek dairenin büyüklüğü, teslim tarihi, malzeme standardı, teminat ve tarafların yükümlülükleri açıkça yazılmalıdır. Riskli yapı tespiti, tebligat ve karar çoğunluğu gibi hususlar ilgili mevzuat çerçevesinde değerlendirilir. Kira yardımı koşulları her dosyada aynı olmayabilir. İmza atmadan önce teknik ve hukuki inceleme yaptırmak hakların korunması açısından önemlidir. İsterseniz arsa payını, sözleşmeyi veya kira yardımını daha ayrıntılı ele alabiliriz.'},
- {test:/hizmet|ne iş yap|neler yap|anahtar teslim|kat karşılığı/i,path:'hizmetlerimiz.html',
- intro:'Memnuniyetle anlatayım. Kumtaş İnşaat ön değerlendirme, imar ve parsel incelemesi, kat karşılığı inşaat modeli, yazılı sözleşme, teminat ve anahtar teslim bina yenileme hizmetleri sunuyor. Yıkımdan sonra temel, kaba inşaat, dış cephe ve ince işler planlanıyor. Maliklerin metrekareleri ve teslim koşulları baştan konuşuluyor. Size hangi aşamayı daha ayrıntılı anlatmamı istersiniz?'},
- {test:/kurumsal|kumtaş kim|firma hakkında|şirket hakkında/i,path:'kurumsal.html',
- intro:'Kumtaş İnşaat iki bin dört yılında kurulmuş bir inşaat ve taahhüt şirketidir. Konut ve ticari yapıların yanında endüstriyel yapılar, madencilik ve hafriyat alanlarında da çalışmalar yürütüyor. Şirketin mühendislik birikimi kentsel dönüşüm projelerinde de kullanılıyor.'},
- {test:/proje|yaptığınız bina|referans/i,path:'projelerimiz.html',
- intro:'Tabii, projeler ve referanslar sayfasına geçiyoruz. Burada Kumtaş İnşaatın proje çalışmalarını inceleyebiliriz.'},
- {test:/iletişim|adres|telefon|ofis|nasıl ulaş/i,path:'iletisim.html',
- intro:'Kumtaş İnşaatın merkez adresi, Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, iki yüz kırk beş A, Bahçelievler İstanbul. İletişim sayfasından telefon numaralarına ve WhatsApp bağlantısına ulaşabilirsiniz.'},
- {test:/bağcılar|bahçelievler|bakırköy|güngören|avcılar|esenler|küçükçekmece|zeytinburnu|yenibosna/i,path:null,
- intro:'İlgilendiğiniz bölgenin kentsel dönüşüm sayfasını açtım. Burada bölgenin imar koşulları ve binanızın durumunun ayrıca değerlendirilmesi gerektiğini görebilirsiniz. Ada parsel ve arsa alanını biliyorsanız ön değerlendirme için paylaşabilirsiniz.'}
-];
+// A single conversation/session for all published pages: greetings are once per visit.
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
-// Handle direct navigation while spoken narration is still playing.
+const yakutPageNames=[
+ ['index.html',/ana\s*sayfa|anasayfa|eve\s*dön/i],
+ ['sss.html',/sık\s*sorulan\s*sorular|sorular\s*sayfası|sss\b/i],
+ ['hakkimizda.html',/hakkımızda/i],
+ ['kurumsal.html',/kurumsal|firmamız|şirketimiz|kumtaş\s*(?:inşaat)?\s*kim/i],
+ ['hizmetlerimiz.html',/hizmetlerimiz|hizmetler|ne\s*iş\s*yapıyorsunuz|neler\s*yapıyorsunuz/i],
+ ['projelerimiz.html',/projelerimiz|projeler|referanslar/i],
+ ['iletisim.html',/iletişim|telefon(?:lar)?|adres(?:imiz)?|bize\s*ulaş/i],
+ ['bolgelerimiz.html',/bölgelerimiz|bölgeler|hangi\s*ilçelerde/i],
+ ['kentsel-donusum.html',/kentsel\s*d[oö]n[uü]ş[uü]m|riskli\s*(?:bina|yapı)|malik\s*hak|arsa\s*payı|kira\s*yardım/i]
+];
 function normalizeYakutCommand(message){
  return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü\s]/gi,' ').replace(/\s+/g,' ').trim();
+}
+function getYakutCurrentPage(){return decodeURIComponent(location.pathname.split('/').pop()||'index.html').toLowerCase()}
+function findYakutPage(message){
+ const t=normalizeYakutCommand(message);
+ // An explicitly named district takes precedence over generic urban transformation.
+ const area=Object.keys(yakutDistrictPages).find(d=>new RegExp('(?:^|\\s)'+d+'(?:\\s|$)').test(t));
+ if(area)return yakutDistrictPages[area]+'-kentsel-donusum.html';
+ const page=yakutPageNames.find(([,re])=>re.test(t));
+ return page?page[0]:null;
 }
 function isYakutHomeCommand(message){
  const t=normalizeYakutCommand(message);
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
+}
+function yakutIsPageRequest(message,whileSpeaking=false){
+ const t=normalizeYakutCommand(message);
+ const page=findYakutPage(t);
+ if(!page)return null;
+ // A factual question on the subject should not unexpectedly navigate away.
+ const asksQuestion=/\b(nedir|nasıl|neden|ne\s*zaman|kaç|hesapla|hesaplama|ne\s*kadar|olur\s*mu|mümkün\s*mü)\b/.test(t);
+ const navigationVerb=/(?:aç|git|geç|göster|götür|sayfa|bilgi\s*(?:istiyorum|ver|almak)|anlat|incele|konuşalım)/.test(t);
+ const shortLabel=t.split(' ').length<=4;
+ const explicitlyAddressed=/\byakut\b/.test(t);
+ if(asksQuestion&&!navigationVerb)return null;
+ if(whileSpeaking&&!navigationVerb&&!explicitlyAddressed&&!shortLabel)return null;
+ return (navigationVerb||shortLabel||explicitlyAddressed)?page:null;
 }
 function cancelYakutSpeech(){
  ++yakutTtsId;++yakutVoiceGeneration;yakutRequests.clear();yakutReadyChunk=null;yakutAudioPlaying=false;yakutSpeechQueue=[];yakutTtsPending='';
@@ -330,22 +347,42 @@ function cancelYakutSpeech(){
  if(yakutTtsSource){const source=yakutTtsSource;yakutTtsSource=null;source.onended=null;try{source.stop()}catch(_){}}
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
-function goYakutHome(){
- cancelYakutSpeech();
- try{sessionStorage.setItem('yakutNextTopic',JSON.stringify({path:'index.html',reply:'Ana sayfaya geldik. Size nasıl yardımcı olabilirim?'}));sessionStorage.setItem('yakutAudioApproved',audioUnlocked?'1':'0')}catch(_){}
- const home=new URL('index.html',location.origin+'/');
- if(location.pathname==='/'||location.pathname.endsWith('/index.html'))react('agree','Tabii, ana sayfadayız. Size nasıl yardımcı olabilirim?');
- else location.assign(home.href);
+function collectYakutPageSpeech(){
+ // Only page copy, in reading order. Never include nav links, footer, buttons or hidden controls.
+ const root=document.querySelector('main')||document.body;
+ const pieces=[],seen=new Set();
+ for(const el of root.querySelectorAll('h1,h2,h3,h4,p,li,dt,dd')){
+  if(el.closest('header,nav,footer,aside,form,button,#yakut-v9,#yakut-v9-ui,.cta,.breadcrumbs'))continue;
+  if(el.closest('p,li,dt,dd')!==null&&el.closest('p,li,dt,dd')!==el)continue;
+  if(el.getAttribute('aria-hidden')==='true'||el.hidden)continue;
+  const text=(el.textContent||'').replace(/\s+/g,' ').trim();
+  if(text.length<12||seen.has(text)||/(çerez|cookie|tüm hakları saklıdır|whatsapp|iletişime geçin)/i.test(text))continue;
+  if(/^(h1|h2|h3|h4)$/i.test(el.tagName) && text.length>135)continue;
+  seen.add(text);pieces.push(text);
+ }
+ return pieces.join('. ').replace(/\.{2,}/g,'.').replace(/\s+/g,' ').trim();
 }
-function openYakutTopic(topic,spoken){
- const name=decodeURIComponent(location.pathname.split('/').pop()||'index.html');
- if(name.toLowerCase()===topic.path.toLowerCase())return false;
- // Carry only the next, short voice reply across this same-origin page navigation.
+function yakutPageIntro(path){
+ const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','hakkimizda.html':'hakkımızda','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgelerimiz'};
+ const title=names[path]||path.replace('-kentsel-donusum.html','').replace(/-/g,' ');
+ return 'Memnuniyetle. '+title+' sayfasını birlikte inceleyelim. ';
+}
+function yakutSpeakCurrentPage(){
+ const page=getYakutCurrentPage();
+ const content=collectYakutPageSpeech();
+ const text=yakutPageIntro(page)+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
+ react('agree',text);
+}
+function openYakutPage(path){
+ const current=getYakutCurrentPage();
+ cancelYakutSpeech();
+ if(current===path){yakutSpeakCurrentPage();return true}
  try{
-  sessionStorage.setItem('yakutNextTopic',JSON.stringify({path:topic.path,reply:spoken}));
+  sessionStorage.setItem('yakutVisited','1');
+  sessionStorage.setItem('yakutNextTopic',JSON.stringify({path,readPage:true}));
   if(audioUnlocked)sessionStorage.setItem('yakutAudioApproved','1');
  }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
- location.assign(new URL(topic.path,location.origin+'/').href);
+ location.assign(new URL(path,location.origin+'/').href);
  return true;
 }
 async function handle(message){
@@ -353,21 +390,9 @@ const q=String(message||'').trim();if(!q||!ready)return;
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
-if(isYakutHomeCommand(q)){goYakutHome();return;}
+const destination=yakutIsPageRequest(q);
+if(destination){openYakutPage(destination);return;}
 let clip='agree',answer='';
- const requestedTopic=yakutTopics.find(topic=>topic.test.test(t));
- if(requestedTopic && !/(dans|gül|alkış|yürü|selam|teşekkür)/i.test(t)){
-  let topic=requestedTopic;
-  if(!topic.path){
-   const district=Object.keys(yakutDistrictPages).find(d=>t.includes(d));
-   if(district)topic={...topic,path:yakutDistrictPages[district]+'-kentsel-donusum.html'};
-  }
-  if(topic.path){
-   processingSpeech=false;
-   if(openYakutTopic(topic,topic.intro))return;
-   react('agree',topic.intro);return;
-  }
- }
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
 if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil|eğilir misin|selam duruşu)/i.test(t)){
  targetX=posX;walkTimer=0;phase='reacting';phaseTime=0;
@@ -462,8 +487,9 @@ function startSpeech(){
   const spoken=e.results?.[0]?.[0]?.transcript;
   if(!spoken)return;
   micFailureCount=0;
-  if(isYakutHomeCommand(spoken)){goYakutHome();return}
-  if(speaking||processingSpeech)return; // Ignore our own voice during narration.
+  const wanted=yakutIsPageRequest(spoken,speaking||processingSpeech);
+  if(wanted){openYakutPage(wanted);return}
+  if(speaking||processingSpeech)return; // Ignore YAKUT output except explicit page commands.
   show('Siz: '+spoken,2600);
   handle(spoken);
  };
@@ -484,7 +510,7 @@ talk.onclick=()=>{
  talk.hidden=false;
  if(listenEnabled&&recognition){stopListening();show('Dinleme durduruldu.',3000);return}
  listenEnabled=true;micFailureCount=0;micRestartAt=0;visitorInteracted=true;talk.hidden=true;talk.textContent='🟢 Dinliyorum';
- if(!openingSpoken){openingSpoken=true;play('greet_02',true);speak(welcome)}
+ if(!openingSpoken){openingSpoken=true;pendingSpeechGesture='greet_02';speak(welcome)}
  else{speak('Seni dinliyorum. Bana bir şey sorabilirsin.')}
  if(!window.speechSynthesis)queueListen(250);
 };
@@ -520,31 +546,29 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage.offsetWidth;targetX=leftGreetingX();
- // Continue the same voice response after page navigation without a second welcome.
- let arrivalReply='';
+ // Keep one greeting across every page and use the current page's real content.
+ let arrivalReadPage=false;
  try{
-  const stored=sessionStorage.getItem('yakutNextTopic');
-  if(stored){
-   const state=JSON.parse(stored);
-   if(state.path===(decodeURIComponent(location.pathname.split('/').pop())||'index.html')){
-    arrivalReply=state.reply||'';
+  const entry=sessionStorage.getItem('yakutNextTopic');
+  if(entry){
+   const state=JSON.parse(entry);
+   if(state.path===getYakutCurrentPage()){
     sessionStorage.removeItem('yakutNextTopic');
-    openingSpoken=true;openingGreeted=true;
+    arrivalReadPage=!!state.readPage;
    }
   }
+  if(sessionStorage.getItem('yakutVisited')==='1'||arrivalReadPage){
+   openingSpoken=true;openingGreeted=true;
+  }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
- }catch(e){console.warn('YAKUT sayfa konuşması:',e)}
- if(arrivalReply){
-  const reply=arrivalReply;
-  const continueOnArrival=()=>{
-   if(!ready||!audioUnlocked||speaking)return;
-   pendingSpeechGesture='agree';
-   speak(reply);
-  };
-  if(audioUnlocked){queueMicrotask(continueOnArrival)}
+  sessionStorage.setItem('yakutVisited','1');
+ }catch(e){console.warn('YAKUT oturumu:',e)}
+ if(arrivalReadPage){
+  const beginNarration=()=>{if(audioUnlocked&&!speaking)yakutSpeakCurrentPage()};
+  if(audioUnlocked)queueMicrotask(beginNarration);
   else{
-   document.addEventListener('pointerdown',continueOnArrival,{once:true,capture:true});
-   document.addEventListener('keydown',continueOnArrival,{once:true,capture:true});
+   document.addEventListener('pointerdown',beginNarration,{once:true,capture:true});
+   document.addEventListener('keydown',beginNarration,{once:true,capture:true});
   }
  }
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
