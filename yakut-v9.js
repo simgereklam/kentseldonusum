@@ -180,7 +180,7 @@ function beginYakutVisit(){
   moveTo(centerAnswerX());
   return;
  }
- if(greeted && yakutPageOfferPending){offerYakutPage();return}
+ if(yakutPageOfferPending){offerYakutPage();return}
  if(greeted&&!speaking)queueListen(450);
 }
 document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
@@ -324,7 +324,7 @@ voiceButton.onclick=()=>{
  if(!openingGreeted){posX=leftGreetingX();targetX=posX;positionStage();openingGreeting()}
  else speak(welcome);
 };
-function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=0;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{posX=targetX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))
@@ -417,7 +417,7 @@ function offerYakutPage(){
  if(!ready||!yakutPageOfferPending||yakutOfferSpoken||speaking||yakutIsGreetingWalking||!audioUnlocked)return;
  yakutOfferSpoken=true;
  const page=getYakutCurrentPage();
- const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(' sayfasını birlikte inceleyelim. ','');
+ const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(/ sayfasını birlikte inceleyelim\.\s*$/,'');
  react('agree',topic+' hakkında size bilgi verebilirim. İster misiniz?','left');
 }
 function handleYakutOfferAnswer(t){
@@ -657,7 +657,7 @@ if(yakutAudioPlaying && phase==='idle'){
  }
 }
 if(phase==='walking'){
-const step=(innerWidth<650?56:94)*dt;
+const step=(innerWidth<650?105:175)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
  if(yakutIsGreetingWalking)finishYakutGreetingWalk()
 }else{posX+=Math.sign(targetX-posX)*step;}
