@@ -718,12 +718,18 @@ function addYakutChestLogo() {
  const texture = new THREE.CanvasTexture(artwork);
  texture.colorSpace = THREE.SRGBColorSpace;
  texture.anisotropy = 4;
- const geometry = new THREE.PlaneGeometry(0.068, 0.0745, 12, 12);
+ // Depth at the center and sides of each row on the GLB's chest plate.
+ const centerDepth = [0.0788, 0.0916, 0.0998, 0.1051, 0.1085, 0.1109, 0.1118, 0.1114, 0.1087];
+ const sideDepth = [0.0742, 0.0880, 0.0956, 0.1014, 0.1051, 0.1064, 0.1058, 0.1040, 0.1010];
+ const geometry = new THREE.PlaneGeometry(0.088, 0.092, 12, centerDepth.length - 1);
  const vertices = geometry.attributes.position;
  for (let i = 0; i < vertices.count; i++) {
   const x = vertices.getX(i);
   const y = vertices.getY(i);
-  vertices.setXYZ(i, x, 0.652 + y, 0.116 - 0.29 * y - 2.7 * x * x);
+  const row = Math.floor(i / 13);
+  const edgeWeight = (x / 0.044) ** 2;
+  const depth = THREE.MathUtils.lerp(centerDepth[row], sideDepth[row], edgeWeight);
+  vertices.setXYZ(i, x, 0.648 + y, depth + 0.0035);
  }
  const material = new THREE.MeshBasicMaterial({
   map: texture,
@@ -741,9 +747,9 @@ function addYakutChestLogo() {
   const pixels = paint.getImageData(0, 0, artwork.width, artwork.height);
   for (let i = 0; i < pixels.data.length; i += 4) {
    pixels.data[i + 3] = 255 - pixels.data[i];
-   pixels.data[i] = 12;
-   pixels.data[i + 1] = 47;
-   pixels.data[i + 2] = 109;
+   pixels.data[i] = 0;
+   pixels.data[i + 1] = 75;
+   pixels.data[i + 2] = 194;
   }
   paint.putImageData(pixels, 0, 0);
   texture.needsUpdate = true;
