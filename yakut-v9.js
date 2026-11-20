@@ -554,7 +554,7 @@ function yakutImarHelpAnswer(message) {
  return 'Bu konuda size yardımcı olabilirim. ' + yakutImarGuidance;
 }
 const yakutDistrictImarSources = [
- ['Adalar', 'https://www.ibb.istanbul/tum-hizmetler/imar-ve-sehircilik-hizmetleri/'],
+ ['Adalar', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
  ['Arnavutköy', 'https://www.turkiye.gov.tr/arnavutkoy-belediyesi-imar-durum-sorgulama'],
  ['Ataşehir', 'https://www.turkiye.gov.tr/atasehir-belediyesi?belediye=kategori&kategori=ARSA'],
  ['Avcılar', 'https://www.turkiye.gov.tr/avcilar-belediyesi?belediye=kategori&kategori=ARSA'],
@@ -601,6 +601,9 @@ function yakutDistrictImarCommand(message) {
   const key = name.toLocaleLowerCase('tr-TR');
   return new RegExp('(?:^| )' + key + '(?: |$|da(?: |$)|de(?: |$)|ta(?: |$)|te(?: |$))').test(t);
  });
+ if (/(?:^| )(?:ibb|i bb|istanbul büyükşehir)(?: |$)/.test(t) && /(?:imar|e plan|plan sorgu)/.test(t)) {
+  return {district: ['İBB', 'https://eplan.ibb.istanbul/sorgu/plansorgu'], open: true};
+ }
  const imar = /(?:^| )(?:e imarı?|e belediye|imar durumu|imar sorgusu|imar sorgula|belediye kaydı)(?: |$)/.test(t);
  const parcel = /(?:^| )ada(?: |$)/.test(t) && /(?:^| )parsel(?: |$)/.test(t);
  const open = /(?:^| )(?:aç|bağlan|git)(?: |$)/.test(t);
