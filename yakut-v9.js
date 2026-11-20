@@ -204,10 +204,14 @@ const q=String(message||'').trim();if(!q||!ready)return;
 const t=q.toLocaleLowerCase('tr-TR');
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
-if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı)/i.test(t)){
+if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil)/i.test(t)){
  targetX=posX;walkTimer=0;phase='reacting';phaseTime=0;
  model.rotation.y=0;
- play('bow',true);
+ // GLB animation names can vary; prefer a real bow clip, never an unrelated 'agree' gesture.
+ const bowName=Object.keys(clips).find(n=>/^(bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))
+   || Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n));
+ if(bowName){play(bowName,true);console.info('YAKUT eğilme:',bowName)}
+ else {phase='idle';play('wait');console.warn('YAKUT modelinde eğilme animasyonu bulunamadı:',Object.keys(clips))}
  return;
 }
 if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
