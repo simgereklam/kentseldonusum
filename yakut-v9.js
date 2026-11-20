@@ -561,7 +561,8 @@ function yakutImarHelpAnswer(message) {
   const link = document.querySelector('a.float-wa[href^="https://wa.me/"]');
   if (link) { location.assign(link.href); return ''; }
  }
- return 'Bu konuda size yardımcı olabilirim. ' + yakutImarGuidance;
+ showYakutImarScreen(null, 'İmar bilgileri için belediye başvurusu');
+ return 'Belediyeden isteyebileceğiniz bilgileri ekranda gösteriyorum. ' + yakutImarGuidance;
 }
 const yakutDistrictImarSources = [
  ['Adalar', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
@@ -628,6 +629,32 @@ function yakutParcelIntakeCommand(message) {
      !(numbered.every(Boolean) && (district || yakutParcelIntake))) return null;
  return {district, numbered};
 }
+function createYakutImarChecklist() {
+ const guide = document.createElement('details');
+ guide.open = true;
+ guide.style.cssText = 'padding:12px 16px;background:#f3f6fa;line-height:1.5;max-height:44vh;overflow:auto';
+ const heading = document.createElement('summary');
+ heading.textContent = 'Belediyeden hangi bilgileri istemeliyim?';
+ heading.style.fontWeight = '700';
+ const intro = document.createElement('p');
+ intro.textContent = 'İlçe, mahalle, ada ve parsel bilgileriyle belediyenin imar veya kentsel dönüşüm birimine başvurup şu bilgileri isteyin.';
+ const list = document.createElement('ul');
+ for (const item of [
+  'Güncel imar durum belgesi ve parsele uygulanan imar planı notları.',
+  'Net imar parseli alanı (m²) ve TAKS (taban oturumu oranı).',
+  'KAKS (emsal) ve emsale esas inşaat alanı (m²).',
+  'İzin verilen kat adedi veya bina yüksekliği ve bahçe çekme mesafeleri.',
+  'Varsa toplam brüt inşaat alanı (m²) ve ilave yapılaşma haklarının koşulları.'
+ ]) {
+  const row = document.createElement('li');
+  row.textContent = item;
+  list.append(row);
+ }
+ const footer = document.createElement('p');
+ footer.textContent = 'Belge elinizdeyse inceleme için Kumtaş İnşaat’a WhatsApp üzerinden iletebilirsiniz.';
+ guide.append(heading, intro, list, footer);
+ return guide;
+}
 function showYakutImarScreen(url, details) {
  document.getElementById('yakut-imar-screen')?.close();
  const dialog = document.createElement('dialog');
@@ -642,7 +669,7 @@ function showYakutImarScreen(url, details) {
  title.textContent = details;
  title.style.flex = '1 1 220px';
  const external = document.createElement('a');
- external.href = url;
+ if (url) external.href = url;
  external.target = '_blank';
  external.rel = 'noopener noreferrer';
  external.textContent = 'Resmî e-İmarı yeni sekmede aç';
@@ -654,15 +681,17 @@ function showYakutImarScreen(url, details) {
  const frame = document.createElement('iframe');
  frame.title = 'Resmî imar kaynağı';
  frame.style.cssText = 'width:100%;flex:1;min-height:0;border:0';
- bar.append(title, external, close);
- layout.append(bar);
- if (new URL(url).hostname === 'keos.besiktas.bel.tr') {
+ bar.append(title);
+ if (url) bar.append(external);
+ bar.append(close);
+ layout.append(bar, createYakutImarChecklist());
+ if (!url || new URL(url).hostname === 'keos.besiktas.bel.tr') {
   dialog.style.cssText = 'position:fixed;inset:0;width:min(92%,680px);max-height:85vh;margin:auto;padding:0;border:0;border-radius:14px;background:white;color:#152b45;box-shadow:0 12px 50px #0005';
   layout.style.height = 'auto';
   const note = document.createElement('p');
   note.textContent = 'Beşiktaş Belediyesi, sorgu ekranını kendi sitesi içinde gösteriyor. Yukarıdaki bağlantıyla resmî ekranı yeni sekmede açıp başlıktaki ada ve parseli aratabilirsiniz. Kumtaş sayfası açık kalır.';
   note.style.cssText = 'max-width:640px;padding:24px 16px;margin:0 auto;line-height:1.6';
-  layout.append(note);
+  if (url) layout.append(note);
  } else {
   frame.src = url;
   layout.append(frame);
@@ -740,7 +769,10 @@ function yakutKirazliAnswer(message) {
  }
  if (/mania/.test(t)) return 'Bu parselin havaalanı mânia sınırı doğrulanmadı. Kat hesabından önce konum, zemin kotu ve ilgili yükseklik sınırı belediyeden kontrol edilmeli.';
  if (/zemin/.test(t)) return 'Belediyenin imar kaydı zemin etüdü yapılmadan uygulama yapılamayacağını belirtiyor. Zemin iyileştirmesi gerekip gerekmediği etüt sonucunda belirlenir.';
- if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) return 'Belediye ekranında taban oturumu ve kat sınırı görünmüyor. ' + yakutImarGuidance;
+ if (/kaç kat|kaç daire/.test(t) && !/kirazlı/.test(t)) {
+  showYakutImarScreen(null, 'Kirazlı · Ada 0 / Parsel 2135');
+  return 'Belediye ekranında taban oturumu ve kat sınırı görünmüyor. ' + yakutImarGuidance;
+ }
  if (/bonus|ilave emsal/.test(t)) return 'Sunumda üç bin yedi yüz yetmiş yedi metrekare net arsa için dokuz bin sekiz yüz yirmi metrekare emsale esas alan gösteriliyor. Bu yaklaşık iki virgül altmış emsale denk geliyor. Artışın parseldeki uygulanma şartı teyit edilmeli. Sunumda brüt alan on iki bin yedi yüz altmış altı; mevcut brüt alan düşüldüğünde kalan alan üç bin iki yüz seksen dört metrekare.';
  showYakutImarScreen(yakutKirazliSource, 'Bağcılar · Kirazlı · Ada 0 / Parsel 2135');
  return 'Bağcılar, Kirazlı, sıfır ada, iki bin yüz otuz beş parsel. Belediye kaydında burası konut alanı ve emsal iki. Bu da kabaca yedi bin beş yüz metrekare emsale esas alan demek. Taban oturumu ve kat sınırı görünmüyor.';
