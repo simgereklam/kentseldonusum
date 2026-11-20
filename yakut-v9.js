@@ -177,14 +177,30 @@ document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
 const yakutAhenkRoot='https://ozguradmin.github.io/ahenk-turkish-tts/';
 let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
+let yakutSpeechQueue=[];
+function splitYakutSpeech(text){
+ const chunks=[],sentences=String(text).replace(/\s+/g,' ').trim().match(/[^.!?;:]+[.!?;:]?/g)||[];
+ for(const sentence of sentences){
+  let chunk='';
+  for(const w of sentence.trim().split(/\s+/)){
+   if(chunk&&(chunk+' '+w).length>115){chunks.push(chunk);chunk=w}
+   else chunk=chunk?chunk+' '+w:w;
+  }
+  if(chunk)chunks.push(chunk);
+ }
+ return chunks;
+}
 function finishYakutSpeech(){
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
+ if(yakutSpeechQueue.length && yakutTtsReady && !hidden){
+  yakutTtsSayNow(yakutSpeechQueue.shift());return;
+ }
  speaking=false;
  if(listenEnabled&&!hidden)queueListen(650);
 }
 function yakutTtsFailure(e){
  console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
- yakutTtsFailed=true;yakutTtsLastFailure=Date.now();yakutTtsReady=false;yakutTtsPending='';
+ yakutTtsFailed=true;yakutTtsLastFailure=Date.now();yakutTtsReady=false;yakutTtsPending='';yakutSpeechQueue=[];
  clearTimeout(yakutTtsBootTimer);clearTimeout(yakutTtsSayTimer);
  try{yakutTtsWorker?.terminate()}catch(_){}
  yakutTtsWorker=null;finishYakutSpeech();
@@ -212,7 +228,7 @@ function yakutPlaySpeech(data){
 function yakutTtsSayNow(text){
  if(!yakutTtsReady||!yakutTtsWorker)return;
  const id=++yakutTtsId;
- yakutTtsWorker.postMessage({type:'say',id,text:text.slice(0,600),style:'neutral',steps:8,speed:1,seed:0});
+ yakutTtsWorker.postMessage({type:'say',id,text:text.slice(0,125),style:'neutral',steps:6,speed:1,seed:0});
  clearTimeout(yakutTtsSayTimer);
  yakutTtsSayTimer=setTimeout(()=>yakutTtsFailure(Error('Ses üretimi zaman aşımı')),90000);
 }
@@ -258,9 +274,11 @@ function speak(text){
  }
  if(yakutTtsSource){try{yakutTtsSource.stop()}catch(e){}yakutTtsSource=null}
  if(!yakutTtsContext&&window.AudioContext){try{yakutTtsContext=new AudioContext();yakutTtsContext.resume().catch(()=>{})}catch(e){}}
- yakutTtsPending=text;
+ const segments=splitYakutSpeech(text);
+ yakutSpeechQueue=segments.slice(1);
+ yakutTtsPending=segments[0]||'';
  startYakutAhenk();
- if(yakutTtsReady){yakutTtsPending='';yakutTtsSayNow(text)}
+ if(yakutTtsReady&&yakutTtsPending){const first=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(first)}
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
 function leftGreetingX(){return innerWidth<650?23:35}
@@ -433,7 +451,7 @@ model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDic
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
-ready=true;loadSiteKnowledge().catch(console.warn);posX=-stage.offsetWidth;targetX=leftGreetingX();
+ready=true;loadSiteKnowledge().catch(console.warn);startYakutAhenk();posX=-stage.offsetWidth;targetX=leftGreetingX();
 listenEnabled=true;voiceButton.hidden=true;queueListen(1600);
 model.rotation.y=0; // Keep YAKUT facing visitors while walking either direction.
 if(reduced){posX=targetX;phase='idle';play('wait');queueMicrotask(openingGreeting)}else{phase='walking';play('walk',false,.95)}
