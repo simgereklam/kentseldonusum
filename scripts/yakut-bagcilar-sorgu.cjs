@@ -12,8 +12,8 @@ async function lookup({ ada, parsel, mahalle }) {
   const browser = await chromium.launch({ executablePath: process.env.YAKUT_CHROMIUM_PATH || undefined });
   try {
     const page = await browser.newPage({ locale: 'tr-TR' });
-    page.setDefaultTimeout(15000);
-    await page.goto(source, { waitUntil: 'domcontentloaded' });
+    page.setDefaultTimeout(30000);
+    await page.goto(source, { waitUntil: 'commit', timeout: 45000 });
     await page.getByRole('tab', { name: 'Ada/Parsel', exact: true }).click();
     await page.getByRole('textbox', { name: 'Ada', exact: true }).fill(ada);
     await page.getByRole('textbox', { name: 'Parsel', exact: true }).fill(parsel);
