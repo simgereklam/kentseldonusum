@@ -1,125 +1,155 @@
-/* KUMTAŞ YAKUT V9 - only 3D character, no chatbot, no opening video.
-   Additive: does not change original site markup or layout. */
+/* KUMTAS YAKUT V9: genuine GLB animated visitor companion.
+ * Runs on the homepage only. No opening video or edits to existing HTML layout. */
 (() => {
 'use strict';
-if (window.__yakutV9) return;
-window.__yakutV9 = true;
-const src = new URL('../YAKUT_V9.glb', document.currentScript.src).href;
-const greeting = 'Hoş geldiniz! Ben KUMTAŞ İnşaat yapay zekâ asistanınız YAKUT. Size yardımcı olmak için buradayım.';
-const style = document.createElement('style');
-style.textContent = [
-'#yakut-v9{position:fixed;right:10px;bottom:77px;z-index:110;width:clamp(155px,19vw,260px);height:clamp(245px,37vw,390px);pointer-events:none;contain:layout style;filter:drop-shadow(0 8px 15px rgba(1,24,45,.28))}',
-'#yakut-v9 canvas{display:block;width:100%;height:100%;pointer-events:none}',
-'#yakut-v9-controls{position:fixed;right:17px;bottom:54px;z-index:121;display:flex;gap:6px;font:600 12px Arial,sans-serif}',
-'#yakut-v9-controls button{background:#0b567e;border:1px solid #3da5d6;border-radius:18px;color:white;cursor:pointer;padding:8px 11px;box-shadow:0 5px 16px #0005}',
-'#yakut-v9-controls button:hover{background:#1477a9}',
-'#yakut-v9-caption{position:fixed;right:18px;bottom:calc(77px + clamp(245px,37vw,390px));z-index:111;max-width:270px;background:#063354e6;border:1px solid #3b9ed3;border-radius:12px;padding:9px 12px;color:white;font:600 12px/1.45 Arial,sans-serif;display:none;pointer-events:none}',
-'#yakut-v9-caption.y-visible{display:block}',
-'@media(max-width:650px){#yakut-v9{width:150px;height:232px;right:0;bottom:81px}#yakut-v9-controls{right:5px;bottom:53px}#yakut-v9-caption{max-width:220px;bottom:322px;right:8px}}'
-].join('\n');
-document.head.appendChild(style);
-const stage=document.createElement('div');
-stage.id='yakut-v9';
-stage.setAttribute('aria-label','YAKUT üç boyutlu asistan');
-const canvas=document.createElement('canvas');
-stage.appendChild(canvas);
-const controls=document.createElement('div');
-controls.id='yakut-v9-controls';
-controls.innerHTML='<button id="yakut-v9-greet" type="button" aria-label="YAKUT selamlasın">👋 YAKUT</button><button id="yakut-v9-hide" type="button" aria-label="YAKUT’u gizle">✕</button>';
-const caption=document.createElement('div');
-caption.id='yakut-v9-caption';
-document.body.append(stage,controls,caption);
-let clips={}, active=null, mixer=null, face=null, THREE=null, root=null;
-let speaking=false, hidden=false, ready=false, phase='loading';
-let introTimer=null, captionTimer=null, baseZ=0, baseScale=1, approach=0;
-function status(text,ms){caption.textContent=text;caption.classList.add('y-visible');clearTimeout(captionTimer);if(ms)captionTimer=setTimeout(()=>caption.classList.remove('y-visible'),ms);}
-function action(name,once=false,speed=1){if(!THREE||!clips[name])return;
-const next=clips[name];if(active&&active!==next)active.fadeOut(.22);
-next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity)
- .setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
-next.clampWhenFinished=once;active=next;
+if(window.__yakutV9)return;window.__yakutV9=true;
+const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
+const welcome='Hoş geldiniz! Ben KUMTAŞ İnşaat yapay zekâ asistanınız YAKUT. Size yardımcı olmak için buradayım.';
+const css=document.createElement('style');
+css.textContent=`
+#yakut-v9{position:fixed;left:0;bottom:70px;width:clamp(155px,19vw,250px);height:clamp(240px,36vw,375px);z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
+#yakut-v9 canvas{display:block;width:100%;height:100%}
+#yakut-v9-ui{position:fixed;bottom:14px;left:12px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
+#yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
+#yakut-v9-ui button:hover{background:#137aaa}
+#yakut-v9-ui input{display:none;width:min(320px,45vw);padding:9px;border:1px solid #71c8fa;border-radius:14px;background:#fff;color:#122f44;font:13px Arial,sans-serif}
+#yakut-v9-ui.open input{display:block}
+#yakut-v9-caption{position:fixed;bottom:64px;left:12px;max-width:min(350px,85vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:11px 13px;border:1px solid #6dccff;border-radius:13px;font:13px/1.5 Arial,sans-serif;box-shadow:0 5px 15px #0004}
+#yakut-v9-caption.shown{display:block}
+@media(max-width:650px){#yakut-v9{width:155px;height:238px;bottom:70px}#yakut-v9-ui{bottom:8px;left:7px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:7px;max-width:80vw}}
+@media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
+`;
+document.head.appendChild(css);
+const stage=document.createElement('div');stage.id='yakut-v9';stage.setAttribute('aria-label','Hareketli 3D YAKUT asistanı');
+stage.appendChild(document.createElement('canvas'));
+const ui=document.createElement('div');ui.id='yakut-v9-ui';
+ui.innerHTML='<button id="yakut-talk" type="button" aria-label="YAKUT ile konuş">🎤 YAKUT</button><input id="yakut-text" aria-label="YAKUT’a bir şey yazın" placeholder="YAKUT’a bir şey söyle..." autocomplete="off"><button id="yakut-send" type="button" aria-label="Mesajı gönder" hidden>Gönder</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
+const caption=document.createElement('div');caption.id='yakut-v9-caption';
+document.body.append(stage,caption,ui);
+const talk=ui.querySelector('#yakut-talk'),inp=ui.querySelector('#yakut-text'),send=ui.querySelector('#yakut-send'),close=ui.querySelector('#yakut-close');
+let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null;
+let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function show(text,ms=7000){caption.textContent=text;caption.classList.add('shown');clearTimeout(dialogTimer);if(ms)dialogTimer=setTimeout(()=>caption.classList.remove('shown'),ms)}
+function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
+const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
+next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
+next.clampWhenFinished=!!once;current=next;return true;
 }
-function say(text){if(!window.speechSynthesis){status(text,5000);return}
-window.speechSynthesis.cancel();
-const u=new SpeechSynthesisUtterance(text);
-u.lang='tr-TR';u.rate=.90;u.pitch=1.1;
+function speak(text){show(text,Math.max(7000,text.length*85));
+if(!window.speechSynthesis)return;
+speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);
+u.lang='tr-TR';u.rate=.92;u.pitch=1.09;
 const voices=speechSynthesis.getVoices().filter(v=>/^tr/i.test(v.lang));
-u.voice=voices.find(v=>/emel|selin|zeynep|ayla|female/i.test(v.name))||voices[0]||null;
-u.onstart=()=>{speaking=true;status(text)};
-u.onend=u.onerror=()=>{speaking=false;status('YAKUT burada. Konuşmak için 👋 YAKUT düğmesine basabilirsiniz.',3500)};
+u.voice=voices.find(v=>/emel|selin|zeynep|ayla|female|kadın/i.test(v.name))||voices[0]||null;
+u.onstart=()=>{speaking=true};u.onend=u.onerror=()=>{speaking=false};
 speechSynthesis.speak(u);
 }
-function greet(withVoice=false){if(!ready)return;
-phase='greeting';if(root){root.position.z=baseZ;root.scale.setScalar(baseScale)}
-action('greet_02',true,1);status(greeting,6500);
-if(withVoice)say(greeting);
+function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
+function moveTo(x){targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?0:Math.PI;play('walk',false,.95)}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function react(clip,text){if(!ready)return;phase='reacting';phaseTime=0;play(clip,true,1);speak(text)}
+function handle(message){
+const q=String(message||'').trim();if(!q||!ready)return;
+inp.value='';const t=q.toLocaleLowerCase('tr-TR');
+let clip='agree',answer='';
+if(/(komik|şaka|espri|gül|haha|ahah|🤣|😂|fıkra)/i.test(t)){
+ clip='laugh_02';answer='Hahaha! Çok güldüm! Seninle sohbet etmek çok eğlenceli.';
+}else if(/(harika|mükemmel|süper|çok güzel|başarılı|tebrik|aferin|sevindim|mutlu|muhteşem|bravo)/i.test(t)){
+ clip='dance_01';answer='Çok sevindim! Böyle güzel sözler duymak harika!';
+}else if(/(teşekkür|sağ ol|eyvallah|eline sağlık)/i.test(t)){
+ clip='bow';answer='Ne demek! Yardımcı olabildiysem ne mutlu bana.';
+}else if(/(kızgın|sinirli|berbat|kötü|üzgün|saçma|yapamadın)/i.test(t)){
+ clip='frustrated_01';answer='Seni anlıyorum. Ne olduğunu anlatırsan birlikte çözmeye çalışabiliriz.';
+}else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne)/i.test(t)){
+ clip='greet_02';answer='Merhaba! Ben YAKUT. KUMTAŞ İnşaat için buradayım. Nasıl yardımcı olabilirim?';
+}else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
+ clip='agree';answer='Kentsel dönüşüm konusunda yardımcı olabilirim. Arsa alanını, ilçeyi ve biliyorsan geçerli imar koşullarını yaz. Kesin yapılaşma hakkı için belediyenin güncel imar durumunu kontrol etmek gerekir.';
+}else if(/(el salla|selam ver|selamla)/i.test(t)){
+ clip='greet_02';answer='Merhaba! Seni görmek güzel!';
+}else if(/(dans et|oyna)/i.test(t)){
+ clip='dance_01';answer='Hadi biraz neşelenelim!';
+}else if(/(alkış|alkışla)/i.test(t)){
+ clip='clap';answer='Bravo! Seni alkışlıyorum!';
+}else if(/(yürü|gez|dolaş|sola git|sağa git)/i.test(t)){
+ const x=/sola/.test(t)?innerWidth*.07:/sağa/.test(t)?innerWidth*.72:innerWidth*(.15+Math.random()*.6);
+ moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
+}else{clip='agree';answer='Seni duydum. İnşaat ve kentsel dönüşümle ilgili sorularında yardımcı olabilirim. Sorunu biraz daha ayrıntılı anlatır mısın?'}
+react(clip,answer);
 }
-controls.querySelector('#yakut-v9-greet').onclick=()=>greet(true);
-controls.querySelector('#yakut-v9-hide').onclick=()=>{
-hidden=!hidden;stage.style.display=hidden?'none':'block';
-controls.querySelector('#yakut-v9-hide').textContent=hidden?'Göster':'✕';
-if(hidden){window.speechSynthesis?.cancel();speaking=false;caption.classList.remove('y-visible')}
+function startSpeech(){
+const API=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!API){ui.classList.add('open');send.hidden=false;inp.focus();show('Tarayıcınız sesli dinlemeyi desteklemiyor. Buraya yazarak konuşabilirsiniz.');return}
+if(recognition){recognition.stop();recognition=null;return}
+recognition=new API();recognition.lang='tr-TR';recognition.interimResults=false;recognition.maxAlternatives=1;
+recognition.onresult=e=>{const spoken=e.results[0][0].transcript;show('Siz: '+spoken,2500);handle(spoken)};
+recognition.onerror=e=>{show('Mikrofon kullanılamadı. İsterseniz yazarak konuşabilirsiniz.');ui.classList.add('open');send.hidden=false;inp.focus()};
+recognition.onend=()=>{recognition=null;talk.textContent='🎤 YAKUT'};
+talk.textContent='🟢 Dinliyorum';try{recognition.start()}catch(e){recognition=null;talk.textContent='🎤 YAKUT';ui.classList.add('open');send.hidden=false;inp.focus()}
+}
+talk.onclick=()=>{if(!ready)return;ui.classList.add('open');send.hidden=false;startSpeech()};
+send.onclick=()=>handle(inp.value);
+inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();handle(inp.value)}});
+close.onclick=()=>{
+hidden=!hidden;stage.style.display=hidden?'none':'block';caption.classList.remove('shown');
+if(hidden){speechSynthesis?.cancel();speaking=false;recognition?.stop()}
+close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';inp.style.display=hidden?'none':'';send.style.display=hidden?'none':'';if(!hidden){positionStage();show('YAKUT tekrar burada!',2500)}
 };
-async function load(){
+window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
+async function init(){
 try{
- const threeModule=await import('https://esm.sh/three@0.164.1');
- const loaderModule=await import('https://esm.sh/three@0.164.1/examples/jsm/loaders/GLTFLoader.js');
- THREE=threeModule;
- const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
- renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.28;
- const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(32,1,.1,50);
- camera.position.set(0,.5,2.7);camera.lookAt(0,.35,0);
- scene.add(new THREE.HemisphereLight(0xe8f8ff,0x23334a,2.5));
- const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,5,6);scene.add(light);
- const fill=new THREE.DirectionalLight(0x44bfff,1.6);fill.position.set(4,3,-3);scene.add(fill);
- const glb=await new loaderModule.GLTFLoader().loadAsync(src);
- root=glb.scene;
- const box=new THREE.Box3().setFromObject(root);
- const size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
- baseScale=1.50/size.y;
- root.scale.setScalar(baseScale);
- root.position.set(-center.x*baseScale,-center.y*baseScale,-center.z*baseScale);
- baseZ=root.position.z;
- root.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary?.jawOpen!==undefined)face=o}});
- scene.add(root);
- mixer=new THREE.AnimationMixer(root);
- glb.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
- mixer.addEventListener('finished',e=>{if(e.action===clips.greet_02){phase='idle';action('wait')}});
- ready=true;
- // Walk from far away, then greet silently. Browser requires a click to play voice.
- phase='walk';approach=0;root.position.z=baseZ-3.2;root.scale.setScalar(baseScale*.6);
- action('walk',false,.98);
- const clock=new THREE.Clock();
- function frame(){
-  if(!stage.isConnected)return;requestAnimationFrame(frame);
-  const dt=Math.min(clock.getDelta(),.06),r=stage.getBoundingClientRect();
-  const w=Math.max(1,r.width),h=Math.max(1,r.height);
-  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
-  mixer.update(dt);
-  if(phase==='walk'){
-   approach=Math.min(1,approach+dt/4.2);
-   // ease in/out translation while preserving walking animation
-   const p=approach*approach*(3-2*approach);
-   root.position.z=baseZ-3.2*(1-p);
-   root.scale.setScalar(baseScale*(.6+.4*p));
-   if(approach>=1)greet(false);
-  }
-  if(face){
-   const mouth=speaking?Math.pow(Math.max(0,Math.sin(performance.now()*.0158)),.55):0;
-   for(const [name,i] of Object.entries(face.morphTargetDictionary)){
-    const value=name==='jawOpen'?.28*mouth:name==='viseme_A'?.88*mouth:name==='viseme_O'?.16*mouth:name==='viseme_E'?.12*mouth:0;
-    face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],value,15,dt);
-   }
-  }
-  renderer.render(scene,camera);
- }
- frame();
+const [three,{GLTFLoader}]=await Promise.all([
+import('https://esm.sh/three@0.164.1'),
+import('https://esm.sh/three@0.164.1/examples/jsm/loaders/GLTFLoader.js')
+]);THREE=three;
+const renderer=new THREE.WebGLRenderer({canvas:stage.querySelector('canvas'),alpha:true,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(33,1,.1,50);
+camera.position.set(0,.45,2.8);camera.lookAt(0,.35,0);
+scene.add(new THREE.HemisphereLight(0xe7f8ff,0x273c57,2.6));
+const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,5,6);scene.add(light);
+const fill=new THREE.DirectionalLight(0x46bbff,1.6);fill.position.set(4,4,-2);scene.add(fill);
+const gltf=await new GLTFLoader().loadAsync(url);model=gltf.scene;
+const bbox=new THREE.Box3().setFromObject(model);
+const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
+normalScale=1.6/size.y;
+model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
+basePosition=model.position.clone();
+model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary)face=o}});
+scene.add(model);mixer=new THREE.AnimationMixer(model);
+gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
+mixer.addEventListener('finished',()=>{if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
+ready=true;posX=-stage.offsetWidth;targetX=Math.min(innerWidth*.25,innerWidth-stage.offsetWidth);
+if(reduced){posX=targetX;phase='idle';play('wait')}else{phase='walking';play('walk',false,.95)}
+positionStage();
+const clock=new THREE.Clock();
+function frame(){
+if(!stage.isConnected)return;requestAnimationFrame(frame);
+const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
+renderer.setSize(Math.max(rect.width,1),Math.max(rect.height,1),false);
+camera.aspect=Math.max(rect.width,1)/Math.max(rect.height,1);camera.updateProjectionMatrix();
+if(!hidden){
+mixer.update(dt);
+if(phase==='walking'){
+const step=(innerWidth<650?56:94)*dt;
+if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';play('wait');walkTimer=0;
+ if(phaseTime===0){phase='greeting';play('greet_02',true);show(welcome,6500);phaseTime=1}
+}else{posX+=Math.sign(targetX-posX)*step;}
+positionStage();
+}else if(phase==='idle'&&!reduced){
+walkTimer+=dt;if(walkTimer>9){walkTimer=0;moveTo(innerWidth*(.08+Math.random()*.65))}
+}
+if(face){
+const v=speaking?Math.max(0,Math.sin(performance.now()*.016)):.0;
+for(const [name,i] of Object.entries(face.morphTargetDictionary)){
+const influence=/jawOpen|viseme_A/i.test(name)?v*.65:/viseme_O/i.test(name)?v*.18:0;
+face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],influence,14,dt)}
+}
+}
+renderer.render(scene,camera);
+}frame();
 }catch(err){
- console.error('YAKUT V9 yüklenemedi:',err);
- // No fake character and no empty overlay if the GLB or CDN fails.
- stage.remove();controls.remove();caption.remove();
+console.error('YAKUT V9 yüklenemedi:',err);stage.remove();ui.remove();caption.remove();
 }}
-load();
+init();
 })();
