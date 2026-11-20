@@ -45,6 +45,11 @@ async function lookup({ ada, parsel, mahalle }) {
       }))
     );
 
+    if (alanlar.Ada !== ada || alanlar.Parsel !== parsel ||
+        normalize(alanlar.Mahalle || '') !== normalize(mahalleler[selected[0]])) {
+      throw new Error('Belediye belgesindeki ada, parsel veya mahalle eşleşmedi.');
+    }
+
     return { durum: 'bulundu', ada, parsel, mahalle: mahalleler[selected[0]], kaynak: page.url(), alanlar };
   } finally {
     await browser.close();
