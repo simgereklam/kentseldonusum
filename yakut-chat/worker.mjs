@@ -8,10 +8,10 @@ function retryDelay(value) {
   return Number.isFinite(delay) && delay > 0 ? delay : 60000;
 }
 
-async function post(url, headers, body, provider) {
+async function post(url, headers, body, provider, timeout = 2500) {
   const response = await fetch(url, {
     method: 'POST', headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(body), signal: AbortSignal.timeout(2500)
+    body: JSON.stringify(body), signal: AbortSignal.timeout(timeout)
   });
   if (response.status === 429) cooldowns.set(provider, Date.now() + retryDelay(response.headers.get('Retry-After')));
   if (!response.ok) return null;
@@ -61,6 +61,14 @@ export default {
       return result?.choices?.[0]?.message?.content;
     };
     const providers = [
+      ['ollama', env.OLLAMA_CHAT_URL && env.OLLAMA_CHAT_TOKEN, async () => {
+        const endpoint = new URL(env.OLLAMA_CHAT_URL);
+        if (endpoint.protocol !== 'https:') return null;
+        const result = await post(endpoint, { Authorization: 'Bearer ' + env.OLLAMA_CHAT_TOKEN },
+          { model: env.OLLAMA_MODEL || 'qwen3:4b', messages, stream: false, think: false,
+            options: { num_predict: 180 } }, 'ollama', 3200);
+        return result?.message?.content;
+      }],
       ['cloudflare', env.AI, async () => {
         let timer;
         try {
