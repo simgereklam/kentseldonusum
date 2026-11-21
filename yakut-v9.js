@@ -730,7 +730,8 @@ let answer='';
  const generation=yakutVoiceGeneration;
  const projectQuestion=/(?:referans|projeleriniz|tamamladığınız proje|yaptığınız proje|devam eden proje)/.test(command)&&
   !/(?:başka firma|başka şirket|rakip|kredi|kaynakça)/.test(command);
- let localAnswer=projectQuestion
+ const greetingOnly=/^(?:(?:yakut|sen|siz|peki|merhaba|selam)\s+)*(?:nasılsın(?:ız)?|naber|ne haber)(?:\s+(?:sen|siz|yakut|nasılsın(?:ız)?))*$/.test(command);
+ let localAnswer=greetingOnly?'İyiyim, teşekkür ederim. Siz nasılsınız?':projectQuestion
   ? 'Projelerimiz sayfasında tamamlanan projelerin, devam eden kaba inşaatların ve mimari proje örneklerinin fotoğraflarını inceleyebilirsiniz. Belirli bir projeyi mi merak ediyorsunuz?'
   : yakutContactRequest(q);
  const siteQuestion=/(?:firmamız|firmanız|şirketiniz|hizmetleriniz|bu site|siteniz|kumtaş)/.test(command);
@@ -757,7 +758,7 @@ let answer='';
     const ask=async research=>{
      const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({question:q,reference:'',history:yakutChatHistory,research}),
-      signal:AbortSignal.timeout(research?18000:5500)});
+      signal:AbortSignal.timeout(research?18000:7500)});
      return response.ok?response.json():null;
     };
     let result=explicitResearch?null:await ask(false);
