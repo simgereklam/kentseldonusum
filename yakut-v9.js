@@ -717,16 +717,18 @@ let yakutWeatherCity='';
 let yakutWeatherPending='';
 function yakutWeatherRequest(command){
  const weather=/hava durumu|hava nasıl|hava kaç derece|hava soğuk|hava sıcak|yağmur (?:var mı|yağacak mı|yağar mı)|kar (?:var mı|yağacak mı|yağar mı)|şemsiye (?:alayım|gerek)/.test(command);
- const simpleFollowup=/^(?:peki )?(?:yarın|bugün)(?: nasıl| ne olacak| nasıl olacak| peki)?$/.test(command);
- if(!weather&&!yakutWeatherPending&&!(yakutWeatherCity&&simpleFollowup))return null;
- const findCity=value=>yakutWeatherCities.find(name=>{
-  const city=name.toLocaleLowerCase('tr-TR');
-  return new RegExp('(?:^| )'+city+'(?:da|de|ta|te|nın|nin)?(?: |$)').test(value);
+ const dayFollowup=/^(?:peki )?(?:yarın|bugün)(?: nasıl| ne olacak| nasıl olacak| peki)?$/.test(command);
+ const rainFollowup=/^(?:peki )?(?:yarın |bugün )?(?:yağmur|kar) (?:var mı|yağacak mı|yağar mı)$/.test(command);
+ const city=yakutWeatherCities.find(name=>{
+  const word=name.toLocaleLowerCase('tr-TR');
+  return new RegExp('(?:^| )'+word+'(?: ?(?:da|de|ta|te|nın|nin)| için)?(?: |$)').test(command);
  });
- const city=findCity(command)||(simpleFollowup?yakutWeatherCity:'');
- const period=/yarın/.test(command)?'tomorrow':/bugün/.test(command)?'today':yakutWeatherPending||'now';
+ const cityReply=city&&new RegExp('^(?:peki )?'+city.toLocaleLowerCase('tr-TR')+'(?: ?(?:da|de|ta|te)| için)?(?: (?:lütfen|bak|bugün|yarın))*$').test(command);
+ if(!weather&&!(yakutWeatherPending&&cityReply)&&!(yakutWeatherCity&&dayFollowup))return null;
+ const period=/\byarın\b/.test(command)?'tomorrow':/\bbugün\b/.test(command)?'today':yakutWeatherPending||'now';
  if(city)return {city,period};
- if(yakutWeatherPending||/(?:[a-zçğıöşü]+ (?:da|de|ta|te) (?:hava|yağmur|kar)|[a-zçğıöşü]+(?:da|de|ta|te) (?:hava|yağmur|kar))/.test(command))return {city:'',period};
+ if(yakutWeatherCity&&(dayFollowup||rainFollowup))return {city:yakutWeatherCity,period};
+ if(/(?:[a-zçğıöşü]+ (?:da|de|ta|te) (?:hava|yağmur|kar)|[a-zçğıöşü]+(?:da|de|ta|te) (?:hava|yağmur|kar))/.test(command))return {city:'',period};
  return {ask:true,period};
 }
 function rememberYakutTurn(question,answer){
@@ -744,6 +746,7 @@ if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 const weather=yakutWeatherRequest(command);
+ if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
   yakutWeatherPending=weather.period;
   const reply='Hangi şehir için hava durumuna bakayım?';
