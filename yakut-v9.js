@@ -919,29 +919,37 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
  if(generation!==yakutVoiceGeneration)return;
  answer=match?.text||'Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
- if(!match?.exact&&q.length<=500){
-  const waiting=setTimeout(()=>{
-   if(generation===yakutVoiceGeneration)show('Yanıt hazırlıyorum…',5500);
-  },450);
+ const explicitResearch=/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
+ if((!match?.exact||explicitResearch)&&q.length<=500){
+  let requestGeneration=generation;
   try{
    const url=new URL(endpoint);
    if(url.protocol==='https:'){
-    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({question:q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory}),
-     signal:AbortSignal.timeout(5500)});
-    if(response.ok){
-     const result=await response.json();
-     if(generation!==yakutVoiceGeneration)return;
-     if(typeof result.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
-      answer=result.answer.trim();
-      yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
-       {role:'assistant',text:answer.slice(0,420)}].slice(-4);
-     }
+    const ask=async research=>{
+     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question:q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory,research}),
+      signal:AbortSignal.timeout(research?18000:5500)});
+     return response.ok?response.json():null;
+    };
+    let result=explicitResearch?null:await ask(false);
+    if(requestGeneration!==yakutVoiceGeneration)return;
+    if(explicitResearch||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI'){
+     answer='Şu anda web kaynaklarından doğrulayamadım. Biraz sonra tekrar deneyebilir misiniz?';
+     speak('Hemen araştırıyorum.');
+     requestGeneration=yakutVoiceGeneration;
+     result=await ask(true);
+     if(requestGeneration!==yakutVoiceGeneration)return;
+     if(!Array.isArray(result?.sources)||result.sources.length===0)result=null;
+    }
+    if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
+     answer=result.answer.trim().replace(/\*\*/g,'');
+     yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
+      {role:'assistant',text:answer.slice(0,420)}].slice(-4);
+     if(result.sources?.length)console.info('Yakut araştırma kaynakları:',result.sources);
     }
    }
-  }catch(_){/* Keep the site answer if the chat service is unavailable. */}
-  finally{clearTimeout(waiting)}
-  if(generation!==yakutVoiceGeneration)return;
+  }catch(_){/* Keep the local answer when the chat service is unavailable. */}
+  if(requestGeneration!==yakutVoiceGeneration)return;
  }
 }
 processingSpeech=false;
