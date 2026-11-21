@@ -13,7 +13,7 @@ css.textContent=`
 #yakut-enable-audio{position:fixed;z-index:135;bottom:18px;left:14px;border:0;background:#09638c;color:white;padding:11px 15px;border-radius:24px;font:700 14px Arial,sans-serif;box-shadow:0 5px 16px #0005;cursor:pointer}
 #yakut-enable-audio[hidden]{display:none!important}
 /* YAKUT is a voice-only on-page character: no caption, chat box, or buttons. */
-#yakut-v9-ui{display:none!important}
+#yakut-v9-ui,#yakut-v9-caption{display:none!important}
 #yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
 #yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
 #yakut-v9-ui button:hover{background:#137aaa}
@@ -361,9 +361,39 @@ function speak(text){
  clearTimeout(listenRetry);
  if(recognition){try{recognition.abort()}catch(_){}}
  yakutCurrentPrompt=String(text||'');
- if(text!==welcome){caption.textContent=text;caption.classList.add('shown');}
+
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;++yakutVoiceGeneration;yakutRequests.clear();
+ if(text!==welcome&&text.length<=600&&yakutTtsContext?.state==='running'){
+  const turn=yakutVoiceGeneration;
+  yakutCloudVoice(text).then(data=>{
+   if(turn!==yakutVoiceGeneration||hidden)return;
+   if(data)yakutPlaySpeech(data);
+   else yakutLocalSpeech(text);
+  });
+  return;
+ }
+ yakutLocalSpeech(text);
+}
+async function yakutCloudVoice(text){
+ try{
+  const response=await fetch('https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/speech',{
+   method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text}),
+   signal:AbortSignal.timeout(2300)});
+  if(!response.ok)return null;
+  const {audio}=await response.json();
+  if(typeof audio!=='string'||audio.length>4000000)return null;
+  const bytes=atob(audio);
+  const pcm=new Float32Array(Math.floor(bytes.length/2));
+  if(!pcm.length)return null;
+  for(let i=0;i<pcm.length;i++){
+   const value=bytes.charCodeAt(i*2)|(bytes.charCodeAt(i*2+1)<<8);
+   pcm[i]=(value>=32768?value-65536:value)/32768;
+  }
+  return {audio:pcm,sampleRate:24000};
+ }catch(_){return null}
+}
+function yakutLocalSpeech(text){
  if(text!==welcome&&chooseVoice()){
   yakutBrowserSpeech();return;
  }
@@ -680,6 +710,11 @@ try{
  const history=JSON.parse(sessionStorage.getItem('yakutChatHistory')||'[]');
  if(Array.isArray(history))yakutChatHistory=history.slice(-4);
 }catch(_){}
+function rememberYakutTurn(question,answer){
+ yakutChatHistory=[...yakutChatHistory,{role:'user',text:question.slice(0,420)},
+  {role:'assistant',text:answer.slice(0,420)}].slice(-4);
+ try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
+}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
@@ -691,9 +726,25 @@ processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
 let answer='';
  const generation=yakutVoiceGeneration;
+ const projectQuestion=/(?:referans|projeleriniz|tamamladığınız proje|yaptığınız proje|devam eden proje)/.test(command)&&
+  !/(?:başka firma|başka şirket|rakip|kredi|kaynakça)/.test(command);
+ let localAnswer=projectQuestion
+  ? 'Projelerimiz sayfasında tamamlanan projelerin, devam eden kaba inşaatların ve mimari proje örneklerinin fotoğraflarını inceleyebilirsiniz. Belirli bir projeyi mi merak ediyorsunuz?'
+  : yakutContactRequest(q);
+ const siteQuestion=/(?:firmamız|firmanız|şirketiniz|hizmetleriniz|bu site|siteniz|kumtaş)/.test(command);
  const match=siteAnswer(q);
+ if(!localAnswer&&(match?.exact||siteQuestion)){
+  const localMatch=match||await yakutFindAnswer(q);
+  if(generation!==yakutVoiceGeneration)return;
+  localAnswer=localMatch?.text||'Sitemizde bu konuda doğrulayabildiğim bir bilgi bulamadım. Hangi hizmeti veya projeyi merak ediyorsunuz?';
+ }
+ if(localAnswer){
+  rememberYakutTurn(q,localAnswer);
+  processingSpeech=false;
+  react('agree',localAnswer,'center');return;
+ }
  if(generation!==yakutVoiceGeneration)return;
- answer=match?.text||'Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
+ answer='Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
  const explicitResearch=/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
  if(q.length<=500){
@@ -703,7 +754,7 @@ let answer='';
    if(url.protocol==='https:'){
     const ask=async research=>{
      const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({question:q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory,research}),
+      body:JSON.stringify({question:q,reference:'',history:yakutChatHistory,research}),
       signal:AbortSignal.timeout(research?18000:5500)});
      return response.ok?response.json():null;
     };
@@ -719,9 +770,7 @@ let answer='';
     }
     if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
      answer=result.answer.trim().replace(/\*\*/g,'');
-     yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
-      {role:'assistant',text:answer.slice(0,420)}].slice(-4);
-     try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
+     rememberYakutTurn(q,answer);
      if(result.sources?.length)console.info('Yakut araştırma kaynakları:',result.sources);
     }
    }
