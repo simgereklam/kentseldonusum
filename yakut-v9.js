@@ -128,10 +128,8 @@ async function speak(text){
   if(turn!==yakutVoiceGeneration||hidden)return;
   const payload={readAloud:prompt};
   finished=await askYakutLive(endpoint,payload,turn);
-  if(finished)return;
-  if(turn===yakutVoiceGeneration&&!hidden){
-   await new Promise(resolve=>setTimeout(resolve,500));
-   if(turn===yakutVoiceGeneration&&!hidden)finished=await askYakutLive(endpoint,payload,turn);
+  if(!finished&&turn===yakutVoiceGeneration&&!hidden){
+   finished=await askYakutLive(endpoint,payload,turn);
   }
  }catch(error){
   console.warn('Yakut ses isteği:',error);
@@ -538,15 +536,14 @@ const yakutLiveSources=new Set();
 let yakutLiveController=null;
 async function askYakutLive(url,payload,generation){
  const context=yakutTtsContext;
- const readAloud=typeof payload.readAloud==='string';
  if(!audioUnlocked||context?.state!=='running')return false;
  const controller=new AbortController();
  yakutLiveController=controller;
- let timer=setTimeout(()=>controller.abort(),readAloud?12000:9500);
+ let timer=setTimeout(()=>controller.abort(),13000);
  let nextStart=0;
  let played=false;
  let completed=false;
- let transcript='';
+ let playbackEnded;
  let reader;
  try{
   const response=await fetch(new URL('/live',url),{method:'POST',headers:{'Content-Type':'application/json'},
@@ -566,13 +563,10 @@ async function askYakutLive(url,payload,generation){
     const frame=JSON.parse(line);
     if(frame.error)throw new Error(frame.error);
     if(frame.done)completed=true;
-    if(frame.text)transcript=(transcript+frame.text).slice(0,1200);
     if(!frame.audio)continue;
     if(controller.signal.aborted||generation!==yakutVoiceGeneration)return false;
-    if(!played){
-     clearTimeout(timer);
-     timer=setTimeout(()=>controller.abort(),readAloud?90000:17000);
-    }
+    clearTimeout(timer);
+    timer=setTimeout(()=>controller.abort(),27000);
     const pcm=atob(frame.audio);
     const length=Math.floor(pcm.length/2);
     if(!length)continue;
@@ -587,7 +581,9 @@ async function askYakutLive(url,payload,generation){
     nextStart=Math.max(nextStart,context.currentTime+(played?0.015:0.09));
     source.start(nextStart);nextStart+=buffer.duration;
     yakutLiveSources.add(source);
-    source.onended=()=>yakutLiveSources.delete(source);
+    playbackEnded=new Promise(resolve=>{
+     source.onended=()=>{yakutLiveSources.delete(source);resolve();};
+    });
     if(!played){
      yakutGestureClock=0;
      if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
@@ -605,14 +601,9 @@ async function askYakutLive(url,payload,generation){
   if(yakutLiveController===controller)yakutLiveController=null;
  }
  if(!played||generation!==yakutVoiceGeneration)return false;
- await new Promise(resolve=>setTimeout(resolve,Math.max(0,(nextStart-context.currentTime)*1000)+40));
+ await playbackEnded;
  if(generation!==yakutVoiceGeneration)return false;
- if(!completed&&!/[.!?…][”\"']?$/.test(transcript.trim())){
-  speaking=false;yakutAudioPlaying=false;
-  return false;
- }
- if(!readAloud&&transcript.trim())rememberYakutTurn(payload.question,transcript.trim());
- processingSpeech=false;
+ if(!completed)console.warn('Yakut ses akışı tamamlanmadan bağlantı kesildi.');
  finishYakutSpeech();
  return true;
 }
@@ -656,31 +647,44 @@ releaseYakutMic();
  }
  if(weather){yakutWeatherPending='';yakutWeatherCity=weather.city;}
  let answer='Sohbet sunucusuna şu anda ulaşamadım. Sorunuzu tekrar söyleyebilirsiniz.';
- const generation=yakutVoiceGeneration;
+ let generation=yakutVoiceGeneration;
  const url=new URL(yakutChatEndpoint());
  const research=Boolean(weather||webRequest||/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.test(command));
  const contact=yakutContactRequest(q);
  const reference=('Açık sayfa: '+yakutPageName(getYakutCurrentPage())+'. '+(contact?contact+' ':'')+collectYakutPageSpeech()).slice(0,1500);
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
+ let researchNotice;
+ let noticeTimer;
  try{
-  if(!research&&await ensureYakutAudio()&&generation===yakutVoiceGeneration&&
-    await askYakutLive(url,{...payload,research:false},generation))return;
-  if(generation!==yakutVoiceGeneration)return;
   const ask=async search=>{
+   if(search&&audioUnlocked){
+    noticeTimer=setTimeout(()=>{
+     if(generation!==yakutVoiceGeneration||hidden)return;
+     researchNotice=speak('Bakıp size haber vereceğim. Lütfen biraz bekleyin.');
+     generation=yakutVoiceGeneration;
+    },350);
+   }
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined,geminiOnly:true}),
+    body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined}),
     signal:AbortSignal.timeout(search?23500:10000)});
    return response.ok?response.json():null;
   };
   let result=await ask(research);
-  if(!research&&result?.answer?.trim()==='WEB_ARAMASI_GEREKLI')result=await ask(true);
+  const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
+  if(!research&&needsSearch)result=await ask(true);
   if(generation!==yakutVoiceGeneration)return;
   if(typeof result?.answer==='string'&&result.answer.trim()){
    answer=result.answer.trim().replace(/\*\*/g,'');
    rememberYakutTurn(q,answer);
-  }else if(research)answer='Bu soru için doğrulanmış bir sonuç alamadım. İsterseniz başka bir kaynak veya daha belirli bir soru deneyelim.';
+  }else if(needsSearch)answer='Bu soru için doğrulanmış bir sonuç alamadım. İsterseniz başka bir kaynak veya daha belirli bir soru deneyelim.';
  }catch(error){
   console.warn('Yakut sohbet isteği:',error);
+ }finally{
+  clearTimeout(noticeTimer);
+ }
+ if(researchNotice&&generation===yakutVoiceGeneration){
+  if(yakutAudioPlaying)await researchNotice;
+  else yakutLiveController?.abort();
  }
  if(generation!==yakutVoiceGeneration)return;
 processingSpeech=false;
