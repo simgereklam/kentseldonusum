@@ -395,15 +395,11 @@ function speak(text){
  const endpoint='https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/live';
  askYakutLive(endpoint,{readAloud:yakutCurrentPrompt},null,turn).then(played=>{
   if(turn!==yakutVoiceGeneration||hidden||played)return;
-  showYakutVoiceText(yakutCurrentPrompt);
-  finishYakutSpeech();
+  yakutLocalSpeech(yakutCurrentPrompt);
  });
 }
 function showYakutVoiceText(text){ /* YAKUT yalnızca sesli konuşur; yazı balonu gösterilmez. */ }
 function yakutLocalSpeech(text){
- if(text!==welcome&&chooseVoice()){
-  yakutBrowserSpeech();return;
- }
  if(yakutTtsFailed&&Date.now()-yakutTtsLastFailure<12000){
   // Avoid rapid repeated network retries, but never disable speech for the entire visit.
   if(text!==welcome)yakutBrowserSpeech();else finishYakutSpeech();return;
