@@ -141,7 +141,7 @@ function chooseVoice(){
  const turkish=voices.filter(v=>/^tr(-|$)/i.test(v.lang));
  if(!turkish.length)return null;
  // The browser does not expose a voice gender field: select only known feminine voice names.
- const selected=['emel','yelda','selin','zeynep','ayla','dilara','filiz','esra','female','kadın']
+ const selected=turkish.find(v=>/\bsiri\b/i.test(v.name))||['yelda','emel','selin','zeynep','ayla','dilara','filiz','esra','female','kadın']
   .map(name=>turkish.find(v=>v.name.toLocaleLowerCase('tr-TR').includes(name))).find(Boolean);
  preferredVoice=selected||null;
  return selected||null;
@@ -364,6 +364,8 @@ function speak(text){
 
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;++yakutVoiceGeneration;yakutRequests.clear();
+ const voice=text===welcome?null:chooseVoice();
+ if(voice&&window.SpeechSynthesisUtterance){yakutBrowserSpeech();return}
  if(text!==welcome&&text.length<=600&&yakutTtsContext?.state==='running'){
   const turn=yakutVoiceGeneration;
   yakutCloudVoice(text).then(data=>{
@@ -841,7 +843,7 @@ function startSpeech(){
   finalText=Array.from(e.results).filter(result=>result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ');
   const stillSpeaking=Array.from(e.results).some(result=>!result.isFinal);
-  if(finalText&&!stillSpeaking)timer=setTimeout(submit,850);
+  if(finalText&&!stillSpeaking)timer=setTimeout(submit,550);
  };
  rec.onerror=e=>{if(recognition!==rec)return;micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
  rec.onend=()=>{
