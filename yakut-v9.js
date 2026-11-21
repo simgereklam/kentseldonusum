@@ -2,6 +2,12 @@
  * Runs on homepage; original site layout and background video stay unchanged. */
 (() => {
 'use strict';
+if(location.protocol==='http:'&&/^(?:www\.)?xn--kentseldnm-lcb7ea99k\.com\.tr$/i.test(location.hostname)){
+ const secureUrl=new URL(location.href);
+ secureUrl.protocol='https:';
+ location.replace(secureUrl.href);
+ return;
+}
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
