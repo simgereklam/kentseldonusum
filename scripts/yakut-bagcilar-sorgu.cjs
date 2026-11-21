@@ -19,8 +19,13 @@ async function lookup({ ilce = 'Bağcılar', ada, parsel, mahalle }) {
   try {
     const page = await browser.newPage({ locale: 'tr-TR' });
     page.setDefaultTimeout(30000);
-    await page.goto(source, { waitUntil: 'commit', timeout: 45000 });
-    await page.getByRole('tab', { name: 'Ada/Parsel', exact: true }).click();
+    const response = await page.goto(source, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    if (!response?.ok()) return { durum: 'belediye_erisim_hatasi', kaynak: source };
+    const verification = page.getByText(/verify you are human|checking your browser|insan olduğunuzu doğrulayın/i).first();
+    const parcelTab = page.getByRole('tab', { name: 'Ada/Parsel', exact: true });
+    await parcelTab.or(verification).first().waitFor({ state: 'visible' });
+    if (await verification.isVisible()) return { durum: 'dogrulama_gerekli', kaynak: source };
+    await parcelTab.click();
     const adaField = page.getByRole('textbox', { name: 'Ada', exact: true });
     if (await adaField.isVisible()) {
       await adaField.fill(ada);
@@ -47,6 +52,9 @@ async function lookup({ ilce = 'Bağcılar', ada, parsel, mahalle }) {
     }
 
     await matches[selected[0]].dblclick();
+    if (ilce === 'Bağcılar') {
+      await page.getByRole('button', { name: 'İmar Durumu', exact: true }).click();
+    }
     await page.locator('#htmlOutput .divTableRow').first().waitFor({ state: 'visible' });
     const alanlar = await page.locator('#htmlOutput .divTableRow').evaluateAll(rows =>
       Object.fromEntries(rows.flatMap(row => {
