@@ -209,8 +209,6 @@ function unlockYakutSound(){
 }
 function beginYakutVisit(){
  if(!ready||hidden)return;
- let greeted=false;
- try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone){
   yakutFirstGreetingDone=true;yakutWelcomeRequested=false;openingSpoken=true;openingGreeted=true;
   cancelGreetingRetreat();
@@ -222,7 +220,7 @@ function beginYakutVisit(){
   return;
  }
  if(yakutPageOfferPending){offerYakutPage();return}
- if(greeted&&!speaking)queueListen(450);
+ if(!speaking)queueListen(450);
 }
 document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
 document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
@@ -451,7 +449,7 @@ function isYakutHomeCommand(message){
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
- if(yakutParcelIntakeCommand(message)||yakutDistrictImarCommand(message)||yakutImarHelpRequest(message)||yakutScenarioRequest(message))return null;
+ if(yakutScenarioRequest(message))return null;
  const t=normalizeYakutCommand(message);
  const page=findYakutPage(t);
  if(!page)return null;
@@ -558,10 +556,9 @@ function yakutContactRequest(message){
 function openYakutPage(path){
  const current=getYakutCurrentPage();
  cancelYakutSpeech();
- if(current===path){prepareYakutPageOffer();return true}
+ if(current===path){queueListen(250);return true}
  try{
   sessionStorage.setItem('yakutVisited','1');
-  sessionStorage.setItem('yakutNextTopic',JSON.stringify({path,readPage:false,offerPage:true}));
   if(audioUnlocked)sessionStorage.setItem('yakutAudioApproved','1');
  }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
  location.assign(new URL(path,location.origin+'/').href);
@@ -569,207 +566,6 @@ function openYakutPage(path){
 }
 let yakutScenario = null;
 const yakutAreaUnit = '(?:m²|m2|metre\\s*kare|metrekare)';
-const yakutImarGuidance = 'İmar planını ve plan notlarını görmeden kesin rakam veremem. Belgeniz varsa sitemizdeki WhatsApp düğmesinden Kumtaş İnşaat’a iletebilirsiniz. Belge yoksa tapu sahiplerinden biri belediyenin kentsel dönüşüm veya imar biriminden güncel imar durumunu, taban oturumu oranını, emsali ve toplam brüt inşaat alanı bilgisini isteyebilir.';
-function yakutParcelSpeech(message) {
- return message.toLocaleLowerCase('tr-TR')
-  .replace(/sıfır/g, '0');
-}
-function yakutImarHelpRequest(message) {
- const t = yakutParcelSpeech(message);
- return /ada/.test(t) && /parsel/.test(t) && /\d/.test(t) ||
-  /imar (?:planı|belgesi|durum belgesi).{0,35}(?:yok|nasıl|nereden|gönder|ilet|var)|whats\s*app.{0,25}(?:aç|bağla)/.test(t);
-}
-function yakutImarHelpAnswer(message) {
- const t = normalizeYakutCommand(message);
- if (/whats\s*app.{0,25}(?:aç|bağla)/.test(t)) {
-  const link = document.querySelector('a.float-wa[href^="https://wa.me/"]');
-  if (link) { location.assign(link.href); return ''; }
- }
- showYakutImarScreen(null, 'İmar bilgileri için belediye başvurusu');
- return 'Belediyeden isteyebileceğiniz bilgileri ekranda gösteriyorum. ' + yakutImarGuidance;
-}
-const yakutDistrictImarSources = [
- ['Adalar', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Arnavutköy', 'https://www.turkiye.gov.tr/arnavutkoy-belediyesi-imar-durum-sorgulama'],
- ['Ataşehir', 'https://webgis.atasehir.bel.tr/imardurumu/index.aspx'],
- ['Avcılar', 'https://keos.avcilar.bel.tr/imardurumu/'],
- ['Bağcılar', 'https://bbgis.bagcilar.bel.tr/imardurumu/'],
- ['Bahçelievler', 'https://www.turkiye.gov.tr/bahcelievler-belediyesi-imar-durum-sorgulama'],
- ['Bakırköy', 'https://www.turkiye.gov.tr/bakirkoy-belediyesi-eimar-8881'],
- ['Başakşehir', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Bayrampaşa', 'https://keos.bayrampasa.bel.tr/imardurumu/'],
- ['Beşiktaş', 'https://keos.besiktas.bel.tr/imardurumu/index.aspx'],
- ['Beykoz', 'https://cbs.beykoz.bel.tr/'],
- ['Beylikdüzü', 'https://www.turkiye.gov.tr/beylikduzu-belediyesi-imar-durum-sorgulama'],
- ['Beyoğlu', 'https://cbs.beyoglu.bel.tr/imardurumu/'],
- ['Büyükçekmece', 'https://www.turkiye.gov.tr/buyukcekmece-belediyesi-imar-durum-sorgulama'],
- ['Çatalca', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Çekmeköy', 'https://www.turkiye.gov.tr/cekmekoy-belediyesi-imar-durum-sorgulama'],
- ['Esenler', 'https://www.turkiye.gov.tr/esenler-belediyesi-eimar-9093'],
- ['Esenyurt', 'https://e-imar.esenyurt.bel.tr/'],
- ['Eyüpsultan', 'https://www.turkiye.gov.tr/eyupsultan-belediyesi-e-imar-7543'],
- ['Fatih', 'https://www.turkiye.gov.tr/e-imar-7462'],
- ['Gaziosmanpaşa', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Güngören', 'https://www.turkiye.gov.tr/gungoren-belediyesi-eimar-8669'],
- ['Kadıköy', 'https://webgis.kadikoy.bel.tr/imardurumu/'],
- ['Kağıthane', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Kartal', 'https://e-belediye.kartal.bel.tr/BilgiSorgulama/EImar'],
- ['Küçükçekmece', 'https://www.turkiye.gov.tr/kucukcekmece-belediyesi-imar-durum-sorgulama'],
- ['Maltepe', 'https://webgis.maltepe.bel.tr/imardurumu/index.aspx'],
- ['Pendik', 'https://www.turkiye.gov.tr/pendik-belediyesi-imar-sorgulama'],
- ['Sancaktepe', 'https://www.turkiye.gov.tr/sancaktepe-belediyesi-imar-durum-sorgulama'],
- ['Sarıyer', 'https://cbs.sariyer.bel.tr/'],
- ['Silivri', 'https://www.turkiye.gov.tr/silivri-belediyesi-imar-durum-sorgulama'],
- ['Sultanbeyli', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Sultangazi', 'https://eplan.ibb.istanbul/sorgu/plansorgu'],
- ['Şile', 'https://kentrehberi.sile.bel.tr/imardurumu/index.aspx'],
- ['Şişli', 'https://www.turkiye.gov.tr/sisli-belediyesi-imar-durum-sorgulama'],
- ['Tuzla', 'https://webgis.tuzla.bel.tr/imardurumu/'],
- ['Ümraniye', 'https://webgis.umraniye.bel.tr/imardurumu/index.aspx'],
- ['Üsküdar', 'https://www.turkiye.gov.tr/uskudar-belediyesi-eimar-8621'],
- ['Zeytinburnu', 'https://eplan.ibb.istanbul/sorgu/plansorgu']
-];
-let yakutImarDistrict = null;
-function yakutFindImarDistrict(t) {
- return yakutDistrictImarSources.find(([name]) => {
-  const key = name.toLocaleLowerCase('tr-TR');
-  return new RegExp('(?:^| )' + key + '(?: |$|da(?: |$)|de(?: |$)|ta(?: |$)|te(?: |$))').test(t);
- });
-}
-let yakutParcelIntake = null;
-const yakutTeklifGuidance = 'İsterseniz Kumtaş İnşaat’a inceleme için vekâlet verebilirsiniz. Ekibimiz belediyedeki güncel belgeleri ve yapılaşma koşullarını kontrol eder. Kat ve alan bilgileri netleşince proje ve maliyet çalışması yapar, ardından teklif hazırlar.';
-function yakutParcelIntakeCommand(message) {
- const t = normalizeYakutCommand(message);
- if (/(?:^| )(?:aç|git|bağlan|bağla)(?: |$)/.test(t)) return null;
- const district = yakutFindImarDistrict(t);
- const raw = yakutParcelSpeech(message);
- const pair = raw.match(/(?:^|\D)(\d+)\s*[/-]\s*(\d+)(?:\D|$)/);
- const ada = raw.match(/\bada\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+ada\b/);
- const parsel = raw.match(/\bparsel\s*[:=]?\s*(\d+)\b/) || raw.match(/\b(\d+)\s+parsel\b/);
- const suffixPair = raw.match(/\b(\d+)\s+ada[\s,]+(\d+)\s+parsel\b/);
- const numbered = pair ? pair.slice(1) : suffixPair ? suffixPair.slice(1) : [ada?.[1], parsel?.[1]];
- if (/(?:vekalet|vek let|teklif|fiyatlandırma)/.test(t) && yakutParcelIntake) return {guidance:true};
- if (!/(?:arsam|arsamız) var/.test(t) &&
-     !(yakutParcelIntake?.waiting && (district || numbered.some(Boolean))) &&
-     !(numbered.every(Boolean) && (district || yakutParcelIntake))) return null;
- return {district, numbered};
-}
-function createYakutImarChecklist() {
- const guide = document.createElement('details');
- guide.open = true;
- guide.style.cssText = 'padding:12px 16px;background:#f3f6fa;line-height:1.5;max-height:44vh;overflow:auto';
- const heading = document.createElement('summary');
- heading.textContent = 'Belediyeden hangi bilgileri istemeliyim?';
- heading.style.fontWeight = '700';
- const intro = document.createElement('p');
- intro.textContent = 'İlçe, mahalle, ada ve parsel bilgileriyle belediyenin imar veya kentsel dönüşüm birimine başvurup şu bilgileri isteyin.';
- const list = document.createElement('ul');
- for (const item of [
-  'Güncel imar durum belgesi ve parsele uygulanan imar planı notları.',
-  'Net imar parseli alanı (m²) ve TAKS (taban oturumu oranı).',
-  'KAKS (emsal) ve emsale esas inşaat alanı (m²).',
-  'İzin verilen kat adedi veya bina yüksekliği ve bahçe çekme mesafeleri.',
-  'Varsa toplam brüt inşaat alanı (m²) ve ilave yapılaşma haklarının koşulları.'
- ]) {
-  const row = document.createElement('li');
-  row.textContent = item;
-  list.append(row);
- }
- const footer = document.createElement('p');
- footer.textContent = 'Belge elinizdeyse inceleme için Kumtaş İnşaat’a WhatsApp üzerinden iletebilirsiniz.';
- guide.append(heading, intro, list, footer);
- return guide;
-}
-function showYakutImarScreen(url, details) {
- document.getElementById('yakut-imar-screen')?.close();
- const dialog = document.createElement('dialog');
- dialog.id = 'yakut-imar-screen';
- dialog.setAttribute('aria-label', 'İmar sorgulama ekranı');
- dialog.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:white;color:#152b45';
- const layout = document.createElement('div');
- layout.style.cssText = 'display:flex;flex-direction:column;height:100%';
- const bar = document.createElement('header');
- bar.style.cssText = 'display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 16px;background:#0c2037;color:white';
- const title = document.createElement('strong');
- title.textContent = details;
- title.style.flex = '1 1 220px';
- const external = document.createElement('a');
- if (url) external.href = url;
- external.target = '_blank';
- external.rel = 'noopener noreferrer';
- external.textContent = 'Resmî e-İmarı yeni sekmede aç';
- external.style.cssText = 'color:white;text-decoration:underline';
- const close = document.createElement('button');
- close.type = 'button';
- close.textContent = 'Kapat';
- close.addEventListener('click', () => dialog.close());
- const frame = document.createElement('iframe');
- frame.title = 'Resmî imar kaynağı';
- frame.style.cssText = 'width:100%;flex:1;min-height:0;border:0';
- bar.append(title);
- if (url) bar.append(external);
- bar.append(close);
- layout.append(bar, createYakutImarChecklist());
- if (!url || new URL(url).hostname === 'keos.besiktas.bel.tr') {
-  dialog.style.cssText = 'position:fixed;inset:0;width:min(92%,680px);max-height:85vh;margin:auto;padding:0;border:0;border-radius:14px;background:white;color:#152b45;box-shadow:0 12px 50px #0005';
-  layout.style.height = 'auto';
-  const note = document.createElement('p');
-  note.textContent = 'Beşiktaş Belediyesi, sorgu ekranını kendi sitesi içinde gösteriyor. Yukarıdaki bağlantıyla resmî ekranı yeni sekmede açıp başlıktaki ada ve parseli aratabilirsiniz. Kumtaş sayfası açık kalır.';
-  note.style.cssText = 'max-width:640px;padding:24px 16px;margin:0 auto;line-height:1.6';
-  if (url) layout.append(note);
- } else {
-  frame.src = url;
-  layout.append(frame);
- }
- dialog.append(layout);
- dialog.addEventListener('close', () => dialog.remove(), {once:true});
- document.body.append(dialog);
- dialog.showModal();
-}
-function yakutParcelIntakeAnswer({district, numbered, guidance}) {
- if (guidance) return yakutTeklifGuidance;
- if (district && district !== yakutParcelIntake?.district) yakutParcelIntake = null;
- const state = yakutParcelIntake ??= {district:null, ada:null, parsel:null, waiting:true};
- state.district = district || state.district;
- state.ada = numbered[0] || state.ada;
- state.parsel = numbered[1] || state.parsel;
- if (!state.district) return 'Tabii, bakalım. Arsanız hangi ilçede?';
- yakutImarDistrict = state.district;
- if (state.ada === null && state.parsel === null) return state.district[0] + ' için ada ve parsel numarasını söyler misiniz?';
- if (state.ada === null) return 'Parsel numarasını aldım. Ada numarası nedir?';
- if (state.parsel === null) return 'Ada numarasını aldım. Parsel numarası nedir?';
- state.waiting = false;
- showYakutImarScreen(state.district[1], state.district[0] + ' · Ada ' + state.ada + ' / Parsel ' + state.parsel);
- if (new URL(state.district[1]).hostname === 'keos.besiktas.bel.tr') {
-  return 'Ada ve parseli aldım. Beşiktaş’ın resmî sorgusunu ekrandaki bağlantıdan yeni sekmede açabilirsiniz. Kumtaş sayfası açık kalacak.';
- }
- return state.district[0] + ', ' + state.ada + ' ada, ' + state.parsel + ' parsel için resmî sorgu ekranını gösteriyorum. Ekrandaki sonucu otomatik okuyamıyorum. TAKS veya emsal değerini görürseniz bana söyleyebilirsiniz. Arsanızın metrekare bilgisini verirseniz bir ön hesap yapabiliriz. Kesin teklif için nasıl ilerleyeceğimizi de sorabilirsiniz. ' + yakutImarGuidance;
-}
-function yakutDistrictImarCommand(message) {
- const t = normalizeYakutCommand(message);
- const district = yakutFindImarDistrict(t);
- if (/(?:^| )(?:ibb|i bb|istanbul büyükşehir)(?: |$)/.test(t) && /(?:imar|e plan|plan sorgu)/.test(t)) {
-  return {district: ['İBB', 'https://eplan.ibb.istanbul/sorgu/plansorgu'], open: true};
- }
- const imar = /(?:^| )(?:e imarı?|e belediye|imar durumu|imar sorgusu|imar sorgula|belediye kaydı)(?: |$)/.test(t);
- const parcel = /(?:^| )ada(?: |$)/.test(t) && /(?:^| )parsel(?: |$)/.test(t);
- const open = /(?:^| )(?:aç|bağlan|git)(?: |$)/.test(t);
- if (!imar && !parcel && !(yakutImarDistrict === 'waiting' && district) &&
-     !(district && open && /belediye/.test(t))) return null;
- return {district: district || (imar && Array.isArray(yakutImarDistrict) ? yakutImarDistrict : null), open};
-}
-function yakutDistrictImarAnswer({district, open}) {
- if (!district) {
-  yakutImarDistrict = 'waiting';
-  return 'İmar sorgusu için İstanbul’un hangi ilçesine bakalım?';
- }
- yakutImarDistrict = district;
- if (open) {
-  showYakutImarScreen(district[1], district[0] + ' · İmar sorgulama');
-  return '';
- }
- return district[0] + ' için resmî imar kaynaklarını açabilirim. Açmamı isterseniz, e-İmarı aç deyin. ' + yakutImarGuidance;
-}
 function yakutScenarioRequest(message) {
  const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
  if (/(?:^| )(?:aç|git|götür|sayfasına|sayfasını)(?: |$)/.test(t)) return false;
@@ -840,12 +636,16 @@ function yakutScenarioAnswer(message) {
   '. Ortak alanlar ve imar koşulları sonucu değiştirebilir.';
 }
 let yakutChatHistory=[];
+try{
+ const history=JSON.parse(sessionStorage.getItem('yakutChatHistory')||'[]');
+ if(Array.isArray(history))yakutChatHistory=history.slice(-4);
+}catch(_){}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutImarDistrict=null;yakutParcelIntake=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -860,30 +660,7 @@ if(getYakutCurrentPage()!=='index.html'&&/^(?:(?:yakut|lütfen)\s+)*(?:bu sayfay
 if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
 const contactAnswer=yakutContactRequest(q);
 if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
-const intake = yakutParcelIntakeCommand(q);
-if(intake){
- yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
- react('agree',yakutParcelIntakeAnswer(intake),'center');
- return;
-}
-const districtImar = yakutDistrictImarCommand(q);
-if(districtImar){
- yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
- const answer=yakutDistrictImarAnswer(districtImar);
- if(answer)react('agree',answer,'center');
- return;
-}
-if(yakutImarHelpRequest(q)){
- yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
- const answer=yakutImarHelpAnswer(q);
- if(answer)react('agree',answer,'center');
- return;
-}
 if(yakutScenarioRequest(q)){
- if (!yakutScenario && yakutParcelIntake?.district) {
-  yakutScenario = {district:yakutParcelIntake.district[0], area:null, floors:null, flat:null, shop:0, waiting:null};
- }
- 
  yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
  react('agree',yakutScenarioAnswer(q),'center');return;
 }
@@ -945,6 +722,7 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
      answer=result.answer.trim().replace(/\*\*/g,'');
      yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
       {role:'assistant',text:answer.slice(0,420)}].slice(-4);
+     try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
      if(result.sources?.length)console.info('Yakut araştırma kaynakları:',result.sources);
     }
    }
@@ -1002,7 +780,7 @@ function startSpeech(){
  rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
  rec.onresult=e=>{
   const spoken=e.results?.[0]?.[0]?.transcript;
-  if(recognition!==rec||!spoken||speaking||(getYakutCurrentPage()==='index.html'&&Date.now()-yakutSpeechEndedAt<1000))return;
+  if(recognition!==rec||!spoken||speaking||(getYakutCurrentPage()==='index.html'&&Date.now()-yakutSpeechEndedAt<300))return;
   micFailureCount=0;
   const heard=normalizeYakutCommand(spoken);
   // A delayed microphone transcript of our page introduction is not a new user command.
@@ -1146,24 +924,12 @@ scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 ready=true;loadSiteKnowledge().catch(console.warn);posX=leftGreetingX();targetX=leftGreetingX();
- // Share the first greeting across the site. All other pages ask before narrating.
- let arrivalOffer=false;
  try{
-  const entry=sessionStorage.getItem('yakutNextTopic');
-  if(entry){
-   const state=JSON.parse(entry);
-   if(state.path===getYakutCurrentPage()){
-    sessionStorage.removeItem('yakutNextTopic');
-    arrivalOffer=!!(state.offerPage||state.readPage);
-   }
-  }
   if(sessionStorage.getItem('yakutGreeted')==='1' && getYakutCurrentPage()!=='index.html'){
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
  }catch(e){console.warn('YAKUT oturumu:',e)}
- if(getYakutCurrentPage()!=='index.html')prepareYakutPageOffer();
- else if(openingGreeted && arrivalOffer)prepareYakutPageOffer();
 listenEnabled=getYakutCurrentPage()!=='index.html';voiceButton.hidden=true;if(listenEnabled){talk.hidden=false;queueListen(450);}
 model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
 posX=targetX;phase='idle';play('wait');
