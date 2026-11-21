@@ -767,7 +767,7 @@ const weather=yakutWeatherRequest(command);
  if(!weather&&!localAnswer&&(match?.exact||siteQuestion)){
   const localMatch=match||await yakutFindAnswer(q);
   if(generation!==yakutVoiceGeneration)return;
-  localAnswer=localMatch?.text||'Sitemizde bu konuda doğrulayabildiğim bir bilgi bulamadım. Hangi hizmeti veya projeyi merak ediyorsunuz?';
+  localAnswer=localMatch?.text||'';
  }
  if(!weather&&localAnswer){
   rememberYakutTurn(q,localAnswer);
@@ -872,7 +872,7 @@ function startSpeech(){
   finalText=Array.from(e.results).filter(result=>result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ');
   const stillSpeaking=Array.from(e.results).some(result=>!result.isFinal);
-  if(finalText&&!stillSpeaking)timer=setTimeout(submit,550);
+  if(finalText&&!stillSpeaking)timer=setTimeout(submit,300);
  };
  rec.onerror=e=>{if(recognition!==rec)return;micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
  rec.onend=()=>{
