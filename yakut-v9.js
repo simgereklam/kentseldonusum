@@ -13,7 +13,7 @@ css.textContent=`
 #yakut-enable-audio{position:fixed;z-index:135;bottom:18px;left:14px;border:0;background:#09638c;color:white;padding:11px 15px;border-radius:24px;font:700 14px Arial,sans-serif;box-shadow:0 5px 16px #0005;cursor:pointer}
 #yakut-enable-audio[hidden]{display:none!important}
 /* YAKUT is a voice-only on-page character: no caption, chat box, or buttons. */
-#yakut-v9-ui,#yakut-v9-caption{display:none!important}
+#yakut-v9-ui{display:none!important}
 #yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
 #yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
 #yakut-v9-ui button:hover{background:#137aaa}
@@ -258,6 +258,7 @@ function splitYakutSpeech(text){
  if(part)chunks.push(part);
  return chunks;
 }
+let yakutSpeechStartTimer;
 function finishYakutSpeech(){
  yakutAudioPlaying=false;
  if(yakutReadyChunk&&!hidden){const next=yakutReadyChunk;yakutReadyChunk=null;yakutPlaySpeech(next);return}
@@ -269,12 +270,26 @@ function finishYakutSpeech(){
  if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
  if(listenEnabled&&!hidden)queueListen(300);
 }
+function yakutBrowserSpeech(){
+ clearTimeout(yakutSpeechStartTimer);
+ ++yakutVoiceGeneration;
+ yakutRequests.clear();yakutReadyChunk=null;yakutSpeechQueue=[];yakutTtsPending='';
+ clearTimeout(yakutTtsSayTimer);
+ const voice=chooseVoice();
+ if(!voice||!window.SpeechSynthesisUtterance){finishYakutSpeech();return}
+ const turn=yakutVoiceGeneration;
+ const utterance=new SpeechSynthesisUtterance(yakutCurrentPrompt);
+ utterance.voice=voice;utterance.lang='tr-TR';
+ const done=()=>{if(turn===yakutVoiceGeneration)finishYakutSpeech()};
+ utterance.onend=done;utterance.onerror=done;
+ window.speechSynthesis.speak(utterance);
+}
 function yakutTtsFailure(e){
  console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
  yakutTtsFailed=true;yakutTtsLastFailure=Date.now();yakutTtsReady=false;yakutTtsPending='';yakutSpeechQueue=[];yakutRequests.clear();yakutReadyChunk=null;yakutAudioPlaying=false;
  clearTimeout(yakutTtsBootTimer);clearTimeout(yakutTtsSayTimer);
  try{yakutTtsWorker?.terminate()}catch(_){}
- yakutTtsWorker=null;finishYakutSpeech();
+ yakutTtsWorker=null;if(speaking&&!yakutAudioPlaying&&!yakutGreetingInProgress&&!yakutHoldWelcomeAudio)yakutBrowserSpeech();else finishYakutSpeech();
 }
 function yakutPlaySpeech(data){
  if(yakutHoldWelcomeAudio){yakutReadyChunk=data;return}
@@ -294,7 +309,8 @@ function yakutPlaySpeech(data){
    limiter.ratio.value=4;limiter.attack.value=0.008;limiter.release.value=0.22;
    src.connect(gain);gain.connect(yakutTtsContext.destination); // Avoid compressor pumping/distortion.
   src.onended=()=>{if(yakutTtsSource===src){yakutTtsSource=null;finishYakutSpeech()}};
-  src.start();yakutAudioPlaying=true;yakutAudioStartTime=performance.now();yakutGestureClock=0;if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
+  src.start();
+  clearTimeout(yakutSpeechStartTimer);yakutAudioPlaying=true;yakutAudioStartTime=performance.now();yakutGestureClock=0;if(yakutSpeechQueue.length&&!yakutRequests.size)yakutTtsSayNow(yakutSpeechQueue.shift());
    // The speaking gesture must never interrupt the real walk animation.
    if(pendingSpeechGesture&&phase!=='walking'){
     const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);phase='reacting';
@@ -344,13 +360,13 @@ function speak(text){
  clearTimeout(listenRetry);
  if(recognition){try{recognition.abort()}catch(_){}}
  yakutCurrentPrompt=String(text||'');
- show(text,Math.max(7000,text.length*85));
+ if(text!==welcome){caption.textContent=text;caption.classList.add('shown');}
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;++yakutVoiceGeneration;yakutRequests.clear();
  // Keep the microphone active for navigation during speech.
  if(yakutTtsFailed&&Date.now()-yakutTtsLastFailure<12000){
   // Avoid rapid repeated network retries, but never disable speech for the entire visit.
-  finishYakutSpeech();return;
+  if(text!==welcome)yakutBrowserSpeech();else finishYakutSpeech();return;
  }
  if(yakutTtsSource){try{yakutTtsSource.stop()}catch(e){}yakutTtsSource=null}
  if(!yakutTtsContext&&window.AudioContext){try{yakutTtsContext=new AudioContext();yakutTtsContext.resume().catch(()=>{})}catch(e){}}
@@ -359,6 +375,10 @@ function speak(text){
  yakutTtsPending=segments[0]||'';
  startYakutAhenk();
  if(yakutTtsReady&&yakutTtsPending){const first=yakutTtsPending;yakutTtsPending='';yakutTtsSayNow(first)}
+ clearTimeout(yakutSpeechStartTimer);
+ if(text!==welcome)yakutSpeechStartTimer=setTimeout(()=>{
+  if(speaking&&!yakutAudioPlaying&&chooseVoice())yakutBrowserSpeech();
+ },2200);
  // Listening resumes only after the voice ends.
 }
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
@@ -469,6 +489,8 @@ function yakutIsPageRequest(message,whileSpeaking=false){
  return (navigationVerb||shortLabel||explicitlyAddressed)?page:null;
 }
 function cancelYakutSpeech(){
+ clearTimeout(yakutSpeechStartTimer);
+ window.speechSynthesis?.cancel();
  ++yakutTtsId;++yakutVoiceGeneration;yakutRequests.clear();yakutReadyChunk=null;yakutAudioPlaying=false;yakutSpeechQueue=[];yakutTtsPending='';
  clearTimeout(yakutTtsSayTimer);yakutTtsSayTimer=null;
  if(yakutTtsSource){const source=yakutTtsSource;yakutTtsSource=null;source.onended=null;try{source.stop()}catch(_){}}
