@@ -1,0 +1,27 @@
+name: Yakut Kirazlı pilot
+on:
+  push:
+    branches: [yakut-bagcilar-test]
+    paths: [.github/workflows/yakut-kirazli-pilot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.58.2
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          node - <<'NODE'
+          const { lookup } = require('./scripts/yakut-bagcilar-sorgu.cjs');
+          lookup({ada:'0', parsel:'2135', mahalle:'Kirazlı'}).then(result => {
+            console.log(JSON.stringify(result, null, 2));
+            if (result.durum !== 'bulundu') process.exitCode = 1;
+          }).catch(error => { console.error(error.message); process.exitCode = 1; });
+          NODE
