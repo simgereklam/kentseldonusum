@@ -639,6 +639,7 @@ function yakutScenarioAnswer(message) {
   '. Ortak alanlar ve imar koşulları sonucu değiştirebilir.';
 }
 let yakutChatHistory=[];
+let yakutMergerTopic='';
 try{
  const history=JSON.parse(sessionStorage.getItem('yakutChatHistory')||'[]');
  if(Array.isArray(history))yakutChatHistory=history.slice(-4);
@@ -647,8 +648,8 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutMergerTopic='';cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutMergerTopic='';cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
@@ -668,7 +669,15 @@ if(yakutScenarioRequest(q)){
  react('agree',yakutScenarioAnswer(q),'center');return;
 }
 if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
-const destination=yakutIsPageRequest(q);
+const mergerIntent=/(birleştir|birleştirmek|birleştire|birşetir|tek bina)/i.test(q)&&/(bina|parsel)/i.test(q);
+if(mergerIntent&&!yakutMergerTopic){
+ yakutMergerTopic=q.slice(0,230);
+ processingSpeech=false;
+ react('agree','İki binayı tek projede değerlendirmeyi araştırabilirim. İlçeyi, mahalleyi ve her iki taşınmazın ada ve parsel numaralarını söyler misiniz?','center');
+ return;
+}
+const mergerFollowup=Boolean(yakutMergerTopic&&/(mahalle|ada|parsel|kirazlı)/i.test(q));
+const destination=mergerFollowup?null:yakutIsPageRequest(q);
 if(destination){openYakutPage(destination);return;}
 let clip='agree',answer='';
 // A standing-at-attention request must not fall through to an unrelated approval gesture.
@@ -699,7 +708,7 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
  if(generation!==yakutVoiceGeneration)return;
  answer=match?.text||'Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
- const explicitResearch=/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
+ const explicitResearch=mergerFollowup||/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
  if((!match?.exact||explicitResearch)&&q.length<=500){
   let requestGeneration=generation;
   try{
@@ -707,7 +716,7 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
    if(url.protocol==='https:'){
     const ask=async research=>{
      const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({question:q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory,research}),
+      body:JSON.stringify({question:mergerFollowup?(yakutMergerTopic+' Kullanıcının devamı: '+q).slice(0,500):q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory,research}),
       signal:AbortSignal.timeout(research?18000:5500)});
      return response.ok?response.json():null;
     };
@@ -715,13 +724,14 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
     if(requestGeneration!==yakutVoiceGeneration)return;
     if(explicitResearch||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI'){
      answer='Şu anda web kaynaklarından doğrulayamadım. Biraz sonra tekrar deneyebilir misiniz?';
-     speak('Hemen araştırıyorum.');
+     speak('Tamam, araştırıp size bilgi vereceğim. Biraz bekletebilirim.');
      requestGeneration=yakutVoiceGeneration;
      result=await ask(true);
      if(requestGeneration!==yakutVoiceGeneration)return;
      if(!Array.isArray(result?.sources)||result.sources.length===0)result=null;
     }
     if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
+     if(mergerFollowup)yakutMergerTopic='';
      answer=result.answer.trim().replace(/\*\*/g,'');
      yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
       {role:'assistant',text:answer.slice(0,420)}].slice(-4);
@@ -779,45 +789,30 @@ function startSpeech(){
  if(!API){stopListening();talk.hidden=false;show('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın.',9000);return}
  if(!ready||!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=false;rec.continuous=false;rec.maxAlternatives=1;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
  rec.onstart=()=>{micStarting=false;talk.textContent='🟢 Dinliyorum'};
- rec.onresult=e=>{
-  const spoken=e.results?.[0]?.[0]?.transcript;
-  if(recognition!==rec||!spoken||speaking||(getYakutCurrentPage()==='index.html'&&Date.now()-yakutSpeechEndedAt<300))return;
-  micFailureCount=0;
-  const heard=normalizeYakutCommand(spoken);
-  // A delayed microphone transcript of our page introduction is not a new user command.
-  if(Date.now()-yakutLastOfferAt<15000 &&
-    /(?:sayfasındayız|size yardımcı olabilir miyim|bilgi vermemi|ister misiniz|bilgileri anlatabilirim)/.test(heard))return;
-  // Prevent the recognition engine from replying to YAKUT's own welcome.
-  if((yakutGreetingInProgress||Date.now()-yakutGreetingEndAt<3500)
-    && /(?:merhaba|kumtaş|dijital asistan|nasıl yardımcı olabilirim)/i.test(heard))return;
-  const answerText=normalizeYakutCommand(spoken);
-  // Spoken page title inside YAKUT's own offer is not a visitor navigation request.
-  const navigationIntent=/(?:^|\s)(?:yakut|aç|git|geç|göster|sayfaya|sayfasına)(?:\s|$)/.test(answerText);
-  // Permit a short yes/no reply to interrupt YAKUT's page offer immediately.
-  // Its own spoken prompt is never an exact "evet", "anlat" or "hayır".
-  if(speaking && yakutPageOfferPending && yakutOfferSpoken &&
-     /^(?:yakut\s+)?(?:evet|istiyorum|isterim|olur|tamam|anlat|anlatsana|anlatır mısın|bilgi ver|evet anlat|evet istiyorum|hayır|istemiyorum|gerek yok|istemem|sonra|şimdi değil)(?:\s+lütfen)?$/.test(answerText)){
-    cancelYakutSpeech();
-    handleYakutOfferAnswer(answerText);
-    return;
-  }
-  if(speaking||processingSpeech){
-   const wanted=yakutContactRequest(spoken)?null:yakutIsPageRequest(spoken,true);
-   if(wanted&&(navigationIntent||answerText.split(' ').length<=4)){openYakutPage(wanted);return}
-   cancelYakutSpeech();handle(spoken);return;
-  }
-  // Responses take precedence over page-name matching, including "anlat".
-  if(yakutPageOfferPending && handleYakutOfferAnswer(answerText))return;
-  const wanted=yakutContactRequest(spoken)?null:yakutIsPageRequest(spoken,false);
-  if(wanted){openYakutPage(wanted);return}
-  show('Siz: '+spoken,2600);
+ let finalText='';
+ let timer;
+ const submit=()=>{
+  clearTimeout(timer);
+  if(recognition!==rec||!finalText||speaking||!listenEnabled||hidden)return;
+  const spoken=finalText;
+  finalText='';
   handle(spoken);
+ };
+ rec.onresult=e=>{
+  if(recognition!==rec||speaking||!listenEnabled)return;
+  micFailureCount=0;
+  clearTimeout(timer);
+  finalText=Array.from(e.results).filter(result=>result.isFinal)
+   .map(result=>result[0].transcript.trim()).join(' ');
+  const stillSpeaking=Array.from(e.results).some(result=>!result.isFinal);
+  if(finalText&&!stillSpeaking)timer=setTimeout(submit,850);
  };
  rec.onerror=e=>{if(recognition!==rec)return;micStarting=false;micLastError=e.error||'unknown';speechProblem(micLastError)};
  rec.onend=()=>{
   if(recognition!==rec)return;
+  submit();
   micStarting=false;recognition=null;
   if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(350)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
