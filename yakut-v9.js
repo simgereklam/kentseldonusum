@@ -74,7 +74,7 @@ async function loadSiteKnowledge(){
  if(siteLoadPromise)return siteLoadPromise;
  siteLoadPromise=(async()=>{
   const pages=await Promise.allSettled(sitePages.map(async path=>{
-   const response=await fetch(new URL(path,location.origin+'/'),{cache:'no-store'});
+   const response=await fetch(new URL(path,location.origin+'/'),{signal:AbortSignal.timeout(4000)});
    if(!response.ok)throw Error(path+' '+response.status);
    const html=await response.text();
    const doc=new DOMParser().parseFromString(html,'text/html');
@@ -87,6 +87,8 @@ async function loadSiteKnowledge(){
     if(/^(ana sayfa|whatsapp|telefon|tüm hakları saklıdır)/i.test(txt))return;
     output.push({path,heading,text:txt});
    });
+   siteSections.push(...output.slice(0,90));
+   siteLoaded=siteSections.length>0;
    return output.slice(0,90)
   }));
   siteSections=pages.filter(p=>p.status==='fulfilled').flatMap(p=>p.value).slice(0,850);
@@ -102,6 +104,15 @@ const yakutPracticalAnswers=[
  [/m[uü]teahhit se[cç]|y[uü]klenici se[cç]|teklifleri nas[ıi]l kar[sş][ıi]la[sş]t[ıi]r/, 'Teklifleri aynı iş kapsamı üzerinden karşılaştırın. Teknik şartnameyi, teslim süresini, ödeme planını, paylaşım tablosunu, geçmiş projeleri ve sunulan teminatları yazılı isteyin.'],
  [/ke[sş]fe ne getir|[oö]n inceleme i[cç]in|ke[sş]if i[cç]in hangi belge/, 'Ön inceleme için taşınmazın adresini, ada ve parsel numaralarını, yaklaşık arsa alanını metrekare olarak ve mevcut daire ile dükkân sayılarını hazırlayın. Elinizde güncel imar durum belgesi, plan notları veya mevcut yapı projesi varsa bunları da paylaşabilirsiniz.', true]
 ];
+async function yakutFindAnswer(q){
+ const existing=siteAnswer(q);
+ if(existing)return existing;
+ let timer;
+ try{
+  await Promise.race([loadSiteKnowledge(),new Promise(resolve=>{timer=setTimeout(resolve,350)})]);
+ }finally{clearTimeout(timer)}
+ return siteAnswer(q);
+}
 function siteAnswer(q){
  const practical=yakutPracticalAnswers.find(([pattern])=>pattern.test(normalizeYakutCommand(q)));
  if(practical)return {text:practical[1], exact: practical[2] === true};
@@ -446,7 +457,7 @@ function yakutIsPageRequest(message,whileSpeaking=false){
  if(!page)return null;
  // A factual question on the subject should not unexpectedly navigate away.
  const asksQuestion=/\b(nedir|nasıl|neden|ne\s*zaman|kaç|hesapla|hesaplama|ne\s*kadar|olur\s*mu|mümkün\s*mü)\b/.test(t);
- const navigationVerb=/(?:aç|git|geç|göster|götür|sayfa|bilgi\s*(?:istiyorum|ver|almak)|anlat|incele|konuşalım)/.test(t);
+ const navigationVerb=/(?:aç|git|geç|göster|götür|sayfa|bilgi\s*(?:istiyorum|ver|almak)|anlat|incele|konuşalım|bakalım|göreyim|görebilir miyim|yönlendir)/.test(t);
  const shortLabel=t.split(' ').length<=4;
  const explicitlyAddressed=/\byakut\b/.test(t);
  if(asksQuestion&&!navigationVerb)return null;
@@ -906,7 +917,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
 }else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
  clip='agree';answer='6306 sayılı Kanun kapsamındaki dönüşüm kararlarında, oybirliği sağlanamazsa maliklerin arsa paylarına göre salt çoğunluğu esas alınabilir. Maliklerin sözleşme şartlarını ve haklarını incelemesi, riskli yapı tespitini, tebligatları ve uygunluk varsa kira yardımını resmi kurumlardan doğrulaması önemlidir. Ayrıntılar yapının durumuna göre değişir. Resmi bilgi için Kentsel Dönüşüm Başkanlığının mevzuat ve bilgi merkezine bakılmalıdır.';
 }else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
- clip='agree';await loadSiteKnowledge();const found=siteAnswer(q);
+ clip='agree';const found=await yakutFindAnswer(q);
  answer=found?'Bu konuda şu bilgileri paylaşabilirim: '+found.text+' Kesin yapılaşma hakkı için belediyenin güncel imar durumu esas alınır.':'Kentsel dönüşümde arsa, imar durumu, maliklerin hakları ve sözleşme şartları birlikte incelenir. Hangi konuda bilgi almak istersiniz?';
 }else if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
  clip='greet_02';answer='Merhaba! Seni görmek güzel!';
@@ -919,8 +930,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  processingSpeech=false;moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
 }else{
  clip='agree';
- await loadSiteKnowledge();
- const match=siteAnswer(q);
+ const match=await yakutFindAnswer(q);
  answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
  // Keep imar calculations, commands and unmatched questions on the existing paths.
@@ -930,7 +940,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
    const url=new URL(endpoint);
    if(url.protocol==='https:'){
     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({question:q,reference:match.text}),signal:AbortSignal.timeout(16500)});
+     body:JSON.stringify({question:q,reference:match.text}),signal:AbortSignal.timeout(1500)});
     if(response.ok){
      const result=await response.json();
      if(typeof result.answer==='string'&&result.answer.trim()&&result.answer.length<=1200)answer=result.answer.trim();
@@ -941,8 +951,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  }
 }
 processingSpeech=false;
-const isShortReaction=/(teşekkür|sağ ol|eyvallah|eline sağlık|anladım|anlaşıldı|anlıyorum|tamam|merhaba|selam)/i.test(t);
-react(clip,isShortReaction?answer:'Sorunuzu cevaplayalım. '+answer,'center');
+react(clip,answer,'center');
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
