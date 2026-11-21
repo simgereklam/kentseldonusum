@@ -1,0 +1,13 @@
+name = "kumtas-yakut-chat"
+main = "worker.mjs"
+compatibility_date = "2026-11-21"
+
+[vars]
+SITE_ORIGINS = "https://xn--kentseldnm-lcb7ea99k.com.tr,https://www.xn--kentseldnm-lcb7ea99k.com.tr"
+
+[[ratelimits]]
+name = "CHAT_LIMITER"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+# Add GROQ_API_KEY, GEMINI_API_KEY and OPENROUTER_API_KEY as Worker secrets.
+# Use keys from free-tier accounts without paid billing. Unset keys are skipped.
