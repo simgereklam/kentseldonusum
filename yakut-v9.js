@@ -922,6 +922,23 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  await loadSiteKnowledge();
  const match=siteAnswer(q);
  answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
+ const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content;
+ // Keep imar calculations, commands and unmatched questions on the existing paths.
+ if(endpoint&&match?.text&&q.length<=500&&match.text.length<=1500){
+  const generation=yakutVoiceGeneration;
+  try{
+   const url=new URL(endpoint);
+   if(url.protocol==='https:'){
+    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({question:q,reference:match.text}),signal:AbortSignal.timeout(8500)});
+    if(response.ok){
+     const result=await response.json();
+     if(typeof result.answer==='string'&&result.answer.trim()&&result.answer.length<=1200)answer=result.answer.trim();
+    }
+   }
+  }catch(_){/* Continue with the site's existing answer. */}
+  if(generation!==yakutVoiceGeneration)return;
+ }
 }
 processingSpeech=false;
 const isShortReaction=/(teşekkür|sağ ol|eyvallah|eline sağlık|anladım|anlaşıldı|anlıyorum|tamam|merhaba|selam)/i.test(t);
