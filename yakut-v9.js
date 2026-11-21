@@ -141,7 +141,8 @@ function chooseVoice(){
  const turkish=voices.filter(v=>/^tr(-|$)/i.test(v.lang));
  if(!turkish.length)return null;
  // The browser does not expose a voice gender field: select only known feminine voice names.
- const selected=turkish.find(v=>/emel|selin|zeynep|ayla|dilara|filiz|esra|female|kadın/i.test(v.name));
+ const selected=['emel','yelda','selin','zeynep','ayla','dilara','filiz','esra','female','kadın']
+  .map(name=>turkish.find(v=>v.name.toLocaleLowerCase('tr-TR').includes(name))).find(Boolean);
  preferredVoice=selected||null;
  return selected||null;
 }
@@ -235,7 +236,7 @@ enableAudio.addEventListener('click',unlockYakutSound);
 // Ahenk Cep neural Turkish speech: runs in the visitor's browser, not via OS voices.
 // Upstream ES modules and the ONNX model are loaded only when speech is requested.
 const yakutAhenkRoot='https://ozguradmin.github.io/ahenk-turkish-tts/';
-const YAKUT_SPEECH_SPEED=0.94;
+const YAKUT_SPEECH_SPEED=1.02;
 let yakutTtsWorker=null,yakutTtsReady=false,yakutTtsFailed=false,yakutTtsContext=null,yakutTtsLastFailure=0;
 let yakutTtsSource=null,yakutTtsPending='',yakutTtsId=0,yakutTtsBootTimer=null,yakutTtsSayTimer=null;
 let yakutSpeechQueue=[],yakutAudioPlaying=false,yakutReadyChunk=null,yakutVoiceGeneration=0,yakutRequests=new Map();
@@ -279,7 +280,7 @@ function yakutBrowserSpeech(){
  if(!voice||!window.SpeechSynthesisUtterance){finishYakutSpeech();return}
  const turn=yakutVoiceGeneration;
  const utterance=new SpeechSynthesisUtterance(yakutCurrentPrompt);
- utterance.voice=voice;utterance.lang='tr-TR';
+ utterance.voice=voice;utterance.lang='tr-TR';utterance.rate=1.03;utterance.pitch=1;
  const done=()=>{if(turn===yakutVoiceGeneration)finishYakutSpeech()};
  utterance.onend=done;utterance.onerror=done;
  window.speechSynthesis.speak(utterance);
@@ -363,7 +364,9 @@ function speak(text){
  if(text!==welcome){caption.textContent=text;caption.classList.add('shown');}
  if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
  speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;++yakutVoiceGeneration;yakutRequests.clear();
- // Keep the microphone active for navigation during speech.
+ if(text!==welcome&&chooseVoice()){
+  yakutBrowserSpeech();return;
+ }
  if(yakutTtsFailed&&Date.now()-yakutTtsLastFailure<12000){
   // Avoid rapid repeated network retries, but never disable speech for the entire visit.
   if(text!==welcome)yakutBrowserSpeech();else finishYakutSpeech();return;
