@@ -379,7 +379,7 @@ async function yakutCloudVoice(text){
  try{
   const response=await fetch('https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/speech',{
    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text}),
-   signal:AbortSignal.timeout(2300)});
+   signal:AbortSignal.timeout(4000)});
   if(!response.ok)return null;
   const {audio}=await response.json();
   if(typeof audio!=='string'||audio.length>4000000)return null;
