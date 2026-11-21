@@ -54,6 +54,7 @@ next.clampWhenFinished=!!once;current=next;return true;
 
 let audioUnlocked=false,yakutTtsContext=null,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
 let yakutDeferredSpeech='';
+let yakutStartTimer;
 function unlockYakutSound(){
  yakutFirstInteraction=true;
  audioUnlocked=true;
@@ -64,7 +65,7 @@ function unlockYakutSound(){
   const Audio=window.AudioContext||window.webkitAudioContext;
   if(Audio){try{yakutTtsContext=new Audio()}catch(_){}}
  }
- if(yakutTtsContext?.state==='suspended')yakutTtsContext.resume().catch(()=>{});
+ if(yakutTtsContext&&yakutTtsContext.state!=='running')yakutTtsContext.resume().catch(()=>{});
  micFailureCount=0;micRestartAt=0;enableAudio.hidden=true;
  if(!ready){yakutWelcomeRequested=true;return}
  if(yakutWelcomeWaitingForSound){
@@ -91,11 +92,13 @@ function beginYakutVisit(){
  if(yakutPageOfferPending&&audioUnlocked&&!yakutOfferSpoken){offerYakutPage();return}
  if(!speaking)queueListen(450);
 }
-document.addEventListener('pointerdown',unlockYakutSound,{once:true,capture:true});
-document.addEventListener('keydown',unlockYakutSound,{once:true,capture:true});
-document.addEventListener('touchend',unlockYakutSound,{once:true,capture:true,passive:true});
-
-enableAudio.addEventListener('click',unlockYakutSound);
+function handleYakutActivation(event){
+ if(!event.isTrusted||navigator.userActivation?.isActive===false)return;
+ if(!yakutFirstInteraction||event.target===enableAudio)unlockYakutSound();
+}
+// On touch devices pointerdown can precede activation and hide the button before click.
+document.addEventListener('click',handleYakutActivation,true);
+document.addEventListener('keydown',handleYakutActivation,true);
 function finishYakutSpeech(){
  yakutAudioPlaying=false;
  speaking=false;yakutSpeechEndedAt=Date.now();
@@ -106,7 +109,7 @@ function finishYakutSpeech(){
  if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
  if(listenEnabled&&!hidden)queueListen(300);
 }
-async function speak(text){
+async function speak(text,retryOnFailure=true){
  clearTimeout(listenRetry);
  releaseYakutMic();
  const prompt=String(text||'').trim();
@@ -118,13 +121,7 @@ async function speak(text){
  const endpoint=yakutChatEndpoint();
  let finished=false;
  try{
-  if(!await ensureYakutAudio()){
-   if(turn!==yakutVoiceGeneration||hidden)return;
-   yakutDeferredSpeech=prompt;
-   enableAudio.textContent='🔊 Yakut’u dinle';
-   enableAudio.hidden=false;
-   return;
-  }
+  if(!await ensureYakutAudio())return;
   if(turn!==yakutVoiceGeneration||hidden)return;
   const payload={readAloud:prompt};
   finished=await askYakutLive(endpoint,payload,turn);
@@ -134,7 +131,14 @@ async function speak(text){
  }catch(error){
   console.warn('Yakut ses isteği:',error);
  }finally{
-  if(turn===yakutVoiceGeneration&&!finished)finishYakutSpeech();
+  if(turn===yakutVoiceGeneration&&!finished){
+   if(retryOnFailure&&!hidden){
+    speaking=false;
+    yakutDeferredSpeech=prompt;
+    enableAudio.textContent='🔊 Yakut’u dinle';
+    enableAudio.hidden=false;
+   }else finishYakutSpeech();
+  }
  }
 }
 function yakutChatEndpoint(){
@@ -165,7 +169,7 @@ function finishYakutGreetingWalk(){
  yakutIsGreetingWalking=false;yakutGreetingInProgress=true;phase='greeting';if(model)model.rotation.y=0;
  const bow=findYakutGesture('bow');
  if(bow&&clips[bow]){yakutOpeningBow=true;play(bow,true)}
- else {console.warn('YAKUT: Eğilme animasyonu dosyada bulunamadı');completeYakutOpening()}
+ else completeYakutOpening();
 }
 function completeYakutOpening(){
  yakutOpeningBow=false;
@@ -660,7 +664,7 @@ releaseYakutMic();
    if(search&&audioUnlocked){
     noticeTimer=setTimeout(()=>{
      if(generation!==yakutVoiceGeneration||hidden)return;
-     researchNotice=speak('Bakıp size haber vereceğim. Lütfen biraz bekleyin.');
+     researchNotice=speak('Bakıp size haber vereceğim. Lütfen biraz bekleyin.',false);
      generation=yakutVoiceGeneration;
     },350);
    }
@@ -858,6 +862,27 @@ function addYakutChestLogo() {
  };
  source.src = chestLogoUrl;
 }
+function startYakutSession(){
+ if(ready)return;
+ clearTimeout(yakutStartTimer);
+ ready=true;
+ try{
+  if(sessionStorage.getItem('yakutGreeted')==='1'&&getYakutCurrentPage()!=='index.html'){
+   openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
+  }
+  if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
+  const pageOffer=sessionStorage.getItem('yakutPageOffer');
+  const page=getYakutCurrentPage();
+  if(page!=='index.html'&&(pageOffer===page||pageOffer==='anlat:'+page)){
+   sessionStorage.removeItem('yakutPageOffer');
+   yakutPendingPageSpeech=pageOffer==='anlat:'+page;
+   yakutPageOfferPending=true;
+  }
+ }catch(e){console.warn('YAKUT oturumu:',e)}
+ listenEnabled=audioUnlocked||yakutFirstInteraction;
+ if(yakutFirstInteraction||yakutWelcomeRequested||(audioUnlocked&&yakutPageOfferPending))beginYakutVisit();
+ else if(listenEnabled)queueListen(450);
+}
 async function init(){
 try{
 const [three,{GLTFLoader}]=await Promise.all([
@@ -883,33 +908,12 @@ model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDic
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
-ready=true;posX=getYakutCurrentPage()==='index.html'?leftGreetingX():yakutRightX();targetX=posX;
- try{
-  if(sessionStorage.getItem('yakutGreeted')==='1' && getYakutCurrentPage()!=='index.html'){
-   openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
-  }
-  if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
-  const pageOffer=sessionStorage.getItem('yakutPageOffer');
-  const page=getYakutCurrentPage();
-  if(page!=='index.html'&&(pageOffer===page||pageOffer==='anlat:'+page)){
-   sessionStorage.removeItem('yakutPageOffer');
-   yakutPendingPageSpeech=pageOffer==='anlat:'+page;
-   yakutPageOfferPending=true;
-  }
- }catch(e){console.warn('YAKUT oturumu:',e)}
-listenEnabled=audioUnlocked||yakutFirstInteraction;
-voiceButton.hidden=true;
-if(listenEnabled){talk.hidden=false;queueListen(450);}
-model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
-posX=targetX;phase='idle';play('wait');
- // Home: render YAKUT in the lower-left immediately after the GLB is ready.
- // A genuine pointer/key interaction, not microphone permission, starts walking.
- // Retain the real walk animation; never translate an idle model across the page.
- if(getYakutCurrentPage()==='index.html'){
-  posX=leftGreetingX();targetX=posX;phase='idle';play('wait');
- }
- if(yakutFirstInteraction||yakutWelcomeRequested||(audioUnlocked&&yakutPageOfferPending))queueMicrotask(beginYakutVisit);
+if(yakutGreetingInProgress)posX=centerAnswerX();
+else if(getYakutCurrentPage()==='index.html'&&!openingGreeted)posX=leftGreetingX();
+else posX=yakutRightX();
+targetX=posX;model.rotation.y=0;phase='idle';play('wait');
 positionStage();
+startYakutSession();
 const clock=new THREE.Clock();
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
@@ -947,8 +951,10 @@ renderer.render(scene,camera);
 }frame();
 }catch(err){
 console.error('YAKUT V9 modeli yüklenemedi:',err);stage.remove();
-ready=true;
-if(yakutFirstInteraction)beginYakutVisit();
+model=null;
+if(yakutIsGreetingWalking)finishYakutGreetingWalk();
+else if(yakutOpeningBow)completeYakutOpening();
+startYakutSession();
 }}
 document.addEventListener('yakut:eimar-result',event=>{
  if(ready&&typeof event.detail==='string'){
@@ -956,5 +962,7 @@ document.addEventListener('yakut:eimar-result',event=>{
   else react('agree',event.detail);
  }
 });
+// Give the character a moment to load without making speech depend on WebGL.
+yakutStartTimer=setTimeout(startYakutSession,1200);
 init();
 })();
