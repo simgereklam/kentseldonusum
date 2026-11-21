@@ -541,6 +541,9 @@ function yakutIsPageRequest(message,whileSpeaking=false){
  return (navigationVerb||shortLabel||explicitlyAddressed)?page:null;
 }
 function cancelYakutSpeech(){
+ yakutLiveController?.abort();
+ for(const source of yakutLiveSources){try{source.stop()}catch(_){}}
+ yakutLiveSources.clear();
  clearTimeout(yakutSpeechStartTimer);
  window.speechSynthesis?.cancel();
  ++yakutTtsId;++yakutVoiceGeneration;yakutRequests.clear();yakutReadyChunk=null;yakutAudioPlaying=false;yakutSpeechQueue=[];yakutTtsPending='';
@@ -800,6 +803,81 @@ function announceYakutLookup(){
   try{synthesis.speak(utterance)}catch(_){finish()}
  });
 }
+const yakutLiveSources=new Set();
+let yakutLiveController=null;
+const yakutLiveRetryAt={chat:0,research:0};
+async function askYakutLive(url,payload,notice,generation){
+ const context=yakutTtsContext;
+ const mode=payload.research?'research':'chat';
+ if(!audioUnlocked||context?.state!=='running'||Date.now()<yakutLiveRetryAt[mode])return false;
+ const controller=new AbortController();
+ yakutLiveController=controller;
+ let timer=setTimeout(()=>controller.abort(),payload.research?9500:8500);
+ let nextStart=0;
+ let played=false;
+ let transcript='';
+ let reader;
+ try{
+  const response=await fetch(new URL('/live',url),{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify(payload),signal:controller.signal});
+  if(!response.ok||!response.body||!response.headers.get('Content-Type')?.includes('application/x-ndjson'))return false;
+  reader=response.body.getReader();
+  const decoder=new TextDecoder();
+  let pending='';
+  for(;;){
+   const {value,done}=await reader.read();
+   if(done)break;
+   pending+=decoder.decode(value,{stream:true});
+   const lines=pending.split('\n');
+   pending=lines.pop();
+   for(const line of lines){
+    if(!line)continue;
+    const frame=JSON.parse(line);
+    if(frame.error)throw new Error(frame.error);
+    if(frame.text)transcript=(transcript+frame.text).slice(0,1200);
+    if(!frame.audio)continue;
+    if(!played){
+     clearTimeout(timer);
+     timer=setTimeout(()=>controller.abort(),17000);
+     await notice;
+     if(controller.signal.aborted||generation!==yakutVoiceGeneration)return false;
+    }
+    const pcm=atob(frame.audio);
+    const length=Math.floor(pcm.length/2);
+    if(!length)continue;
+    const buffer=context.createBuffer(1,length,24000);
+    const samples=buffer.getChannelData(0);
+    for(let index=0;index<length;index++){
+     const value=pcm.charCodeAt(index*2)|(pcm.charCodeAt(index*2+1)<<8);
+     samples[index]=(value<<16>>16)/32768;
+    }
+    const source=context.createBufferSource();
+    source.buffer=buffer;source.connect(context.destination);
+    nextStart=Math.max(nextStart,context.currentTime+(played?0.015:0.09));
+    source.start(nextStart);nextStart+=buffer.duration;
+    yakutLiveSources.add(source);
+    source.onended=()=>yakutLiveSources.delete(source);
+    speaking=true;yakutAudioPlaying=true;played=true;
+   }
+  }
+ }catch(error){
+  if(!played&&generation===yakutVoiceGeneration)console.info('Yakut Live bağlantısı:',error.message);
+ }finally{
+  clearTimeout(timer);
+  if(reader)reader.cancel().catch(()=>{});
+  if(yakutLiveController===controller)yakutLiveController=null;
+  if(!played&&generation===yakutVoiceGeneration)yakutLiveRetryAt[mode]=Date.now()+45000;
+ }
+ if(!played||generation!==yakutVoiceGeneration)return false;
+ if(transcript.trim())rememberYakutTurn(payload.question,transcript.trim());
+ await new Promise(resolve=>setTimeout(resolve,Math.max(0,(nextStart-context.currentTime)*1000)+40));
+ if(generation===yakutVoiceGeneration){
+  processingSpeech=false;
+  finishYakutSpeech();
+ }
+ return true;
+}
+
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
@@ -874,6 +952,11 @@ releaseYakutMic();
     };
     if(weather||explicitResearch)lookupNotice=announceYakutLookup();
     if(weather)answer='Şu anda hava durumu verisini alamadım. Biraz sonra tekrar deneyebilirsiniz.';
+    const sensitiveQuestion=/(?:imar|parsel|malik|yasal|hukuk|kanun|ruhsat|fiyat|sağlık|ilaç)/i.test(q);
+    if(!weather&&!sensitiveQuestion&&await askYakutLive(url,{
+     question:q,reference:'',history:yakutChatHistory,research:explicitResearch
+    },lookupNotice,requestGeneration))return;
+    if(requestGeneration!==yakutVoiceGeneration)return;
     let result=explicitResearch&&!weather?.city?null:await ask(false);
     if(requestGeneration!==yakutVoiceGeneration)return;
     if((explicitResearch&&!weather?.city)||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI'){
