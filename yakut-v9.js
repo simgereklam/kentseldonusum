@@ -243,8 +243,11 @@ function splitYakutSpeech(text){
  if(String(text).trim()===welcome){
   return ['Merhaba, hoş geldiniz.', 'Ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Sizin için ne yapabilirim?'];
  }
- const sentences=String(text).replace(/\s+/g,' ').trim().match(/[^.!?;:]+[.!?;:]?/g)||[];
- const chunks=[];let part='';
+ const normalized=String(text).replace(/\s+/g,' ').trim();
+ const opening=normalized.match(/^.{8,100}?[.!?](?=\s)/)?.[0];
+ const remainder=opening?normalized.slice(opening.length).trim():normalized;
+ const sentences=remainder.match(/[^.!?;:]+[.!?;:]?/g)||[];
+ const chunks=opening?[opening]:[];let part='';
  for(const sentence of sentences)for(const word of sentence.trim().split(/\s+/)){
   if(part&&(part+' '+word).length>185){chunks.push(part);part=''}
   part=part?part+' '+word:word;
@@ -261,7 +264,7 @@ function finishYakutSpeech(){
  if(yakutGreetingInProgress){yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();scheduleGreetingRetreat()}
  if(yakutReturnLeftAfterSpeech){yakutReturnLeftAfterSpeech=false;moveTo(leftGreetingX())}
  if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
- if(listenEnabled&&!hidden)queueListen(getYakutCurrentPage()==='index.html'?1200:250);
+ if(listenEnabled&&!hidden)queueListen(300);
 }
 function yakutTtsFailure(e){
  console.warn('YAKUT Ahenk sesi kullanılamıyor:',e?.message||e);
@@ -692,7 +695,7 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
 }else{
  clip='agree';
  const generation=yakutVoiceGeneration;
- const match=await yakutFindAnswer(q);
+ const match=siteAnswer(q);
  if(generation!==yakutVoiceGeneration)return;
  answer=match?.text||'Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
@@ -816,7 +819,7 @@ function startSpeech(){
  rec.onend=()=>{
   if(recognition!==rec)return;
   micStarting=false;recognition=null;
-  if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(900)}
+  if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(350)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
  try{rec.start()}catch(e){
