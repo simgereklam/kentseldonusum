@@ -76,10 +76,10 @@ export default {
       ['groq', env.GROQ_API_KEY, async () => (await post('https://api.groq.com/openai/v1/chat/completions',
         { Authorization: 'Bearer ' + env.GROQ_API_KEY },
         { model: 'llama-3.1-8b-instant', messages, max_completion_tokens: 180 }, 'groq'))?.choices?.[0]?.message?.content],
-      ['gemini', env.GEMINI_API_KEY, async () => (await post('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent',
+      ['gemini', env.GEMINI_API_KEY, async () => (await post('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
         { 'x-goog-api-key': env.GEMINI_API_KEY },
         { systemInstruction: { parts: [{ text: system }] }, contents: [{ parts: [{ text: input }] }],
-          generationConfig: { maxOutputTokens: 180, thinkingConfig: { thinkingBudget: 0 } } }, 'gemini'))
+          generationConfig: { maxOutputTokens: 180, thinkingConfig: { thinkingLevel: 'minimal' } } }, 'gemini'))
         ?.candidates?.[0]?.content?.parts?.filter(part => !part.thought).map(part => part.text).join(' ')],
       ['cerebras', env.CEREBRAS_API_KEY, () => chat('cerebras',
         'https://api.cerebras.ai/v1/chat/completions', env.CEREBRAS_API_KEY, 'gpt-oss-120b',
