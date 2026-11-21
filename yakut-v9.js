@@ -209,6 +209,9 @@ function unlockYakutSound(){
 }
 function beginYakutVisit(){
  if(!ready||hidden)return;
+ if(getYakutCurrentPage()==='kentsel-donusum.html'&&audioUnlocked){
+  try{if(sessionStorage.getItem('yakutExplainMalik')==='1'){yakutExplainMalik();return}}catch(_){}
+ }
  if(getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone){
   yakutFirstGreetingDone=true;yakutWelcomeRequested=false;openingSpoken=true;openingGreeted=true;
   cancelGreetingRetreat();
@@ -556,6 +559,15 @@ function yakutContactRequest(message){
  if(asksEmail&&!asksAddress&&!asksPhone&&!/iletişim bilgi/.test(t))return yakutContact.email;
  return Object.values(yakutContact).join(' ');
 }
+const yakutMalikIntro='Malik hakları hakkında sizi bilgilendireyim. Kentsel dönüşümde riskli yapı tespiti ve tebligat, maliklerin karar sürecine katılımı ve sözleşme koşulları ayrı ayrı değerlendirilir. Riskli yapı tespitine itiraz ve kira yardımı gibi konularda süreler ve başvuru koşulları önemlidir. Hangisini ayrıntılı anlatalım?';
+function yakutExplainMalik(){
+ try{
+  sessionStorage.removeItem('yakutExplainMalik');
+  yakutChatHistory=[{role:'user',text:'Kentsel dönüşümde malik hakları'},{role:'assistant',text:yakutMalikIntro}];
+  sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory));
+ }catch(_){}
+ react('agree',yakutMalikIntro,'center');
+}
 function openYakutPage(path){
  const current=getYakutCurrentPage();
  cancelYakutSpeech();
@@ -677,6 +689,17 @@ if(mergerIntent&&!yakutMergerTopic){
  return;
 }
 const mergerFollowup=Boolean(yakutMergerTopic&&/(mahalle|ada|parsel|kirazlı)/i.test(q));
+if(/(?:malik(?:lerin)?\s+hakları|hak sahiplerinin hakları)/.test(command)&&
+   !/(?:^|\s)(?:peki|itiraz|kira|kaç|süresi)(?:\s|$)/.test(command)){
+ const path='kentsel-donusum.html';
+ if(getYakutCurrentPage()!==path){
+  try{
+   sessionStorage.setItem('yakutExplainMalik','1');
+   openYakutPage(path);return;
+  }catch(_){}
+ }
+ processingSpeech=false;yakutExplainMalik();return;
+}
 const destination=mergerFollowup?null:yakutIsPageRequest(q);
 if(destination){openYakutPage(destination);return;}
 let clip='agree',answer='';
@@ -937,7 +960,7 @@ posX=targetX;phase='idle';play('wait');
  if(getYakutCurrentPage()==='index.html'){
   posX=leftGreetingX();targetX=posX;phase='idle';play('wait');
  }
- if(yakutFirstInteraction||yakutWelcomeRequested)queueMicrotask(beginYakutVisit);
+ if(yakutFirstInteraction||yakutWelcomeRequested||getYakutCurrentPage()==='kentsel-donusum.html')queueMicrotask(beginYakutVisit);
 positionStage();
 const clock=new THREE.Clock();
 function frame(){
