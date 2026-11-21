@@ -716,7 +716,7 @@ const yakutWeatherCities=['İstanbul','Ankara','İzmir','Bursa','Antalya','Adana
 let yakutWeatherCity='';
 let yakutWeatherPending='';
 function yakutWeatherRequest(command){
- const weather=/hava durumu|hava nasıl|hava kaç derece|hava soğuk|hava sıcak|yağmur (?:var mı|yağacak mı|yağar mı)|kar (?:var mı|yağacak mı|yağar mı)|şemsiye (?:alayım|gerek)/.test(command);
+ const weather=/hava durumu|hava (?:nasıl|ne durumda|kaç derece)|hava soğuk|hava sıcak|yağmur (?:var mı|yağacak mı|yağar mı)|kar (?:var mı|yağacak mı|yağar mı)|şemsiye (?:alayım|gerek)/.test(command);
  const dayFollowup=/^(?:peki )?(?:yarın|bugün)(?: nasıl| ne olacak| nasıl olacak| peki)?$/.test(command);
  const rainFollowup=/^(?:peki )?(?:yarın |bugün )?(?:yağmur|kar) (?:var mı|yağacak mı|yağar mı)$/.test(command);
  const city=yakutWeatherCities.find(name=>{
@@ -735,6 +735,21 @@ function rememberYakutTurn(question,answer){
  yakutChatHistory=[...yakutChatHistory,{role:'user',text:question.slice(0,420)},
   {role:'assistant',text:answer.slice(0,420)}].slice(-4);
  try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
+}
+function announceYakutLookup(){
+ const synthesis=window.speechSynthesis;
+ if(!audioUnlocked||!synthesis||!window.SpeechSynthesisUtterance)return Promise.resolve();
+ const utterance=new SpeechSynthesisUtterance('Bakıp size haber vereceğim. Lütfen biraz bekleyin.');
+ utterance.lang='tr-TR';
+ utterance.rate=1.08;
+ utterance.voice=chooseVoice()||synthesis.getVoices().find(voice=>/^tr(-|$)/i.test(voice.lang))||null;
+ return new Promise(resolve=>{
+  const finish=()=>{clearTimeout(timer);resolve()};
+  const timer=setTimeout(()=>{synthesis.cancel();finish()},4200);
+  utterance.onend=finish;
+  utterance.onerror=finish;
+  try{synthesis.speak(utterance)}catch(_){finish()}
+ });
 }
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
@@ -779,7 +794,8 @@ const weather=yakutWeatherRequest(command);
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
  const explicitResearch=Boolean(weather&&!weather.city)||/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
  if(q.length<=500){
-  let requestGeneration=generation;
+  const requestGeneration=generation;
+  let lookupNotice;
   try{
    const url=new URL(endpoint);
    if(url.protocol==='https:'){
@@ -789,12 +805,13 @@ const weather=yakutWeatherRequest(command);
       signal:AbortSignal.timeout(research||weather?18000:7500)});
      return response.ok?response.json():null;
     };
+    if(weather||explicitResearch)lookupNotice=announceYakutLookup();
+    if(weather)answer='Şu anda hava durumu verisini alamadım. Biraz sonra tekrar deneyebilirsiniz.';
     let result=explicitResearch&&!weather?.city?null:await ask(false);
     if(requestGeneration!==yakutVoiceGeneration)return;
     if((explicitResearch&&!weather?.city)||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI'){
      answer='Şu anda web kaynaklarından doğrulayamadım. Biraz sonra tekrar deneyebilir misiniz?';
-     speak('Tamam, araştırıp size bilgi vereceğim. Biraz bekletebilirim.');
-     requestGeneration=yakutVoiceGeneration;
+     lookupNotice??=announceYakutLookup();
      result=await ask(true);
      if(requestGeneration!==yakutVoiceGeneration)return;
      if(!Array.isArray(result?.sources)||result.sources.length===0)result=null;
@@ -806,6 +823,7 @@ const weather=yakutWeatherRequest(command);
     }
    }
   }catch(_){/* Keep the local answer when the chat service is unavailable. */}
+  await lookupNotice;
   if(requestGeneration!==yakutVoiceGeneration)return;
  }
 processingSpeech=false;
