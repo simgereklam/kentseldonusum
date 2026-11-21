@@ -651,7 +651,6 @@ function yakutScenarioAnswer(message) {
   '. Ortak alanlar ve imar koşulları sonucu değiştirebilir.';
 }
 let yakutChatHistory=[];
-let yakutMergerTopic='';
 try{
  const history=JSON.parse(sessionStorage.getItem('yakutChatHistory')||'[]');
  if(Array.isArray(history))yakutChatHistory=history.slice(-4);
@@ -660,86 +659,26 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutMergerTopic='';cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
-if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;yakutMergerTopic='';cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
+if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;moveTo(leftGreetingX());return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 processingSpeech=true;
 if(recognition){try{recognition.abort()}catch(e){}}
-const t=q.toLocaleLowerCase('tr-TR').replace(/[.,!?;:]/g,' ').replace(/\s+/g,' ').trim();
-// Navigate to the contact page for explicit contact-information and directions requests.
-// Keep direct phone-number and email questions as spoken answers.
-const contactNavigation=/(?:iletişim\s+(?:bilgi(?:si|leri|lerini)?|sayfa(?:sı|sını)?|bölümü)|adres\s+tarif(?:i|ini)?|yol\s+tarif(?:i|ini)?|konum(?:umu|umuzu)?\s+göster)/.test(command)
- || /(?:iletişim|adres)\s+sayfas(?:ını|ına)\s+(?:aç|git|göster|geç)/.test(command);
-if(getYakutCurrentPage()!=='index.html'&&/^(?:(?:yakut|lütfen)\s+)*(?:bu sayfayı (?:anlat|oku|özetle|anlatır mısın|okur musun|özetler misin)|(?:burayı|sayfayı) (?:anlat|oku|özetle))(?:\s+lütfen)?$/.test(command)){
- processingSpeech=false;yakutPageOfferPending=false;yakutOfferSpoken=false;yakutSpeakCurrentPage();return;
-}
-if(contactNavigation){processingSpeech=false;openYakutPage('iletisim.html');return;}
-const contactAnswer=yakutContactRequest(q);
-if(contactAnswer){yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;react('agree',contactAnswer,'center');return;}
-if(yakutScenarioRequest(q)){
- yakutPageOfferPending=false;yakutOfferSpoken=false;processingSpeech=false;
- react('agree',yakutScenarioAnswer(q),'center');return;
-}
-if(handleYakutOfferAnswer(t)){processingSpeech=false;return;}
-const mergerIntent=/(birleştir|birleştirmek|birleştire|birşetir|tek bina)/i.test(q)&&/(bina|parsel)/i.test(q);
-if(mergerIntent&&!yakutMergerTopic){
- yakutMergerTopic=q.slice(0,230);
- processingSpeech=false;
- react('agree','İki binayı tek projede değerlendirmeyi araştırabilirim. İlçeyi, mahalleyi ve her iki taşınmazın ada ve parsel numaralarını söyler misiniz?','center');
- return;
-}
-const mergerFollowup=Boolean(yakutMergerTopic&&/(mahalle|ada|parsel|kirazlı)/i.test(q));
-if(/(?:malik(?:lerin)?\s+hakları|hak sahiplerinin hakları)/.test(command)&&
-   !/(?:^|\s)(?:peki|itiraz|kira|kaç|süresi)(?:\s|$)/.test(command)){
- const path='kentsel-donusum.html';
- if(getYakutCurrentPage()!==path){
-  try{
-   sessionStorage.setItem('yakutExplainMalik','1');
-   openYakutPage(path);return;
-  }catch(_){}
- }
- processingSpeech=false;yakutExplainMalik();return;
-}
-const destination=mergerFollowup?null:yakutIsPageRequest(q);
-if(destination){openYakutPage(destination);return;}
-let clip='agree',answer='';
-// A standing-at-attention request must not fall through to an unrelated approval gesture.
-if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam ver|saygı selamı|başını eğ|eğil|eğilir misin|selam duruşu)/i.test(t)){
- targetX=posX;walkTimer=0;phase='reacting';phaseTime=0;
- model.rotation.y=0;
- // GLB animation names can vary; prefer a real bow clip, never an unrelated 'agree' gesture.
- const bowName=Object.keys(clips).find(n=>/^(bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))
-   || Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n));
- if(bowName){play(bowName,true);console.info('YAKUT eğilme:',bowName)}
- else {phase='idle';play('wait');console.warn('YAKUT modelinde eğilme animasyonu bulunamadı:',Object.keys(clips))}
- processingSpeech=false;if(listenEnabled)queueListen(650);
- return;
-}
-if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
- clip='greet_02';answer='Merhaba! Seni görmek güzel!';
-}else if(/(dans et|dans etsene|dans eder misin|oyna|dans yap)/i.test(t)){
- clip='dance_01';answer='Hadi biraz neşelenelim!';
-}else if(/(alkış|alkışla|alkışlasana)/i.test(t)){
- clip='clap';answer='Bravo! Seni alkışlıyorum!';
-}else if(/(yürü|yürüsene|yürüyebilir misin|gez|gezinsene|dolaş|sola git|sağa git)/i.test(t)){
- const x=/sola/.test(t)?innerWidth*.07:/sağa/.test(t)?innerWidth*.72:innerWidth*(.15+Math.random()*.6);
- processingSpeech=false;moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
-}else{
- clip='agree';
+let answer='';
  const generation=yakutVoiceGeneration;
  const match=siteAnswer(q);
  if(generation!==yakutVoiceGeneration)return;
  answer=match?.text||'Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
- const explicitResearch=mergerFollowup||/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
- if((!match?.exact||explicitResearch)&&q.length<=500){
+ const explicitResearch=/(?:araştır|internetten|kaynaklarına? bak|webde ara|güncel|bugün|son dakika|en son)/i.test(q);
+ if(q.length<=500){
   let requestGeneration=generation;
   try{
    const url=new URL(endpoint);
    if(url.protocol==='https:'){
     const ask=async research=>{
      const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({question:mergerFollowup?(yakutMergerTopic+' Kullanıcının devamı: '+q).slice(0,500):q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory,research}),
+      body:JSON.stringify({question:q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory,research}),
       signal:AbortSignal.timeout(research?18000:5500)});
      return response.ok?response.json():null;
     };
@@ -754,7 +693,6 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
      if(!Array.isArray(result?.sources)||result.sources.length===0)result=null;
     }
     if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
-     if(mergerFollowup)yakutMergerTopic='';
      answer=result.answer.trim().replace(/\*\*/g,'');
      yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
       {role:'assistant',text:answer.slice(0,420)}].slice(-4);
@@ -765,9 +703,8 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
   }catch(_){/* Keep the local answer when the chat service is unavailable. */}
   if(requestGeneration!==yakutVoiceGeneration)return;
  }
-}
 processingSpeech=false;
-react(clip,answer,'center');
+react('agree',answer,'center');
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
