@@ -1,0 +1,3 @@
+# YAKUT Gemini backend
+
+This is a deployable API, not a live deployment. Set GEMINI_API_KEY as a private server environment variable. Optionally set GEMINI_MODEL and YAKUT_ALLOWED_ORIGINS. Install with `pip install -r requirements.txt` and run `uvicorn main:app --host 0.0.0.0 --port 8000` from this folder. Publish behind HTTPS and configure the site's `meta[name=yakut-chat-endpoint]` to point to `https://YOUR-BACKEND/chat`. `/chat` returns `{answer,sources}`; `research=true` enables Gemini Google Search grounding. `/health` reports whether the secret exists, not its value. Existing `/live` speech endpoint is separate and remains unchanged. Google Search can require enabled billing/quota and may return errors.
