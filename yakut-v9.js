@@ -930,7 +930,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
    const url=new URL(endpoint);
    if(url.protocol==='https:'){
     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({question:q,reference:match.text}),signal:AbortSignal.timeout(8500)});
+     body:JSON.stringify({question:q,reference:match.text}),signal:AbortSignal.timeout(16500)});
     if(response.ok){
      const result=await response.json();
      if(typeof result.answer==='string'&&result.answer.trim()&&result.answer.length<=1200)answer=result.answer.trim();
