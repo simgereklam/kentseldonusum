@@ -23,7 +23,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
-#yakut-v9-caption.yakut-voice-text{display:block!important;max-height:35dvh;overflow:auto}
+#yakut-v9-caption.yakut-voice-text{display:none!important}
 @media(max-width:650px){#yakut-v9{width:clamp(225px,65vw,325px);height:min(62dvh,clamp(355px,101vw,500px));bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
@@ -399,12 +399,7 @@ function speak(text){
   finishYakutSpeech();
  });
 }
-function showYakutVoiceText(text){
- caption.textContent=text;
- caption.classList.add('yakut-voice-text');
- clearTimeout(dialogTimer);
- dialogTimer=setTimeout(()=>caption.classList.remove('yakut-voice-text'),10000);
-}
+function showYakutVoiceText(text){ /* YAKUT yalnızca sesli konuşur; yazı balonu gösterilmez. */ }
 function yakutLocalSpeech(text){
  if(text!==welcome&&chooseVoice()){
   yakutBrowserSpeech();return;
@@ -486,6 +481,7 @@ function react(clip,text,placement='left'){
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 const yakutPageNames=[
  ['index.html',/ana\s*sayfa|anasayfa|eve\s*dön/i],
+ ['yakut-eimar.html',/e\s*imar|imar\s*(?:hesaplama|analiz|sorgu|durumu)|ön\s*proje|ada\s*parsel/i],
  ['sss.html',/sık\s*sorulan\s*sorular|sorular\s*sayfası|sss\b/i],
  ['kurumsal.html',/kurumsal|hakkımızda|firmamız|şirketimiz|kumtaş\s*(?:inşaat)?\s*kim/i],
  ['hizmetlerimiz.html',/hizmetlerimiz|hizmetler|ne\s*iş\s*yapıyorsunuz|neler\s*yapıyorsunuz/i],
@@ -562,7 +558,7 @@ function collectYakutPageSpeech(){
  return summary.join(' ');
 }
 function yakutPageIntro(path){
- const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgeler'};
+ const names={'yakut-eimar.html':'e-İmar ve ön proje','index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgeler'};
  const districts={'bagcilar':'Bağcılar','bahcelievler':'Bahçelievler','bakirkoy':'Bakırköy','gungoren':'Güngören','avcilar':'Avcılar','esenler':'Esenler','kucukcekmece':'Küçükçekmece','zeytinburnu':'Zeytinburnu','yenibosna':'Yenibosna'};
  const area=path.replace('-kentsel-donusum.html','');
  const title=names[path]||(districts[area]?districts[area]+' kentsel dönüşüm':path.replace(/-/g,' '));
