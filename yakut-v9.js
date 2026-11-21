@@ -12,6 +12,8 @@ css.textContent=`
 #yakut-v9 canvas{display:block;width:100%;height:100%}
 #yakut-enable-audio{position:fixed;z-index:135;bottom:18px;left:14px;border:0;background:#09638c;color:white;padding:11px 15px;border-radius:24px;font:700 14px Arial,sans-serif;box-shadow:0 5px 16px #0005;cursor:pointer}
 #yakut-enable-audio[hidden]{display:none!important}
+#yakut-map-link{position:fixed;right:14px;bottom:74px;z-index:135;background:#09638c;color:white;padding:10px 14px;border-radius:20px;font:700 14px Arial,sans-serif;text-decoration:none}
+#yakut-map-link[hidden]{display:none}
 /* YAKUT is a voice-only on-page character: no caption, chat box, or buttons. */
 #yakut-v9-ui,#yakut-v9-caption{display:none!important}
 #yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
@@ -576,6 +578,7 @@ function yakutPageIntro(path){
  return 'Memnuniyetle. '+title+' sayfasını birlikte inceleyelim. ';
 }
 function prepareYakutPageOffer(){
+ if(getYakutCurrentPage()==='index.html')return;
  yakutPageOfferPending=true;yakutOfferSpoken=false;
  if(ready&&audioUnlocked&&!speaking)offerYakutPage();
 }
@@ -583,15 +586,14 @@ function offerYakutPage(){
  if(!ready||!yakutPageOfferPending||yakutOfferSpoken||speaking||yakutIsGreetingWalking||!audioUnlocked)return;
  yakutOfferSpoken=true;
  const page=getYakutCurrentPage();
- if(page==='kurumsal.html'){
+ if(yakutPendingPageSpeech){
+  yakutPendingPageSpeech=false;
   yakutPageOfferPending=false;
   yakutSpeakCurrentPage();
   return;
  }
  const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(/ sayfasını birlikte inceleyelim\.\s*$/,'');
- const offer=page==='iletisim.html'
-  ?'İletişim sayfasındayız. Size adres tarif etmemi ister misiniz?'
-  :topic+' sayfasındayız. Size yardımcı olabilir miyim?';
+ const offer=topic+' sayfasındayız. Bu sayfa hakkında bilgi ister misiniz?';
  yakutLastOfferAt=Date.now();
  react('agree',offer,'left');
 }
@@ -612,7 +614,7 @@ function handleYakutOfferAnswer(t){
 }
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage();
- if(page==='iletisim.html'){react('agree',yakutContact.address,'left');return}
+ if(page==='index.html')return;
  const content=collectYakutPageSpeech();
  const intro=page==='kurumsal.html'?'Kurumsal sayfasındayız. Size şirketimiz hakkında bilgi vereyim. ':yakutPageIntro(page);
  const text=intro+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
@@ -625,6 +627,28 @@ const yakutContact={
  mobile:'Cep telefonu ve WhatsApp numaramız: sıfır, beş yüz kırk üç, yüz seksen bir, otuz dört, seksen beş.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
 };
+function yakutWantsLocation(command){
+ return /(?:^| )(?:konum(?:u|unuz|unuzu|unu)?|lokasyon(?:u|unuz|unuzu)?|harita)(?: |$)/.test(command)&&
+  /^(?:(?:yakut|lütfen) )*(?:konum(?:u|unuz|unuzu)?|harita)$|(?:^| )(?:nerede|at(?:ar)?|gönder(?:ir)?|paylaş(?:ır)?|ver(?:ir)?|göster(?:ir)?|istiyorum|şirket(?:in|inizin|imizin)?|firma(?:nın|nızın|mızın)?|ofis(?:in|inizin|imizin)?|kumtaş|yol tarifi)(?: |$)/.test(command)&&
+  !/(?:parsel|arsa|binam|benim konum|proje konum)/.test(command);
+}
+function yakutShareLocation(){
+ let link=document.getElementById('yakut-map-link');
+ if(!link){
+  link=document.createElement('a');
+  link.id='yakut-map-link';
+  const map=new URL('https://www.google.com/maps/search/');
+  map.searchParams.set('api','1');
+  map.searchParams.set('query','Kocasinan Merkez Mahallesi Mahmutbey Caddesi No 245/A Bahçelievler İstanbul');
+  link.href=map.href;
+  link.target='_blank';
+  link.rel='noopener noreferrer';
+  link.textContent='Kumtaş konumunu haritada aç';
+  document.body.appendChild(link);
+ }
+ link.hidden=false;
+ react('agree','Şirketimizin konum bağlantısını ekrana ekledim. Dokunarak haritada açabilirsiniz.');
+}
 function yakutContactRequest(message){
  const t=normalizeYakutCommand(message);
  const wantsContact=/(iletişim bilgi|iletişimimiz|iletişim adres|iletişim numara|bize nasıl ulaş|nasıl ulaşabilirim|irtibat|adresimiz|adresinizi|adresiniz|telefon numara|telefonunuz|telefonunuzu|telefonlarımız|mail adres|e posta adres|eposta adres|mailiniz|mailinizi|numaranız|numaranızı)/.test(t);
@@ -646,13 +670,14 @@ function yakutExplainMalik(){
  }catch(_){}
  react('agree',yakutMalikIntro,'center');
 }
-function openYakutPage(path){
+function openYakutPage(path,narrate=false){
  const current=getYakutCurrentPage();
  cancelYakutSpeech();
- if(current===path){prepareYakutPageOffer();queueListen(250);return true}
+ if(current===path){yakutPendingPageSpeech=narrate;prepareYakutPageOffer();queueListen(250);return true}
  try{
   sessionStorage.setItem('yakutVisited','1');
-  sessionStorage.setItem('yakutPageOffer',path);
+  if(path!=='index.html')sessionStorage.setItem('yakutPageOffer',narrate?'anlat:'+path:path);
+  else sessionStorage.removeItem('yakutPageOffer');
   if(audioUnlocked)sessionStorage.setItem('yakutAudioApproved','1');
  }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
  location.assign(new URL(path,location.origin+'/').href);
@@ -783,9 +808,11 @@ if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 if(isYakutHomeCommand(command))return openYakutPage('index.html');
-if(yakutWantsCompanyInfo(command))return openYakutPage('kurumsal.html');
+if(yakutWantsCompanyInfo(command))return openYakutPage('kurumsal.html',true);
+if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
+if(yakutWantsLocation(command)){yakutShareLocation();return;}
 if(handleYakutOfferAnswer(command))return;
-if(/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat|özetle|bilgi ver)(?: lütfen)?$/.test(command)){
+if(getYakutCurrentPage()!=='index.html'&&/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat|özetle|bilgi ver(?:ir misin|ebilir misin)?)(?: lütfen)?$/.test(command)){
  yakutPageOfferPending=false;yakutSpeakCurrentPage();return;
 }
 const weather=yakutWeatherRequest(command);
@@ -1064,12 +1091,14 @@ ready=true;loadSiteKnowledge().catch(console.warn);posX=getYakutCurrentPage()===
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   if(sessionStorage.getItem('yakutAudioApproved')==='1')audioUnlocked=true;
-  if(sessionStorage.getItem('yakutPageOffer')===getYakutCurrentPage()){
+  const pageOffer=sessionStorage.getItem('yakutPageOffer');
+  const page=getYakutCurrentPage();
+  if(page!=='index.html'&&(pageOffer===page||pageOffer==='anlat:'+page)){
    sessionStorage.removeItem('yakutPageOffer');
+   yakutPendingPageSpeech=pageOffer==='anlat:'+page;
    yakutPageOfferPending=true;
   }
  }catch(e){console.warn('YAKUT oturumu:',e)}
-if(getYakutCurrentPage()==='kurumsal.html')yakutPageOfferPending=true;
 listenEnabled=getYakutCurrentPage()!=='index.html';voiceButton.hidden=true;if(listenEnabled){talk.hidden=false;queueListen(450);}
 model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
 posX=targetX;phase='idle';play('wait');
