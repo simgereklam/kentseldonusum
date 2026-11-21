@@ -23,6 +23,7 @@ css.textContent=`
 #yakut-v9-ui.open input{display:block}
 #yakut-v9-caption{position:fixed;bottom:65px;left:4px;max-width:min(260px,75vw);z-index:131;display:none;background:#073b5cf2;color:#fff;padding:8px 10px;border:1px solid #6dccff;border-radius:12px;font:12px/1.45 Arial,sans-serif;box-shadow:0 5px 15px #0004}
 #yakut-v9-caption.shown{display:block}
+#yakut-v9-caption.yakut-voice-text{display:block!important;max-height:35dvh;overflow:auto}
 @media(max-width:650px){#yakut-v9{width:clamp(225px,65vw,325px);height:min(62dvh,clamp(355px,101vw,500px));bottom:45px;left:0}#yakut-v9-ui{bottom:8px;left:3px;gap:4px}#yakut-v9-ui button{padding:8px;font-size:12px}#yakut-v9-ui input{width:min(180px,41vw)}#yakut-v9-caption{bottom:52px;left:3px;max-width:80vw}}
 @media(prefers-reduced-motion:reduce){#yakut-v9{transition:none!important}}
 `;
@@ -384,43 +385,25 @@ function startYakutAhenk(){
  }catch(e){yakutTtsFailure(e)}
 }
 function speak(text){
- // Pause microphone recognition before producing sound to prevent self-triggered loops.
  clearTimeout(listenRetry);
  releaseYakutMic();
- yakutCurrentPrompt=String(text||'');
-
- if(!audioUnlocked){if(listenEnabled)queueListen(650);return}
- speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;++yakutVoiceGeneration;yakutRequests.clear();
- const voice=chooseVoice();
- if(voice&&window.SpeechSynthesisUtterance){yakutBrowserSpeech();return}
- if(text!==welcome&&text.length<=600&&yakutTtsContext?.state==='running'){
-  const turn=yakutVoiceGeneration;
-  yakutCloudVoice(text).then(data=>{
-   if(turn!==yakutVoiceGeneration||hidden)return;
-   if(data)yakutPlaySpeech(data);
-   else yakutLocalSpeech(text);
-  });
-  return;
- }
- yakutLocalSpeech(text);
+ yakutCurrentPrompt=String(text||'').trim();
+ if(!audioUnlocked||!yakutCurrentPrompt){if(listenEnabled)queueListen(650);return}
+ speaking=true;yakutAudioPlaying=false;yakutReadyChunk=null;
+ const turn=++yakutVoiceGeneration;
+ yakutRequests.clear();
+ const endpoint='https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/live';
+ askYakutLive(endpoint,{readAloud:yakutCurrentPrompt},null,turn).then(played=>{
+  if(turn!==yakutVoiceGeneration||hidden||played)return;
+  showYakutVoiceText(yakutCurrentPrompt);
+  finishYakutSpeech();
+ });
 }
-async function yakutCloudVoice(text){
- try{
-  const response=await fetch('https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/speech',{
-   method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text}),
-   signal:AbortSignal.timeout(4000)});
-  if(!response.ok)return null;
-  const {audio}=await response.json();
-  if(typeof audio!=='string'||audio.length>4000000)return null;
-  const bytes=atob(audio);
-  const pcm=new Float32Array(Math.floor(bytes.length/2));
-  if(!pcm.length)return null;
-  for(let i=0;i<pcm.length;i++){
-   const value=bytes.charCodeAt(i*2)|(bytes.charCodeAt(i*2+1)<<8);
-   pcm[i]=(value>=32768?value-65536:value)/32768;
-  }
-  return {audio:pcm,sampleRate:24000};
- }catch(_){return null}
+function showYakutVoiceText(text){
+ caption.textContent=text;
+ caption.classList.add('yakut-voice-text');
+ clearTimeout(dialogTimer);
+ dialogTimer=setTimeout(()=>caption.classList.remove('yakut-voice-text'),10000);
 }
 function yakutLocalSpeech(text){
  if(text!==welcome&&chooseVoice()){
@@ -792,28 +775,16 @@ function rememberYakutTurn(question,answer){
  try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
 }
 function announceYakutLookup(){
- const synthesis=window.speechSynthesis;
- if(!audioUnlocked||!synthesis||!window.SpeechSynthesisUtterance)return Promise.resolve();
- const utterance=new SpeechSynthesisUtterance('Bakıp size haber vereceğim. Lütfen biraz bekleyin.');
- utterance.lang='tr-TR';
- utterance.rate=1.08;
- const voice=chooseVoice();
- if(!voice)return Promise.resolve();
- utterance.voice=voice;
- return new Promise(resolve=>{
-  const finish=()=>{clearTimeout(timer);resolve()};
-  const timer=setTimeout(()=>{synthesis.cancel();finish()},4200);
-  utterance.onend=finish;
-  utterance.onerror=finish;
-  try{synthesis.speak(utterance)}catch(_){finish()}
- });
+ showYakutVoiceText('Bilgiyi kontrol ediyorum. Lütfen biraz bekleyin.');
+ return Promise.resolve();
 }
 const yakutLiveSources=new Set();
 let yakutLiveController=null;
-const yakutLiveRetryAt={chat:0,research:0};
+const yakutLiveRetryAt={chat:0,research:0,read:0};
 async function askYakutLive(url,payload,notice,generation){
  const context=yakutTtsContext;
- const mode=payload.research?'research':'chat';
+ const readAloud=typeof payload.readAloud==='string';
+ const mode=readAloud?'read':payload.research?'research':'chat';
  if(!audioUnlocked||context?.state!=='running'||Date.now()<yakutLiveRetryAt[mode])return false;
  const controller=new AbortController();
  yakutLiveController=controller;
@@ -845,7 +816,7 @@ async function askYakutLive(url,payload,notice,generation){
     if(!frame.audio)continue;
     if(!played){
      clearTimeout(timer);
-     timer=setTimeout(()=>controller.abort(),17000);
+     timer=setTimeout(()=>controller.abort(),readAloud?90000:17000);
      await notice;
      if(controller.signal.aborted||generation!==yakutVoiceGeneration)return false;
     }
@@ -864,6 +835,7 @@ async function askYakutLive(url,payload,notice,generation){
     source.start(nextStart);nextStart+=buffer.duration;
     yakutLiveSources.add(source);
     source.onended=()=>yakutLiveSources.delete(source);
+    caption.classList.remove('yakut-voice-text');
     speaking=true;yakutAudioPlaying=true;played=true;
    }
   }
@@ -882,7 +854,7 @@ async function askYakutLive(url,payload,notice,generation){
   speaking=false;yakutAudioPlaying=false;
   return false;
  }
- if(transcript.trim())rememberYakutTurn(payload.question,transcript.trim());
+ if(!readAloud&&transcript.trim())rememberYakutTurn(payload.question,transcript.trim());
  processingSpeech=false;
  finishYakutSpeech();
  return true;
@@ -1245,6 +1217,5 @@ renderer.render(scene,camera);
 }catch(err){
 console.error('YAKUT V9 yüklenemedi:',err);stage.remove();ui.remove();caption.remove();
 }}
-startYakutAhenk(); // Warm up voice model in parallel with 3D loading.
 init();
 })();
