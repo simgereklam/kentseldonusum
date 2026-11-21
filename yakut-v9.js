@@ -59,7 +59,7 @@ next.clampWhenFinished=!!once;current=next;return true;
 /* KUMTAS site knowledge: searchable extracts from the actual published pages.
    This is grounded retrieval, not a connection to a general-purpose AI model. */
 const sitePages=[
-'index.html','kurumsal.html','hakkimizda.html','kentsel-donusum.html',
+'index.html','kurumsal.html','kentsel-donusum.html',
 'hizmetlerimiz.html','sss.html','projelerimiz.html','iletisim.html',
 'bolgelerimiz.html','yenibosna-kentsel-donusum.html','bahcelievler-kentsel-donusum.html',
 'bakirkoy-kentsel-donusum.html','bagcilar-kentsel-donusum.html',
@@ -497,8 +497,7 @@ const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler'
 const yakutPageNames=[
  ['index.html',/ana\s*sayfa|anasayfa|eve\s*dön/i],
  ['sss.html',/sık\s*sorulan\s*sorular|sorular\s*sayfası|sss\b/i],
- ['hakkimizda.html',/hakkımızda/i],
- ['kurumsal.html',/kurumsal|firmamız|şirketimiz|kumtaş\s*(?:inşaat)?\s*kim/i],
+ ['kurumsal.html',/kurumsal|hakkımızda|firmamız|şirketimiz|kumtaş\s*(?:inşaat)?\s*kim/i],
  ['hizmetlerimiz.html',/hizmetlerimiz|hizmetler|ne\s*iş\s*yapıyorsunuz|neler\s*yapıyorsunuz/i],
  ['projelerimiz.html',/projelerimiz|projeler|referanslar/i],
  ['iletisim.html',/iletişim|telefon(?:lar)?|adres(?:imiz)?|bize\s*ulaş/i],
@@ -520,6 +519,10 @@ function findYakutPage(message){
 function isYakutHomeCommand(message){
  const t=normalizeYakutCommand(message);
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
+}
+function yakutWantsCompanyInfo(command){
+ const topic=command.replace(/^(?:(?:yakut|asistan|lütfen) )+/, '');
+ return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?|(?:şirket|firma)(?:imiz|iniz) hakkında bilgi)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
 function yakutIsPageRequest(message,whileSpeaking=false){
  if(yakutScenarioRequest(message))return null;
@@ -566,7 +569,7 @@ function collectYakutPageSpeech(){
  return summary.join(' ');
 }
 function yakutPageIntro(path){
- const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','hakkimizda.html':'hakkımızda','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgeler'};
+ const names={'index.html':'ana sayfa','kentsel-donusum.html':'kentsel dönüşüm','sss.html':'sık sorulan sorular','hizmetlerimiz.html':'hizmetlerimiz','kurumsal.html':'kurumsal','projelerimiz.html':'projelerimiz','iletisim.html':'iletişim','bolgelerimiz.html':'bölgeler'};
  const districts={'bagcilar':'Bağcılar','bahcelievler':'Bahçelievler','bakirkoy':'Bakırköy','gungoren':'Güngören','avcilar':'Avcılar','esenler':'Esenler','kucukcekmece':'Küçükçekmece','zeytinburnu':'Zeytinburnu','yenibosna':'Yenibosna'};
  const area=path.replace('-kentsel-donusum.html','');
  const title=names[path]||(districts[area]?districts[area]+' kentsel dönüşüm':path.replace(/-/g,' '));
@@ -580,6 +583,11 @@ function offerYakutPage(){
  if(!ready||!yakutPageOfferPending||yakutOfferSpoken||speaking||yakutIsGreetingWalking||!audioUnlocked)return;
  yakutOfferSpoken=true;
  const page=getYakutCurrentPage();
+ if(page==='kurumsal.html'){
+  yakutPageOfferPending=false;
+  yakutSpeakCurrentPage();
+  return;
+ }
  const topic=yakutPageIntro(page).replace(/^Memnuniyetle\.\s*/, '').replace(/ sayfasını birlikte inceleyelim\.\s*$/,'');
  const offer=page==='iletisim.html'
   ?'İletişim sayfasındayız. Size adres tarif etmemi ister misiniz?'
@@ -606,7 +614,8 @@ function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage();
  if(page==='iletisim.html'){react('agree',yakutContact.address,'left');return}
  const content=collectYakutPageSpeech();
- const text=yakutPageIntro(page)+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
+ const intro=page==='kurumsal.html'?'Kurumsal sayfasındayız. Size şirketimiz hakkında bilgi vereyim. ':yakutPageIntro(page);
+ const text=intro+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
  react('agree',text,'left');
 }
 // Verified site contact details. Speak slash as 'A harfi', not a mathematical fraction.
@@ -774,6 +783,7 @@ if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 if(isYakutHomeCommand(command))return openYakutPage('index.html');
+if(yakutWantsCompanyInfo(command))return openYakutPage('kurumsal.html');
 if(handleYakutOfferAnswer(command))return;
 if(/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat|özetle|bilgi ver)(?: lütfen)?$/.test(command)){
  yakutPageOfferPending=false;yakutSpeakCurrentPage();return;
@@ -1059,6 +1069,7 @@ ready=true;loadSiteKnowledge().catch(console.warn);posX=getYakutCurrentPage()===
    yakutPageOfferPending=true;
   }
  }catch(e){console.warn('YAKUT oturumu:',e)}
+if(getYakutCurrentPage()==='kurumsal.html')yakutPageOfferPending=true;
 listenEnabled=getYakutCurrentPage()!=='index.html';voiceButton.hidden=true;if(listenEnabled){talk.hidden=false;queueListen(450);}
 model.rotation.y=0; // Face the visitor when waiting; turn sideways only during actual steps.
 posX=targetX;phase='idle';play('wait');
