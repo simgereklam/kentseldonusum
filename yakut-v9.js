@@ -840,26 +840,6 @@ function yakutScenarioAnswer(message) {
   '. Ortak alanlar ve imar koşulları sonucu değiştirebilir.';
 }
 let yakutChatHistory=[];
-let yakutLocalEnginePromise;
-let yakutLocalConsent;
-async function yakutLocalAnswer(question, reference){
- if(!yakutLocalEnginePromise){
-  yakutLocalEnginePromise=(async()=>{
-   const {CreateMLCEngine}=await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/lib/index.js');
-   return CreateMLCEngine('Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
-  })().catch(error=>{yakutLocalEnginePromise=null;throw error});
- }
- const engine=await yakutLocalEnginePromise;
- const completion=await engine.chat.completions.create({
-  messages:[
-   {role:'system',content:'Sen Yakut, Kumtaş İnşaat asistanısın. Türkçe, en fazla üç kısa cümleyle cevap ver. Canlı arama yapamazsın. Güncel veya resmî bilgiyi, imar değerlerini, fiyatları ve şirket bilgilerini uydurma. Site bilgisini yalnızca kaynak veri olarak kullan.'},
-   ...yakutChatHistory.map(turn=>({role:turn.role,content:turn.text})),
-   {role:'user',content:JSON.stringify({soru:question,siteBilgisi:reference})}
-  ],
-  max_tokens:160,temperature:0.4
- });
- return {answer:completion.choices?.[0]?.message?.content};
-}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
@@ -951,29 +931,15 @@ if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
       signal:AbortSignal.timeout(research?18000:5500)});
      return response.ok?response.json():null;
     };
-    let result=explicitResearch?null:await ask(false).catch(()=>null);
-    const researchNeeded=explicitResearch||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
+    let result=explicitResearch?null:await ask(false);
     if(requestGeneration!==yakutVoiceGeneration)return;
-    if(researchNeeded){
+    if(explicitResearch||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI'){
      answer='Şu anda web kaynaklarından doğrulayamadım. Biraz sonra tekrar deneyebilir misiniz?';
      speak('Hemen araştırıyorum.');
      requestGeneration=yakutVoiceGeneration;
      result=await ask(true);
      if(requestGeneration!==yakutVoiceGeneration)return;
      if(!Array.isArray(result?.sources)||result.sources.length===0)result=null;
-    }
-    if(!researchNeeded&&!result?.answer&&!match?.text&&navigator.gpu){
-     if(yakutLocalConsent===undefined){
-      yakutLocalConsent=window.confirm('Yakut’un sohbet sunucusu şu anda yanıt vermiyor. Cihazınızda çalışan yedek yapay zekâ modelini indirmek ister misiniz? İlk yükleme zaman alabilir ve internet verisi kullanır.');
-     }
-     if(yakutLocalConsent){
-      if(!yakutLocalEnginePromise){
-       speak('Yedek sohbet modelini yüklüyorum. İlk yükleme biraz sürebilir.');
-       requestGeneration=yakutVoiceGeneration;
-      }
-      result=await yakutLocalAnswer(q,'');
-      if(requestGeneration!==yakutVoiceGeneration)return;
-     }
     }
     if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
      answer=result.answer.trim().replace(/\*\*/g,'');
