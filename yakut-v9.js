@@ -839,6 +839,7 @@ function yakutScenarioAnswer(message) {
    Math.floor(base / state.flat) * (state.floors - 1) + Math.floor((base - state.shop) / state.flat) + ' daire') +
   '. Ortak alanlar ve imar koşulları sonucu değiştirebilir.';
 }
+let yakutChatHistory=[];
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 cancelGreetingRetreat();
@@ -902,24 +903,7 @@ if(/(saygı duruşu|saygıyla eğil|öne eğil|öne doğru eğil|eğilerek selam
  processingSpeech=false;if(listenEnabled)queueListen(650);
  return;
 }
-if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|fıkra)/i.test(t)){
- clip='laugh_02';answer='Hahaha! Çok güldüm! Seninle sohbet etmek çok eğlenceli.';
-}else if(/(harika|mükemmel|süper|çok güzel|başarılı|tebrik|aferin|sevindim|sevin|mutlu|muhteşem|bravo|ne kadar güzel|çok iyisin)/i.test(t)){
- clip='dance_01';answer='Çok sevindim! Böyle güzel sözler duymak harika!';
-}else if(/(teşekkür|sağ ol|eyvallah|eline sağlık)/i.test(t)){
- clip='bow';answer='Ben teşekkür ederim. Yardımcı olabildiysem ne mutlu bana.';
-}else if(/(kızgın|sinirli|berbat|kötü|üzgün|saçma|yapamadın)/i.test(t)){
- clip='frustrated_01';answer='Seni anlıyorum. Ne olduğunu anlatırsan birlikte çözmeye çalışabiliriz.';
-}else if(/^(?:tamam|anladım|anlaşıldı|şimdi anladım|çok iyi anladım|peki anladım|anlıyorum|oldu anladım)(?:\s+(?:yakut|teşekkürler|sağ ol))?$/.test(t)){
- clip='clap';answer='Harika, anlaştığımıza sevindim.';
-}else if(/(merhaba|selam|günaydın|nasılsın|kimsin|adın ne|yakut kimsin|kendini tanıt)/i.test(t)){
- clip='greet_02';answer='Merhaba, size nasıl yardımcı olabilirim?';
-}else if(/(malik|hak sahip|çoğunluk|oybirliği|oy birliği|arsa payı|kira yardımı|riskli yapı tespiti|itiraz|tahliye|hisse satış)/i.test(t)){
- clip='agree';answer='6306 sayılı Kanun kapsamındaki dönüşüm kararlarında, oybirliği sağlanamazsa maliklerin arsa paylarına göre salt çoğunluğu esas alınabilir. Maliklerin sözleşme şartlarını ve haklarını incelemesi, riskli yapı tespitini, tebligatları ve uygunluk varsa kira yardımını resmi kurumlardan doğrulaması önemlidir. Ayrıntılar yapının durumuna göre değişir. Resmi bilgi için Kentsel Dönüşüm Başkanlığının mevzuat ve bilgi merkezine bakılmalıdır.';
-}else if(/(emsal|imar|arsa|metrekare|m2|m²|daire|dükkan|inşaat alanı|kat karşılığı|kentsel dönüşüm)/i.test(t)){
- clip='agree';const found=await yakutFindAnswer(q);
- answer=found?'Bu konuda şu bilgileri paylaşabilirim: '+found.text+' Kesin yapılaşma hakkı için belediyenin güncel imar durumu esas alınır.':'Kentsel dönüşümde arsa, imar durumu, maliklerin hakları ve sözleşme şartları birlikte incelenir. Hangi konuda bilgi almak istersiniz?';
-}else if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
+if(/(el salla|el sallasana|elini salla|selam ver|selamla)/i.test(t)){
  clip='greet_02';answer='Merhaba! Seni görmek güzel!';
 }else if(/(dans et|dans etsene|dans eder misin|oyna|dans yap)/i.test(t)){
  clip='dance_01';answer='Hadi biraz neşelenelim!';
@@ -930,23 +914,33 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  processingSpeech=false;moveTo(x);speak('Tamam! Biraz yürüyüş yapıyorum.');return;
 }else{
  clip='agree';
+ const generation=yakutVoiceGeneration;
  const match=await yakutFindAnswer(q);
- answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
+ if(generation!==yakutVoiceGeneration)return;
+ answer=match?.text||'Şu anda sohbet bağlantısı yanıt vermedi. Tekrar sorabilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
- // Keep imar calculations, commands and unmatched questions on the existing paths.
- if(endpoint&&match?.text&&!match.exact&&q.length<=500&&match.text.length<=1500){
-  const generation=yakutVoiceGeneration;
+ if(!match?.exact&&q.length<=500){
+  const waiting=setTimeout(()=>{
+   if(generation===yakutVoiceGeneration)show('Yanıt hazırlıyorum…',5500);
+  },450);
   try{
    const url=new URL(endpoint);
    if(url.protocol==='https:'){
     const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({question:q,reference:match.text}),signal:AbortSignal.timeout(1500)});
+     body:JSON.stringify({question:q,reference:(match?.text||'').slice(0,1500),history:yakutChatHistory}),
+     signal:AbortSignal.timeout(5500)});
     if(response.ok){
      const result=await response.json();
-     if(typeof result.answer==='string'&&result.answer.trim()&&result.answer.length<=1200)answer=result.answer.trim();
+     if(generation!==yakutVoiceGeneration)return;
+     if(typeof result.answer==='string'&&result.answer.trim()&&result.answer.length<=1200){
+      answer=result.answer.trim();
+      yakutChatHistory=[...yakutChatHistory,{role:'user',text:q.slice(0,420)},
+       {role:'assistant',text:answer.slice(0,420)}].slice(-4);
+     }
     }
    }
-  }catch(_){/* Continue with the site's existing answer. */}
+  }catch(_){/* Keep the site answer if the chat service is unavailable. */}
+  finally{clearTimeout(waiting)}
   if(generation!==yakutVoiceGeneration)return;
  }
 }
