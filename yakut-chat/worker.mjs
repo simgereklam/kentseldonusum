@@ -75,7 +75,7 @@ export default {
       }],
       ['groq', env.GROQ_API_KEY, async () => (await post('https://api.groq.com/openai/v1/chat/completions',
         { Authorization: 'Bearer ' + env.GROQ_API_KEY },
-        { model: 'llama-3.1-8b-instant', messages, max_completion_tokens: 180 }, 'groq'))?.choices?.[0]?.message?.content],
+        { model: 'openai/gpt-oss-20b', messages, max_completion_tokens: 512, reasoning_effort: 'low' }, 'groq'))?.choices?.[0]?.message?.content],
       ['gemini', env.GEMINI_API_KEY, async () => (await post('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',
         { 'x-goog-api-key': env.GEMINI_API_KEY },
         { systemInstruction: { parts: [{ text: system }] }, contents: [{ parts: [{ text: input }] }],
