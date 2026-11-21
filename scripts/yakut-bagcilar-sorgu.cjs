@@ -8,6 +8,29 @@ const sources = new Map([
 ]);
 const normalize = value => value.trim().toLocaleLowerCase('tr-TR').normalize('NFC');
 
+function readZoningFields(fields) {
+  const labels = new Map(Object.entries(fields).map(([label, value]) => [
+    normalize(label).replace(/[^a-zçğıöşü0-9]/g, ''), value
+  ]));
+  const read = (...keys) => {
+    for (const key of keys) {
+      const value = labels.get(key);
+      if (typeof value === 'string' && value.trim() && !/^[-–—]+$/.test(value.trim())) {
+        return value.trim();
+      }
+    }
+    return null;
+  };
+  return {
+    taks: read('taks'),
+    kaks: read('kaks', 'kaksemsal', 'emsal'),
+    katAdedi: read('katadedi'),
+    binaYuksekligi: read('binayüksekliği', 'hmax', 'yençok'),
+    insaatNizami: read('inşaatnizamı'),
+    hesapAlani: read('hesapalanı')
+  };
+}
+
 async function lookup({ ilce = 'Bağcılar', ada, parsel, mahalle }) {
   const source = sources.get(ilce);
   if (!source) return { durum: 'ilce_desteklenmiyor' };
@@ -69,7 +92,7 @@ async function lookup({ ilce = 'Bağcılar', ada, parsel, mahalle }) {
       throw new Error('Belediye belgesindeki ada, parsel veya mahalle eşleşmedi.');
     }
 
-    return { durum: 'bulundu', ada, parsel, mahalle: mahalleler[selected[0]], kaynak: page.url(), alanlar };
+    return { durum: 'bulundu', ada, parsel, mahalle: mahalleler[selected[0]], kaynak: page.url(), alanlar, yapilasma: readZoningFields(alanlar) };
   } finally {
     await browser.close();
   }
