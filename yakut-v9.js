@@ -922,7 +922,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  await loadSiteKnowledge();
  const match=siteAnswer(q);
  answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
- const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content;
+ const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
  // Keep imar calculations, commands and unmatched questions on the existing paths.
  if(endpoint&&match?.text&&q.length<=500&&match.text.length<=1500){
   const generation=yakutVoiceGeneration;
