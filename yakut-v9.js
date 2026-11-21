@@ -100,11 +100,11 @@ const yakutPracticalAnswers=[
  [/hava man[iî]|hava m nia|mania|mânia/, 'Hava mânia kısıtı, parselde izin verilebilecek yapı yüksekliğini etkileyebilir. Güncel imar durumunda ve plan notlarında parsel için geçerli yükseklik sınırına bakılır.'],
  [/ge[cç]ici konut|ta[sş][ıi]nma plan[ıi]|tahliye haz[ıi]rl[ıi][gğ][ıi]/, 'Taşınma takvimini, geçici konutu ve abonelik işlemlerini tahliyeden önce planlayabilirsiniz. Binayla ilgili yazılı bildirimdeki tarihleri ayrıca kontrol edin.'],
  [/m[uü]teahhit se[cç]|y[uü]klenici se[cç]|teklifleri nas[ıi]l kar[sş][ıi]la[sş]t[ıi]r/, 'Teklifleri aynı iş kapsamı üzerinden karşılaştırın. Teknik şartnameyi, teslim süresini, ödeme planını, paylaşım tablosunu, geçmiş projeleri ve sunulan teminatları yazılı isteyin.'],
- [/ke[sş]fe ne getir|[oö]n inceleme i[cç]in|ke[sş]if i[cç]in hangi belge/, 'Ön inceleme için adresi, ada ve parseli, yaklaşık arsa alanını ve mevcut daire ile dükkân sayısını hazırlayın. Elinizde güncel imar durumu, plan notu veya mevcut proje varsa onları da paylaşabilirsiniz.']
+ [/ke[sş]fe ne getir|[oö]n inceleme i[cç]in|ke[sş]if i[cç]in hangi belge/, 'Ön inceleme için taşınmazın adresini, ada ve parsel numaralarını, yaklaşık arsa alanını metrekare olarak ve mevcut daire ile dükkân sayılarını hazırlayın. Elinizde güncel imar durum belgesi, plan notları veya mevcut yapı projesi varsa bunları da paylaşabilirsiniz.', true]
 ];
 function siteAnswer(q){
  const practical=yakutPracticalAnswers.find(([pattern])=>pattern.test(normalizeYakutCommand(q)));
- if(practical)return {text:practical[1]};
+ if(practical)return {text:practical[1], exact: practical[2] === true};
  const words=tokens(q);
  if(!siteLoaded||words.length===0)return null;
  const ranked=siteSections.map(x=>{
@@ -924,7 +924,7 @@ if(/(komik|şaka|espri|gül|gülsene|gül bakalım|kahkaha|haha|ahah|🤣|😂|f
  answer=match?match.text:'Bu konuda yardımcı olmak isterim. Bana biraz daha ayrıntı verebilir misiniz?';
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content || "https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat";
  // Keep imar calculations, commands and unmatched questions on the existing paths.
- if(endpoint&&match?.text&&q.length<=500&&match.text.length<=1500){
+ if(endpoint&&match?.text&&!match.exact&&q.length<=500&&match.text.length<=1500){
   const generation=yakutVoiceGeneration;
   try{
    const url=new URL(endpoint);
