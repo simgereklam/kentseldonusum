@@ -39,6 +39,7 @@ let openingGreeted=false,openingSpoken=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
 let processingSpeech=false;
 let micStartTimer;
+let micStopOnly=false;
 let yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
 let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false,yakutSpeechEndedAt=0;
@@ -107,8 +108,6 @@ function finishYakutSpeech(){
  if(listenEnabled&&!hidden)queueListen(300);
 }
 async function speak(text,retryOnFailure=true){
- clearTimeout(listenRetry);
- releaseYakutMic();
  const prompt=String(text||'').trim();
  if(!prompt){queueListen(300);return}
  yakutCurrentPrompt=prompt;
@@ -117,9 +116,12 @@ async function speak(text,retryOnFailure=true){
  const turn=++yakutVoiceGeneration;
  const endpoint=yakutChatEndpoint();
  let finished=false;
+ let audioReady=false;
  try{
-  if(!await ensureYakutAudio())return;
+  audioReady=await ensureYakutAudio();
+  if(!audioReady)return;
   if(turn!==yakutVoiceGeneration||hidden)return;
+  queueListen(0);
   const payload={readAloud:prompt};
   finished=await askYakutLive(endpoint,payload,turn);
   if(!finished&&turn===yakutVoiceGeneration&&!hidden){
@@ -129,7 +131,7 @@ async function speak(text,retryOnFailure=true){
   console.warn('Yakut ses isteği:',error);
  }finally{
   if(turn===yakutVoiceGeneration&&!finished){
-   if(retryOnFailure&&!hidden){
+   if(retryOnFailure&&!audioReady&&!hidden){
     speaking=false;
     yakutDeferredSpeech=prompt;
    }else finishYakutSpeech();
@@ -213,6 +215,9 @@ function yakutPageCommand(command){
 function normalizeYakutCommand(message){
  return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim();
 }
+function isYakutStopCommand(command){
+ return /^(?:(?:yakut|lütfen) )*(?:dur|sus|konuşma|kes|yeter)(?: (?:lütfen|biraz|artık|yakut))*$/.test(command);
+}
 function getYakutCurrentPage(){return decodeURIComponent(location.pathname.split('/').pop()||'index.html').toLowerCase()}
 function isYakutHomeCommand(message){
  const t=normalizeYakutCommand(message);
@@ -224,10 +229,20 @@ function yakutWantsCompanyInfo(command){
 }
 function cancelYakutSpeech(){
  yakutLiveController?.abort();
+ yakutChatController?.abort();
  for(const source of yakutLiveSources){try{source.stop()}catch(_){}}
  yakutLiveSources.clear();
  ++yakutVoiceGeneration;yakutAudioPlaying=false;yakutDeferredSpeech='';
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
+}
+function stopYakutAnswer(){
+ if(!speaking&&!processingSpeech){
+  yakutScenario=null;yakutParcelStep='';yakutWeatherPending='';
+ }
+ yakutPageOfferPending=false;
+ cancelYakutSpeech();
+ if(phase==='reacting'){phase='idle';play('wait')}
+ finishYakutSpeech();
 }
 function collectYakutPageSpeech(){
  // Only page copy, in reading order. Never include nav links, footer, buttons or hidden controls.
@@ -512,6 +527,7 @@ function rememberYakutTurn(question,answer){
 }
 const yakutLiveSources=new Set();
 let yakutLiveController=null;
+let yakutChatController=null;
 async function askYakutLive(url,payload,generation){
  const context=yakutTtsContext;
  if(!audioUnlocked||context?.state!=='running')return false;
@@ -589,7 +605,7 @@ async function askYakutLive(url,payload,generation){
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
-if(/^(?:yakut\s+)?(?:dur|sus|konuşma|kes|yeter)$/.test(command)){yakutScenario=null;yakutParcelStep='';yakutWeatherPending='';cancelYakutSpeech();yakutPageOfferPending=false;return}
+if(isYakutStopCommand(command)){stopYakutAnswer();return}
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(command==='yakut'||command==='yakut dinle'){cancelYakutSpeech();react('greet_02','Efendim, dinliyorum.','left');return}
 if(isYakutHomeCommand(command))return openYakutPage('index.html');
@@ -614,7 +630,6 @@ if(!weather&&!webRequest){
  if(yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 }
 processingSpeech=true;
-releaseYakutMic();
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
   yakutWeatherPending=weather.period;
@@ -630,6 +645,9 @@ releaseYakutMic();
  const contact=yakutContactRequest(q);
  const reference=('Açık sayfa: '+yakutPageName(getYakutCurrentPage())+'. '+(contact?contact+' ':'')+collectYakutPageSpeech()).slice(0,1500);
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
+ const controller=new AbortController();
+ yakutChatController=controller;
+ queueListen(0);
  let researchNotice;
  let noticeTimer;
  try{
@@ -643,7 +661,7 @@ releaseYakutMic();
    }
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined}),
-    signal:AbortSignal.timeout(search?23500:10000)});
+    signal:AbortSignal.any([controller.signal,AbortSignal.timeout(search?23500:10000)])});
    return response.ok?response.json():null;
   };
   let result=await ask(research);
@@ -655,9 +673,10 @@ releaseYakutMic();
    rememberYakutTurn(q,answer);
   }else if(needsSearch)answer='Bu soru için doğrulanmış bir sonuç alamadım. İsterseniz başka bir kaynak veya daha belirli bir soru deneyelim.';
  }catch(error){
-  console.warn('Yakut sohbet isteği:',error);
+  if(!controller.signal.aborted)console.warn('Yakut sohbet isteği:',error);
  }finally{
   clearTimeout(noticeTimer);
+  if(yakutChatController===controller)yakutChatController=null;
  }
  if(researchNotice&&generation===yakutVoiceGeneration){
   if(yakutAudioPlaying)await researchNotice;
@@ -669,9 +688,14 @@ react('agree',answer,'center');
 }
 function queueListen(delay=600){
  clearTimeout(listenRetry);
- if(!listenEnabled||hidden||processingSpeech||speaking||recognition||micStarting||yakutDeferredSpeech)return;
+ if(!ready||!listenEnabled||hidden||yakutDeferredSpeech)return;
+ const stopOnly=speaking||processingSpeech;
+ if(recognition){
+  if(micStopOnly===stopOnly)return;
+  releaseYakutMic();
+ }
  const ms=Math.max(delay,micRestartAt-Date.now(),0);
- listenRetry=setTimeout(()=>{if(listenEnabled&&!hidden&&!speaking&&!processingSpeech&&!recognition)startSpeech()},ms)
+ listenRetry=setTimeout(startSpeech,ms);
 }
 function releaseYakutMic(){
  clearTimeout(micStartTimer);
@@ -711,17 +735,21 @@ function speechProblem(err){
  }
 }
 function startSpeech(){
+ if(!ready||!listenEnabled||hidden||recognition||yakutDeferredSpeech)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();show('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın.',9000);return}
- if(!ready||!listenEnabled||hidden||speaking||processingSpeech||recognition||micStarting)return;
+ const stopOnly=speaking||processingSpeech;
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+ micStopOnly=stopOnly;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;talk.textContent='🟢 Dinliyorum'};
  let finalText='';
+ let hasInterim=false;
+ let pendingStop=false;
  let timer;
  const submit=()=>{
   clearTimeout(timer);
-  if(recognition!==rec||!finalText||speaking||!listenEnabled||hidden)return;
+  if(recognition!==rec||!finalText||speaking||processingSpeech||!listenEnabled||hidden)return;
   const spoken=finalText;
   finalText='';
   releaseYakutMic();
@@ -729,22 +757,51 @@ function startSpeech(){
    console.warn('Yakut komut hatası:',error);
    processingSpeech=false;
   }).finally(()=>queueListen(300));
+  return true;
  };
+ const waitForSentenceEnd=()=>{
+  clearTimeout(timer);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,720);
+ };
+ const stop=()=>{
+  if(recognition!==rec||!listenEnabled||hidden||!(speaking||processingSpeech))return false;
+  stopYakutAnswer();
+  return true;
+ };
+ if(!stopOnly){
+  rec.onspeechstart=()=>clearTimeout(timer);
+  rec.onspeechend=waitForSentenceEnd;
+ }
  rec.onresult=e=>{
-  if(recognition!==rec||speaking||!listenEnabled)return;
+  if(recognition!==rec||!listenEnabled||hidden)return;
   micFailureCount=0;
   clearTimeout(timer);
-  finalText=Array.from(e.results).filter(result=>result.isFinal)
+  const results=Array.from(e.results);
+  if(stopOnly){
+   // Only a standalone stop command can interrupt while Yakut's own voice is audible.
+   pendingStop=false;
+   for(const result of results.slice(e.resultIndex)){
+    if(!isYakutStopCommand(normalizeYakutCommand(result[0].transcript)))continue;
+    if(result.isFinal){stop();return}
+    pendingStop=true;
+   }
+   // Give a partial word time to resolve (for example, "dur" may become "durum").
+   if(pendingStop)timer=setTimeout(stop,200);
+   return;
+  }
+  finalText=results.filter(result=>result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ');
-  const stillSpeaking=Array.from(e.results).some(result=>!result.isFinal);
-  if(finalText&&!stillSpeaking)timer=setTimeout(submit,300);
+  hasInterim=results.some(result=>!result.isFinal&&result[0].transcript.trim());
+  waitForSentenceEnd();
  };
- rec.onerror=e=>{if(recognition!==rec)return;releaseYakutMic();micLastError=e.error||'unknown';speechProblem(micLastError);queueListen(350)};
+ rec.onerror=e=>{if(recognition!==rec)return;clearTimeout(timer);releaseYakutMic();micLastError=e.error||'unknown';speechProblem(micLastError);queueListen(350)};
  rec.onend=()=>{
   if(recognition!==rec)return;
-  submit();
+  clearTimeout(timer);
+  if(stopOnly&&pendingStop&&stop())return;
+  if(!stopOnly&&submit())return;
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
-  if(listenEnabled&&!hidden&&!speaking&&!processingSpeech){talk.textContent='🟢 Dinliyorum';queueListen(350)}
+  if(listenEnabled&&!hidden){talk.textContent='🟢 Dinliyorum';queueListen(350)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
  micStartTimer=setTimeout(()=>{
