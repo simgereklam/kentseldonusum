@@ -2,9 +2,6 @@ name = "kumtas-yakut-chat"
 main = "worker.mjs"
 compatibility_date = "2026-11-21"
 
-[ai]
-binding = "AI"
-
 [vars]
 SITE_ORIGINS = "https://xn--kentseldnm-lcb7ea99k.com.tr,https://www.xn--kentseldnm-lcb7ea99k.com.tr"
 
@@ -12,8 +9,9 @@ SITE_ORIGINS = "https://xn--kentseldnm-lcb7ea99k.com.tr,https://www.xn--kentseld
 name = "CHAT_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10, period = 60 }
-# Worker secrets: TAVILY_API_KEY, FIRECRAWL_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, CEREBRAS_API_KEY, HF_API_KEY, OPENROUTER_API_KEY.
-# Configure secrets privately with wrangler secret put TAVILY_API_KEY and wrangler secret put FIRECRAWL_API_KEY.
+# Required private Worker secrets: GEMINI_API_KEY, TAVILY_API_KEY, FIRECRAWL_API_KEY.
+# Configure secrets privately with: wrangler secret put GEMINI_API_KEY
+# wrangler secret put TAVILY_API_KEY
+# wrangler secret put FIRECRAWL_API_KEY
 # Never store API key values in this file or in frontend JavaScript.
-# To enable Hugging Face, also set HF_CHAT_MODEL to a currently available chat model.
-# Use keys from free-tier accounts without paid billing. Unset keys are skipped.
+# Only Gemini composes answers; search uses Tavily then Firecrawl as fallback.
