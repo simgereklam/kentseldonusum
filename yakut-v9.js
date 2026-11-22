@@ -142,7 +142,14 @@ async function speak(text,recordings=[],deferPlayback=true){
    await playYakutRecordings(recordings,turn);
    finished=true;
   }else if(navigator.onLine!==false&&Date.now()>=yakutVoiceRetryAt){
-   finished=await askYakutLive(endpoint,{readAloud:prompt},turn);
+   const sentences=prompt.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean)||[prompt];
+   let allOk=true;
+   for(const sentence of sentences){
+    if(turn!==yakutVoiceGeneration||hidden){allOk=false;break;}
+    const ok=await askYakutLive(endpoint,{readAloud:sentence},turn);
+    if(!ok){allOk=false;break;}
+   }
+   finished=allOk;
   }
   if(!finished&&turn===yakutVoiceGeneration&&!hidden){
    await playYakutRecordings(recordings.length?recordings:['ulasamiyorum'],turn);
@@ -236,7 +243,7 @@ function normalizeYakutCommand(message){
  return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim();
 }
 function isYakutStopCommand(command){
- return /^(?:(?:yakut|lütfen) )*(?:dur|sus|konuşma|kes|yeter)(?: (?:lütfen|biraz|artık|yakut))*$/.test(command);
+ return /(?:^| )(?:dur|sus|konuşma|kes|yeter|tamam dur|bi saniye|bir saniye|bekle)(?: |$)/.test(command) && command.split(' ').length <= 4;
 }
 function getYakutCurrentPage(){
  const path=location.pathname.split('/').filter(Boolean).pop()||'index.html';
@@ -248,21 +255,34 @@ function yakutPageRecording(path=getYakutCurrentPage()){
 }
 function yakutSiteRecording(command){
  const topics=[
-  [/\b(?:riskli yapı|çürük bina) (?:nedir|ne demek|nasıl belirlenir)\b/,'riskli-yapi'],
-  [/(?:malik hak|arsa payı|mevcut metrekare)/,'malik-haklari'],
-  [/(?:adresiniz|adresinizi|ofisiniz nerede|ofis nerede|şirketin adresi|ofis adresi)/,'adres'],
-  [/(?:eposta|e posta|mail adres|mailiniz)/,'e-posta'],
-  [/(?:hangi (?:bölgelerde|ilçelerde) (?:çalış|hizmet)|hizmet bölgeleri|hangi bölgelerde varsınız)/,'bolgeler'],
-  [/(?:hizmetleriniz|ne iş yapıyorsunuz|ne yapıyorsunuz|ne tür hizmet|neler yapıyorsunuz)/,'hizmetlerimiz'],
-  [/(?:proje örnekleri|projeleriniz|referanslarınız|tamamlanan proje)/,'projelerimiz'],
-  [/(?:iletişim bilgileri|nasıl ulaşabilirim|nasıl ulaşırım)/,'iletisim'],
-  [/(?:başvuru nasıl|nasıl başvuru|hangi evrak|hangi belgeler|başvuru için ne gerekli)/,'basvuru'],
-  [/(?:dönüşüm süreci|dönüşüme nereden başla|kentsel dönüşüm nasıl|dönüşüm aşamaları)/,'kentsel-donusum'],
-  [/(?:şirket ne iş yapar|şirket hakkında|kumtaş (?:kimdir|ne iş yapar)|şirket (?:ne zaman|hangi yıl) kuruldu)/,'kurumsal'],
-  [/(?:e imar nasıl|parsel sorgusu nasıl|imar hesabı nasıl)/,'yakut-eimar'],
-  [/(?:bu sayfanın içeriği|bu sayfada (?:ne var|ne yapabilirim|ne anlatılıyor)|burada ne var)/,yakutPageRecording()]
+  [/\b(?:riskli yapı|çürük bina|deprem test|karot|bina sağlam)\b/,'riskli-yapi'],
+  [/(?:malik|arsa payı|mevcut metrekare|sözleşme|teminat|kat karşılığı|daire paylaşım|hak sahi)/,'malik-haklari'],
+  [/(?:adres|neredesiniz|nerede bulunuyorsunuz|ofisiniz nerede|ofis nerede|şirketin adresi)/,'adres'],
+  [/(?:eposta|e posta|mail)/,'e-posta'],
+  [/(?:hangi (?:bölgelerde|ilçelerde)|hizmet bölge|nerelerde hizmet|ilçeler)/,'bolgeler'],
+  [/(?:hizmet|ne iş yap|ne yapıyorsunuz|neler yapıyorsunuz|anahtar teslim)/,'hizmetlerimiz'],
+  [/(?:proje|referans|tamamlanan|devam eden)/,'projelerimiz'],
+  [/(?:iletişim|nasıl ulaş|irtibat)/,'iletisim'],
+  [/(?:başvuru|evrak|belge|ön değerlendirme|ücretsiz keşif)/,'basvuru'],
+  [/(?:dönüşüm süreci|nasıl başla|dönüşüm nasıl|aşamalar|kentsel dönüşüm nedir)/,'kentsel-donusum'],
+  [/(?:şirket|kumtaş|hakkınızda|kuruldu|iki bin dört|2004|kimsiniz|kimdir)/,'kurumsal'],
+  [/(?:e imar|parsel sorgu|imar hesab|ada parsel)/,'yakut-eimar'],
+  [/(?:bu sayfa|sayfada ne var|burada ne var|sayfa içeriği)/,yakutPageRecording()]
  ];
  return topics.find(([pattern,key])=>key&&Object.hasOwn(yakutSiteVoice,key)&&pattern.test(command))?.[1]||null;
+}
+function yakutLocalSiteSearch(command){
+ const words=command.split(' ').filter(w=>w.length>3&&!/^(?:nedir|nasıl|hakkında|bilgi|verir|misin|yakut|lütfen|hangi|neler|kaç)$/.test(w));
+ if(!words.length)return null;
+ const pageText=collectYakutPageSpeech();
+ const sentences=pageText.split(/(?<=[.!?])\s+/).filter(s=>s.length>15);
+ let best=null,bestScore=0;
+ for(const s of sentences){
+  const norm=normalizeYakutCommand(s);
+  const score=words.filter(w=>norm.includes(w)).length;
+  if(score>bestScore){bestScore=score;best=s;}
+ }
+ return bestScore>=2?best:null;
 }
 function isYakutHomeCommand(message){
  const t=normalizeYakutCommand(message);
@@ -792,6 +812,12 @@ if(!weather&&!webRequest){
   rememberYakutTurn(q,reply);react('agree',reply,'left',[siteRecording]);return;
  }
  if(yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
+ if(!officialResearch){
+  const localMatch=yakutLocalSiteSearch(command);
+  if(localMatch){
+   rememberYakutTurn(q,localMatch);react('agree',localMatch,'left');return;
+  }
+ }
 }
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
@@ -949,8 +975,7 @@ function startSpeech(){
     if(result.isFinal){stop();return}
     pendingStop=true;
    }
-   // Give a partial word time to resolve (for example, "dur" may become "durum").
-   if(pendingStop)timer=setTimeout(stop,200);
+   if(pendingStop){stop();return;}
    return;
   }
   finalText=results.filter(result=>result.isFinal)
