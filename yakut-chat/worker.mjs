@@ -109,6 +109,38 @@ async function tavilyResearch(question, env) {
   return sources.length ? sources : null;
 }
 
+// Firecrawl v2 is a fallback when Tavily has no usable results or is unavailable.
+// FIRECRAWL_API_KEY must be configured as a private Worker secret.
+async function firecrawlResearch(question, env) {
+  if (!env.FIRECRAWL_API_KEY || (cooldowns.get('firecrawl') || 0) > Date.now()) return null;
+  const data = await post('https://api.firecrawl.dev/v2/search',
+    {Authorization: 'Bearer ' + env.FIRECRAWL_API_KEY},
+    {query: question, limit: 5}, 'firecrawl', 10000);
+  const groups = data?.data;
+  const results = Array.isArray(groups) ? groups :
+    Array.isArray(groups?.web) ? groups.web : [];
+  const sources = results
+    .filter(x => typeof x.url === 'string' && /^https?:\/\//.test(x.url))
+    .slice(0, 5)
+    .map(x => ({title: String(x.title || '').slice(0, 120),
+      url: x.url.slice(0, 600),
+      content: String(x.description || x.markdown || '').slice(0, 900)}));
+  return sources.length ? sources : null;
+}
+
+async function externalResearch(question, env) {
+  if (env.TAVILY_API_KEY) {
+    try {
+      const tavily = await tavilyResearch(question, env);
+      if (tavily?.length) return tavily;
+    } catch { /* use another configured provider */ }
+  }
+  if (env.FIRECRAWL_API_KEY) {
+    try {return await firecrawlResearch(question, env);} catch { /* unavailable */ }
+  }
+  return null;
+}
+
 async function geminiResearchAnswer(question, sources, env) {
   if (!env.GEMINI_API_KEY) return null;
   const evidence = sources.map((s, i) => ({
@@ -169,11 +201,11 @@ export default {
     // Off-site researched questions: Tavily retrieves, Gemini alone writes the answer.
     // No Gemini Search tool, and no invented facts if sources are missing.
     if (payload.research === true) {
-      if (!env.TAVILY_API_KEY || !env.GEMINI_API_KEY)
+      if ((!env.TAVILY_API_KEY && !env.FIRECRAWL_API_KEY) || !env.GEMINI_API_KEY)
         return Response.json({error:'SEARCH_NOT_CONFIGURED',
           answer:'Güncel internet araması şu anda yapılandırılmamış.'}, {status:503, headers});
       try {
-        const sources = await tavilyResearch(payload.question, env);
+        const sources = await externalResearch(payload.question, env);
         if (!sources) return Response.json({error:'SEARCH_UNAVAILABLE',
           answer:'Güncel bilgiye şu anda erişemedim.'}, {status:503, headers});
         const answer = await geminiResearchAnswer(payload.question, sources, env);
