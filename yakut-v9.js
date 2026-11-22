@@ -266,20 +266,21 @@ function yakutPageRecording(path=getYakutCurrentPage()){
  return Object.hasOwn(yakutSiteVoice,key)?key:null;
 }
 function yakutSiteRecording(command){
+ if(command.split(' ').length<2)return null;
  const topics=[
-  [/\b(?:riskli yapı|çürük bina|deprem test|karot|bina sağlam)\b/,'riskli-yapi'],
-  [/(?:malik|arsa payı|mevcut metrekare|sözleşme|teminat|kat karşılığı|daire paylaşım|hak sahi)/,'malik-haklari'],
-  [/(?:adres|neredesiniz|nerede bulunuyorsunuz|ofisiniz nerede|ofis nerede|şirketin adresi)/,'adres'],
-  [/(?:eposta|e posta|mail)/,'e-posta'],
-  [/(?:hangi (?:bölgelerde|ilçelerde)|hizmet bölge|nerelerde hizmet|ilçeler)/,'bolgeler'],
-  [/(?:hizmet|ne iş yap|ne yapıyorsunuz|neler yapıyorsunuz|anahtar teslim)/,'hizmetlerimiz'],
-  [/(?:proje|referans|tamamlanan|devam eden)/,'projelerimiz'],
-  [/(?:iletişim|nasıl ulaş|irtibat)/,'iletisim'],
-  [/(?:başvuru|evrak|belge|ön değerlendirme|ücretsiz keşif)/,'basvuru'],
-  [/(?:dönüşüm süreci|nasıl başla|dönüşüm nasıl|aşamalar|kentsel dönüşüm nedir)/,'kentsel-donusum'],
-  [/(?:şirket|kumtaş|hakkınızda|kuruldu|iki bin dört|2004|kimsiniz|kimdir)/,'kurumsal'],
-  [/(?:e imar|parsel sorgu|imar hesab|ada parsel)/,'yakut-eimar'],
-  [/(?:bu sayfa|sayfada ne var|burada ne var|sayfa içeriği)/,yakutPageRecording()]
+  [/\b(?:riskli yapı nedir|riskli yapı ne demek|çürük bina|deprem testi|karot)\b/,'riskli-yapi'],
+  [/(?:malik hakları|arsa payı|mevcut metrekare|sözleşme şart|teminat nedir|kat karşılığı nedir)/,'malik-haklari'],
+  [/(?:adresiniz|adresinizi|ofisiniz nerede|ofis nerede|şirketin adresi|nerede bulunuyorsunuz)/,'adres'],
+  [/(?:eposta adres|e posta adres|mail adres|mailiniz)/,'e-posta'],
+  [/(?:hangi bölgelerde|hangi ilçelerde|hizmet bölgeleri|nerelerde hizmet)/,'bolgeler'],
+  [/(?:hizmetleriniz|ne iş yapıyorsunuz|ne yapıyorsunuz|neler yapıyorsunuz|anahtar teslim)/,'hizmetlerimiz'],
+  [/(?:proje örnekleri|projeleriniz|referanslarınız|tamamlanan projeler)/,'projelerimiz'],
+  [/(?:iletişim bilgileri|nasıl ulaşabilirim|nasıl ulaşırım)/,'iletisim'],
+  [/(?:başvuru nasıl|nasıl başvuru|hangi evrak|hangi belgeler|ön değerlendirme)/,'basvuru'],
+  [/(?:dönüşüm süreci|nasıl başlar|kentsel dönüşüm nasıl|dönüşüm aşamaları|kentsel dönüşüm nedir)/,'kentsel-donusum'],
+  [/(?:şirket hakkında|kumtaş kimdir|kumtaş ne iş yapar|ne zaman kuruldu|hangi yıl kuruldu|hakkınızda bilgi)/,'kurumsal'],
+  [/(?:e imar nasıl|parsel sorgusu nasıl|imar hesabı nasıl)/,'yakut-eimar'],
+  [/(?:bu sayfada ne var|burada ne var|sayfa içeriği|bu sayfanın içeriği)/,yakutPageRecording()]
  ];
  return topics.find(([pattern,key])=>key&&Object.hasOwn(yakutSiteVoice,key)&&pattern.test(command))?.[1]||null;
 }
@@ -953,7 +954,7 @@ function startSpeech(){
  let timer;
  const submit=()=>{
   clearTimeout(timer);
-  if(recognition!==rec||!finalText||speaking||processingSpeech||!listenEnabled||hidden)return;
+  if(recognition!==rec||!finalText||speaking||processingSpeech||!listenEnabled||hidden||(Date.now()-yakutSpeechEndedAt<700)){finalText='';return;}
   const spoken=finalText;
   finalText='';
   releaseYakutMic();
