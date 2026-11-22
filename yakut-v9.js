@@ -115,7 +115,6 @@ function handleYakutActivation(event){
  micFailureCount=0;micRestartAt=0;
  resumeYakutSound();
 }
-// A regular tap also starts speech when the browser blocks autoplay.
 document.addEventListener('click',handleYakutActivation,true);
 document.addEventListener('keydown',handleYakutActivation,true);
 function finishYakutSpeech(){
@@ -144,14 +143,7 @@ async function speak(text,recordings=[],deferPlayback=true){
   if(!audioReady)return;
   if(turn!==yakutVoiceGeneration||hidden)return;
   queueListen(0);
-  // Exact site recordings play locally without any Gemini or search API call.
-  const isExactSiteRecording=recordings.length>0
-   && recordings.every(key=>Object.hasOwn(yakutSiteVoice,key))
-   && recordings.map(key=>yakutSiteVoice[key]).join(' ')===String(text||'').trim();
-  if(isExactSiteRecording){
-   await playYakutRecordings(recordings,turn);
-   finished=true;
-  }else if(navigator.onLine!==false&&Date.now()>=yakutVoiceRetryAt){
+  if(navigator.onLine!==false&&Date.now()>=yakutVoiceRetryAt){
    const sentences=prompt.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean)||[prompt];
    let allOk=true;
    for(const sentence of sentences){
@@ -220,7 +212,6 @@ function react(clip,text,placement='left',recordings=[]){
  pendingSpeechGesture=findYakutGesture(clip);
  speak(text,recordings);
 }
-// A single conversation/session for all published pages: greetings are once per visit.
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 const yakutPages={
  'index.html':['Ana Sayfa','anasayfa','eve dön'],
@@ -327,7 +318,6 @@ function stopYakutAnswer(){
  finishYakutSpeech();
 }
 function collectYakutPageSpeech(){
- // Only page copy, in reading order. Never include nav links, footer, buttons or hidden controls.
  const root=document.querySelector('main')||document.body;
  const pieces=[],seen=new Set();
  for(const el of root.querySelectorAll('h1,h2,h3,h4,p,li,dt,dd')){
@@ -924,7 +914,6 @@ function speechProblem(err){
   return;
  }
  if(err==='no-speech'||err==='aborted'){return}
- // SpeechRecognition may rely on a browser speech server and cannot always run offline.
  micFailureCount++;
  if(err==='network'||err==='language-not-supported'||err==='language-unavailable'){
   if(micFailureCount>=3){
@@ -1025,7 +1014,6 @@ talk.onclick=()=>{
  listenEnabled=true;micFailureCount=0;micRestartAt=0;talk.hidden=getYakutCurrentPage()==='index.html';talk.textContent='🟢 Dinliyorum';
  if(!openingSpoken)beginYakutVisit();
  queueListen(250);
- 
 };
 
 close.onclick=()=>{
@@ -1047,7 +1035,6 @@ function addYakutChestLogo() {
  const texture = new THREE.CanvasTexture(artwork);
  texture.colorSpace = THREE.SRGBColorSpace;
  texture.anisotropy = 4;
- // Depth at the center and sides of each row on the GLB's chest plate.
  const centerDepth = [0.0788, 0.0916, 0.0998, 0.1051, 0.1085, 0.1109, 0.1118, 0.1114, 0.1087];
  const sideDepth = [0.0696, 0.0850, 0.0930, 0.0991, 0.1028, 0.1036, 0.1024, 0.1001, 0.0958];
  const geometry = new THREE.PlaneGeometry(0.105, 0.092, 12, centerDepth.length - 1);
@@ -1171,13 +1158,12 @@ if(yakutAudioPlaying && phase==='idle'){
 if(phase==='walking'){
 const step=(innerWidth<650?105:175)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
- // Finish walking with actual footstep motion before any response gesture.
  if(pendingSpeechGesture&&yakutAudioPlaying){const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);phase='reacting'}
  if(yakutIsGreetingWalking)finishYakutGreetingWalk();
 }else{posX+=Math.sign(targetX-posX)*step;}
 positionStage();
 }else if(phase==='idle'&&!reduced){
-walkTimer+=dt; // Keep YAKUT by the left edge for narration.
+walkTimer+=dt;
 }
 if(face){
 let amp=0;
@@ -1208,7 +1194,6 @@ document.addEventListener('yakut:eimar-result',event=>{
   else react('agree',event.detail,'left',[pageClip]);
  }
 });
-// Give the character a moment to load without making speech depend on WebGL.
 yakutStartTimer=setTimeout(startYakutSession,1200);
 init();
 })();
