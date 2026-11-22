@@ -1,3 +1,22 @@
 # YAKUT Gemini backend
 
-This is a deployable API, not a live deployment. Set GEMINI_API_KEY as a private server environment variable. Optionally set GEMINI_MODEL and YAKUT_ALLOWED_ORIGINS. Install with `pip install -r requirements.txt` and run `uvicorn main:app --host 0.0.0.0 --port 8000` from this folder. Publish behind HTTPS and configure the site's `meta[name=yakut-chat-endpoint]` to point to `https://YOUR-BACKEND/chat`. `/chat` returns `{answer,sources}`; `research=true` enables Gemini Google Search grounding. `/health` reports whether the secret exists, not its value. Existing `/live` speech endpoint is separate and remains unchanged. Google Search can require enabled billing/quota and may return errors.
+This directory contains the deployable FastAPI backend source. GitHub changes are **not** deployment and do not update an already-running server automatically.
+
+## Run
+
+Configure `GEMINI_API_KEY` only as a private runtime environment variable (never in GitHub or frontend JavaScript). Optionally set `GEMINI_MODEL`, `GEMINI_TTS_MODEL` (default `gemini-2.5-flash-tts`), and `YAKUT_ALLOWED_ORIGINS`.
+
+```bash
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Publish behind HTTPS and set the website's `meta[name="yakut-chat-endpoint"]` to the deployed `https://YOUR-BACKEND/chat` URL.
+
+## Routes
+
+- `GET /health`: reports whether the private API key is configured, not its value.
+- `POST /chat`: Gemini text answers. **Gemini Google Search is disabled**, even when `research=true` is passed. An external search broker must be implemented/deployed separately to supply researched sources.
+- `POST /live`: `{"readAloud":"Merhaba"}` synthesizes the configured **Aoede** voice and returns NDJSON lines with base64 16-bit PCM mono audio at 24 kHz, ending with `{"done":true}`. The current browser player consumes this format. This is server-side speech synthesis, **not** a bidirectional Gemini Live microphone session.
+
+Existing exact-match site recordings are played from local MP3 files without invoking Gemini. Do not put keys in the browser. Verify service deployment, quota, and audio in a real browser before claiming the production voice is active.
