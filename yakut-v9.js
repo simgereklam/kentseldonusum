@@ -675,7 +675,7 @@ async function askYakutLive(url,payload,generation){
  if(!audioUnlocked||context?.state!=='running')return false;
  const controller=new AbortController();
  yakutLiveController=controller;
- let timer=setTimeout(()=>controller.abort(),25000);
+ let timer=setTimeout(()=>controller.abort(),50000);
  let nextStart=0;
  let played=false;
  let completed=false;
