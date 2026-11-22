@@ -1,4 +1,23 @@
 const cooldowns = new Map();
+const localRate = new Map();
+// Best-effort per-isolate safety net only. Production should also use a
+// Cloudflare rate-limit rule, as isolates do not share this map.
+function fallbackLimit(ip) {
+  const now = Date.now();
+  const item = localRate.get(ip);
+  if (!item || now - item.start >= 60000) {
+    localRate.set(ip, {start: now, count: 1});
+    if (localRate.size > 1500) {
+      for (const [key, value] of localRate) {
+        if (now - value.start >= 60000) localRate.delete(key);
+      }
+    }
+    return true;
+  }
+  item.count++;
+  return item.count <= 10;
+}
+
 
 function retryDelay(value) {
   if (!value) return 60000;
@@ -177,18 +196,20 @@ export default {
     if (!['/chat','/live'].includes(pathname) || request.method !== 'POST')
       return new Response(null, { status: 404, headers });
     if (!request.headers.get('Content-Type')?.startsWith('application/json')) return new Response(null, { status: 415, headers });
-    // Optional Cloudflare rate limit binding. If absent, an upstream gateway
-    // should enforce per-IP limits; missing binding must not disable speech.
+    // Preserve availability when the optional limiter binding is missing.
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    let limited = false;
     if (env.CHAT_LIMITER) {
       try {
-        const {success} = await env.CHAT_LIMITER.limit({
-          key: request.headers.get('CF-Connecting-IP') || 'unknown'
-        });
-        if (!success) return new Response(null, {status:429, headers});
+        const {success} = await env.CHAT_LIMITER.limit({key: ip});
+        limited = !success;
       } catch {
-        // Upstream limit service faults must not permanently disable Yakut.
+        limited = !fallbackLimit(ip);
       }
+    } else {
+      limited = !fallbackLimit(ip);
     }
+    if (limited) return new Response(null, {status:429, headers});
     if (pathname === '/live') return geminiAoedeSpeech(request, env, headers);
     let payload;
     try {
