@@ -69,7 +69,7 @@ async def chat(req: ChatRequest):
 
 # Gemini speech is deliberately separate from Gemini chat and Google Search.
 # Aoede is the single voice for synthesized answers. Never expose API keys.
-TTS_MODEL = os.getenv("GEMINI_TTS_MODEL", "gemini-2.5-flash-tts")
+TTS_MODEL = os.getenv("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts")
 TTS_VOICE = "Aoede"
 
 class LiveRequest(BaseModel):
