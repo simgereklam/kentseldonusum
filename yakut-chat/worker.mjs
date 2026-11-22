@@ -47,9 +47,9 @@ async function geminiAoedeSpeech(request, env, headers) {
   const speech = body?.readAloud;
   if (typeof speech !== 'string' || !speech.trim() || speech.length > 2000)
     return new Response(null, {status:400, headers});
-  const model = env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts';
+  const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
   const payload = {
-    contents: [{role:'user', parts:[{text: speech, speechMetadata: {style: 'Sıcak ve doğal bir Türkçe anlatım.'}}]}],
+    contents: [{role:'user', parts:[{text: 'Sıcak, güven veren ve doğal Türkçe diksiyonla sadece şu metni oku: ' + speech}]}],
     generationConfig: {responseModalities:['AUDIO'], speechConfig:{
       voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}
     }}
@@ -183,7 +183,7 @@ export default {
         gemini_configured: Boolean(env.GEMINI_API_KEY),
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
-        chat_endpoint: true, speech_endpoint: true, tts_voice: 'Aoede'
+        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede'
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());
@@ -193,7 +193,7 @@ export default {
       ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type'
     } });
     const pathname = new URL(request.url).pathname;
-    if (!['/chat','/live'].includes(pathname) || request.method !== 'POST')
+    if (!['/chat','/live','/imar'].includes(pathname) || request.method !== 'POST')
       return new Response(null, { status: 404, headers });
     if (!request.headers.get('Content-Type')?.startsWith('application/json')) return new Response(null, { status: 415, headers });
     // Preserve availability when the optional limiter binding is missing.
@@ -211,6 +211,42 @@ export default {
     }
     if (limited) return new Response(null, {status:429, headers});
     if (pathname === '/live') return geminiAoedeSpeech(request, env, headers);
+
+    // Compatibility endpoint for the existing e-imar page. No official parcel
+    // source is connected yet: never claim a zoning coefficient was verified.
+    if (pathname === '/imar') {
+      let body;
+      try {
+        const raw = await request.text();
+        if (raw.length > 4096) return Response.json({error:'PAYLOAD_TOO_LARGE'}, {status:413,headers});
+        body = JSON.parse(raw);
+      } catch {
+        return Response.json({error:'INVALID_JSON'}, {status:400, headers});
+      }
+      const district = String(body?.district || '').trim().toLowerCase();
+      const neighborhood = String(body?.neighborhood || '').trim();
+      const ada = String(body?.ada || '').trim();
+      const parsel = String(body?.parsel || '').trim();
+      if (!['bagcilar','bahcelievler'].includes(district) ||
+          !neighborhood || neighborhood.length > 100 ||
+          !/^[0-9]{1,9}$/.test(ada) ||
+          !/^[0-9]{1,9}$/.test(parsel) ||
+          !Number(ada) || !Number(parsel)) {
+        return Response.json({error:'INVALID_PARCEL_INPUT'},
+          {status:400, headers});
+      }
+      const links = {
+        bagcilar:'https://www.turkiye.gov.tr/bagcilar-belediyesi-imar-durum-sorgulama',
+        bahcelievler:'https://www.turkiye.gov.tr/bahcelievler-belediyesi-imar-durum-sorgulama'
+      };
+      return Response.json({
+        ok:true, verified:false, status:'unverified',
+        district, neighborhood, ada, parsel, zoning:'',
+        source:links[district],
+        message:'Otomatik olarak doğrulanmış imar verisi alınamadı. Resmî belediye sonucunu açarak parsel alanı, TAKS ve emsal bilgilerini elle giriniz.'
+      }, {headers});
+    }
+
     let payload;
     try {
       const reader = request.body.getReader();
