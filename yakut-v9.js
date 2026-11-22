@@ -74,6 +74,14 @@ function onYakutSoundReady(){
 }
 function beginYakutVisit(){
  if(!ready||hidden)return;
+ if(getYakutCurrentPage()==='yakut-eimar.html'){
+  let question;
+  try{
+   question=sessionStorage.getItem('yakutImarQuestion');
+   sessionStorage.removeItem('yakutImarQuestion');
+  }catch(_){}
+  if(question){yakutPageOfferPending=false;handle(question);return}
+ }
  if(getYakutCurrentPage()==='kentsel-donusum.html'&&audioUnlocked){
   try{if(sessionStorage.getItem('yakutExplainMalik')==='1'){yakutExplainMalik();return}}catch(_){}
  }
@@ -245,6 +253,7 @@ function stopYakutAnswer(){
  }
  yakutPageOfferPending=false;
  cancelYakutSpeech();
+ window.yakutImar?.cancelLookup();
  if(phase==='reacting'){phase='idle';play('wait')}
  finishYakutSpeech();
 }
@@ -414,55 +423,68 @@ function openYakutPage(path,narrate=false){
 let yakutParcelStep='';
 function handleYakutParcel(command){
  const onPage=getYakutCurrentPage()==='yakut-eimar.html';
- if(!onPage)return false;
+ const imar=window.yakutImar;
+ if(!onPage||!imar)return false;
  const say=text=>{react('agree',text);return true};
+ const lookup=()=>{
+  if(imar.canLookUp())say('Belediyenin imar verilerine bakıyorum.');
+  imar.lookup();
+  return true;
+ };
  if(/(?:resmi|resmî|belediye) (?:sorgu(?:yu)?|e imar)(?: sayfasını)? aç/.test(command)){
   const source=document.getElementById('source');
   source?.focus();source?.scrollIntoView({block:'center'});
   return say('Resmî e-İmar sayfasını aç düğmesine dokunun. Açılan sayfada ada parsel sorgusunu seçip mahalle, ada ve parseli girin.');
  }
- if(/(?:^| )(?:imar sorgusu(?:na başla)?|parsel sorgula|ada parsel sorgula|ada parsel sorgusu)(?: |$)/.test(command)){
+ if(/(?:^| )(?:imar sorgusu(?:na başla)?|imar sorgula|parsel sorgula|ada parsel sorgula|ada parsel sorgusu|imar durumunu sorgula)(?: |$)/.test(command)||
+    /imar/.test(command)&&/(?:^| )ada(?: |$)/.test(command)&&/(?:^| )parsel(?: |$)/.test(command)){
+  const district=Object.keys(yakutDistrictPages).find(name=>command.includes(name));
+  let neighborhood=command.match(/(?:^| )([a-zçğıöşü0-9]+(?: [a-zçğıöşü0-9]+)?) mahallesi(?: |$)/)?.[1];
+  if(neighborhood&&district)neighborhood=neighborhood.replace(district+' ','');
+  const identifiers=command.match(/(?:^| )ada (\d{1,9}) parsel (\d{1,9})(?: |$)/)||
+   command.match(/(?:^| )(\d{1,9}) ada (\d{1,9}) parsel(?: |$)/);
+  imar.setParcel({district:district==='yenibosna'?'bahcelievler':yakutDistrictPages[district],
+   mahalle:neighborhood,ada:identifiers?.[1],parsel:identifiers?.[2]});
+  if(['mahalle','ada','parsel'].every(id=>document.getElementById(id)?.value)){
+   yakutParcelStep='';return lookup();
+  }
+  if(district){
+   yakutParcelStep=['mahalle','ada','parsel'].find(id=>!document.getElementById(id).value);
+   return say({mahalle:'Mahalle adı nedir?',ada:'Ada numarası kaç?',parsel:'Parsel numarası kaç?'}[yakutParcelStep]);
+  }
   yakutParcelStep='ilçe';
-  return say('Önce ilçe adını söyleyin. Bağcılar için doğrudan resmî sorgu bağlantısı var.');
+  return say('Önce ilçe adını söyleyin.');
  }
  if(!yakutParcelStep)return false;
  if(yakutParcelStep==='ilçe'){
   const district=Object.keys(yakutDistrictPages).find(name=>command===name||command===name+' ilçesi');
   if(!district)return false;
-  if(district!=='bağcılar'){
-   yakutParcelStep='';
-   const source=document.getElementById('yakut-official-directory');
-   source.href='https://www.turkiye.gov.tr/arama?aranan='+encodeURIComponent(district+' belediyesi imar durum bilgisi sorgulama');
-   source.hidden=false;
-   return say(district+' için e-Devlet arama bağlantısını açabilirsiniz. Belediyenin hizmetini seçin. İsterseniz burada varsayımlı alan hesabı yapabiliriz.');
-  }
-  const field=document.getElementById('district');
-  if(field)field.value='bagcilar';
+  imar.setParcel({district:district==='yenibosna'?'bahcelievler':yakutDistrictPages[district]});
   yakutParcelStep='mahalle';
-  return say('Bağcılar. Mahalle adı nedir?');
+  return say('Mahalle adı nedir?');
  }
  if(yakutParcelStep==='mahalle'){
-  if(command.split(' ').length>5||/\d|\b(?:nasıl|nedir|araştır)\b/.test(command))return false;
-  const field=document.getElementById('mahalle');
-  if(field)field.value=command.replace(/ mahallesi$/,'');
+ if(command.split(' ').length>5||/\b(?:nasıl|nedir|araştır)\b/.test(command))return false;
+  imar.setParcel({mahalle:command.replace(/ mahallesi$/,'')});
   yakutParcelStep='ada';
   return say('Ada numarası kaç?');
  }
- const number=command.match(/^(?:ada |parsel )?(\d{1,10})$/)?.[1];
+ const number=command.match(/^(?:ada |parsel )?(\d{1,9})(?: ada| parsel)?$/)?.[1];
  if(!number)return false;
- const field=document.getElementById(yakutParcelStep);
- if(field)field.value=number;
+ imar.setParcel({[yakutParcelStep]:number});
  if(yakutParcelStep==='ada'){
   yakutParcelStep='parsel';
   return say('Parsel numarası kaç?');
  }
  yakutParcelStep='';
- const source=document.getElementById('source');
- source?.focus();source?.scrollIntoView({block:'center'});
- return say('Bağcılar e-İmar sorgusu için bilgiler hazır. Resmî e-İmar sayfasını aç düğmesine dokunun ve bilgileri oradaki forma girin. Ön hesap için arsa alanınızı söyleyebilirsiniz.');
+ return lookup();
 }
 
 let yakutScenario = null;
+function yakutOfficialImarRequest(command){
+ return !/(?:ön hesap|senaryo|varsay|yüzde 30|yüzde 40|yüzde 50)/.test(command)&&
+  /(?:imar.{0,25}hesap|parsel sorgula|ada parsel sorgusu|imar sorgula|imar sorgusu|imar durumunu sorgula|kaç daire|kaç konut|kaç dükk[aâ]n|emsale esas alan|taban oturumu|inşaat alanı hesap)/.test(command);
+}
 const yakutAreaUnit = '(?:m²|m2|metre\\s*kare|metrekare)';
 function yakutScenarioRequest(message) {
  const t = normalizeYakutCommand(message.replace(/â/gi, 'a'));
@@ -656,6 +678,14 @@ if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapm
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
 const phoneAnswer=yakutPhoneAnswer(command);
 if(phoneAnswer){rememberYakutTurn(q,phoneAnswer);react('agree',phoneAnswer);return;}
+if(getYakutCurrentPage()==='yakut-eimar.html'){
+ if(handleYakutParcel(command))return;
+ const imarAnswer=window.yakutImar?.answer(q,command);
+ if(imarAnswer){react('agree',imarAnswer);return}
+}else if(yakutOfficialImarRequest(command)){
+ try{sessionStorage.setItem('yakutImarQuestion',q.slice(0,500))}catch(_){}
+ return openYakutPage('yakut-eimar.html');
+}
 const destination=yakutPageCommand(command);
 if(destination){yakutParcelStep='';yakutScenario=null;return openYakutPage(destination);}
 if(handleYakutParcel(command))return;
