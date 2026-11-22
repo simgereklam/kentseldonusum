@@ -1,5 +1,3 @@
-/* KUMTAS YAKUT V9: genuine GLB animated visitor companion.
- * Runs on homepage; original site layout and background video stay unchanged. */
 (() => {
 'use strict';
 if(location.protocol==='http:'&&/^(?:www\.)?xn--kentseldnm-lcb7ea99k\.com\.tr$/i.test(location.hostname)){
@@ -47,13 +45,12 @@ let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
 let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false,yakutSpeechEndedAt=0;
 let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,dialogTimer=0,normalScale=1,basePosition=null;
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function show(text,ms=7000){/* No on-screen text by design. Keep speech and diagnostic logs separate. */}
+function show(text,ms=7000){}
 function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
 const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
 next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
-
 let audioUnlocked=false,yakutTtsContext=null,yakutAnalyser=null,yakutAnalyserData=null,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
 function getYakutAudioDest(){
  if(!yakutTtsContext)return null;
@@ -199,7 +196,7 @@ function completeYakutOpening(){
  phase='idle';play('wait');
  speak(welcome,['welcome']);
 }
-function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{console.warn('YAKUT: yürüme animasyonu bulunamadı, kayma yerine sabit kalıyor');targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
@@ -256,38 +253,6 @@ function yakutPageRecording(path=getYakutCurrentPage()){
  const key=path.replace(/\.html$/,'');
  return Object.hasOwn(yakutSiteVoice,key)?key:null;
 }
-function yakutSiteRecording(command){
- if(command.split(' ').length<2)return null;
- const topics=[
-  [/\b(?:riskli yapı nedir|riskli yapı ne demek|çürük bina|deprem testi|karot)\b/,'riskli-yapi'],
-  [/(?:malik hakları|arsa payı|mevcut metrekare|sözleşme şart|teminat nedir|kat karşılığı nedir)/,'malik-haklari'],
-  [/(?:adresiniz|adresinizi|ofisiniz nerede|ofis nerede|şirketin adresi|nerede bulunuyorsunuz)/,'adres'],
-  [/(?:eposta adres|e posta adres|mail adres|mailiniz)/,'e-posta'],
-  [/(?:hangi bölgelerde|hangi ilçelerde|hizmet bölgeleri|nerelerde hizmet)/,'bolgeler'],
-  [/(?:hizmetleriniz|ne iş yapıyorsunuz|ne yapıyorsunuz|neler yapıyorsunuz|anahtar teslim)/,'hizmetlerimiz'],
-  [/(?:proje örnekleri|projeleriniz|referanslarınız|tamamlanan projeler)/,'projelerimiz'],
-  [/(?:iletişim bilgileri|nasıl ulaşabilirim|nasıl ulaşırım)/,'iletisim'],
-  [/(?:başvuru nasıl|nasıl başvuru|hangi evrak|hangi belgeler|ön değerlendirme)/,'basvuru'],
-  [/(?:dönüşüm süreci|nasıl başlar|kentsel dönüşüm nasıl|dönüşüm aşamaları|kentsel dönüşüm nedir)/,'kentsel-donusum'],
-  [/(?:şirket hakkında|kumtaş kimdir|kumtaş ne iş yapar|ne zaman kuruldu|hangi yıl kuruldu|hakkınızda bilgi)/,'kurumsal'],
-  [/(?:e imar nasıl|parsel sorgusu nasıl|imar hesabı nasıl)/,'yakut-eimar'],
-  [/(?:bu sayfada ne var|burada ne var|sayfa içeriği|bu sayfanın içeriği)/,yakutPageRecording()]
- ];
- return topics.find(([pattern,key])=>key&&Object.hasOwn(yakutSiteVoice,key)&&pattern.test(command))?.[1]||null;
-}
-function yakutLocalSiteSearch(command){
- const words=command.split(' ').filter(w=>w.length>3&&!/^(?:nedir|nasıl|hakkında|bilgi|verir|misin|yakut|lütfen|hangi|neler|kaç)$/.test(w));
- if(!words.length)return null;
- const pageText=collectYakutPageSpeech();
- const sentences=pageText.split(/(?<=[.!?])\s+/).filter(s=>s.length>15);
- let best=null,bestScore=0;
- for(const s of sentences){
-  const norm=normalizeYakutCommand(s);
-  const score=words.filter(w=>norm.includes(w)).length;
-  if(score>bestScore){bestScore=score;best=s;}
- }
- return bestScore>=2?best:null;
-}
 function isYakutHomeCommand(message){
  const t=normalizeYakutCommand(message);
  return /^(?:(?:yakut|asistan|lütfen|beni|bizi|hemen|hadi)\s+)*(?:ana\s*sayfa(?:ya|yı)?|anasayfa(?:ya|yı)?|ana\s*sayfayı\s*aç|ana\s*sayfaya\s*(?:git|dön|geç)|eve\s*dön)(?:\s+(?:aç|git|dön|geç|götür|lütfen|istiyorum))?$/.test(t);
@@ -332,9 +297,9 @@ function collectYakutPageSpeech(){
  const summary=[];let length=0;
  for(const text of pieces){
   const sentence=/[.!?…:;]$/.test(text)?text:text+'.';
-  if(length+sentence.length>1200)continue;
+  if(length+sentence.length>1450)continue;
   summary.push(sentence);length+=sentence.length+1;
-  if(summary.length===7)break;
+  if(summary.length===10)break;
  }
  return summary.join(' ');
 }
@@ -378,11 +343,7 @@ function handleYakutOfferAnswer(t){
  return false;
 }
 function yakutSpeakCurrentPage(){
- const page=getYakutCurrentPage();
- const content=collectYakutPageSpeech();
- const intro=page==='kurumsal.html'?'Kurumsal sayfasındayız. Size şirketimiz hakkında bilgi vereyim. ':yakutPageIntro(page);
- const text=intro+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
- react('agree',text,'left',[yakutPageRecording()]);
+ handle('Şu an bulunduğumuz ' + yakutPageName(getYakutCurrentPage()) + ' sayfasındaki bilgileri bana akıcı ve doğal şekilde özetleyip anlat.');
 }
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
@@ -538,7 +499,6 @@ function handleYakutParcel(command){
  yakutParcelStep='';
  return lookup();
 }
-
 let yakutScenario = null;
 function yakutOfficialImarRequest(command){
  return !/(?:ön hesap|senaryo|varsay|yüzde 30|yüzde 40|yüzde 50)/.test(command)&&
@@ -767,10 +727,8 @@ async function askYakutLive(url,payload,generation){
  if(!played||generation!==yakutVoiceGeneration)return false;
  await playbackEnded;
  if(generation!==yakutVoiceGeneration)return false;
- if(!completed)console.warn('Yakut ses akışı tamamlanmadan bağlantı kesildi.');
  return completed;
 }
-
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
@@ -809,22 +767,9 @@ if(/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:a
  yakutPageOfferPending=false;yakutSpeakCurrentPage();return;
 }
 const weather=yakutWeatherRequest(command);
-const webRequest=/(?:araştır|internet|kaynak|webde ara|güncel|bugün|yarın|son dakika|en son|maçı|maç var|fikstür|ne yenir|nerede yenir|gezilecek)/.test(command);
+const webRequest=/(?:araştır|internet|kaynak|webde ara|güncel|bugün|yarın|son dakika|en son|maç|skor|kaç kaç|kim kazandı|kim yendi|fikstür|puan durumu|haber|döviz|dolar|euro|altın|ne yenir|nerede yenir|gezilecek)/.test(command);
 const officialResearch=/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.test(command);
-if(!weather&&!webRequest){
- const siteRecording=!officialResearch&&yakutSiteRecording(command);
- if(siteRecording){
-  const reply=yakutSiteVoice[siteRecording];
-  rememberYakutTurn(q,reply);react('agree',reply,'left',[siteRecording]);return;
- }
- if(yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
- if(!officialResearch){
-  const localMatch=yakutLocalSiteSearch(command);
-  if(localMatch){
-   rememberYakutTurn(q,localMatch);react('agree',localMatch,'left');return;
-  }
- }
-}
+if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
@@ -906,33 +851,25 @@ function stopListening(){
 function speechProblem(err){
  if(!listenEnabled||hidden)return;
  if(err==='not-allowed'||err==='service-not-allowed'){
-  stopListening();show('Mikrofon erişimi engellendi. Tarayıcı adres çubuğundaki kilit simgesinden bu site için mikrofon izni verin.',10000);
-  return;
+  stopListening();return;
  }
  if(err==='audio-capture'){
-  stopListening();show('Mikrofon bulunamadı veya başka bir uygulama tarafından kullanılıyor. Mikrofonu kontrol edin; isterseniz yazarak devam edin.',11000);
-  return;
+  stopListening();return;
  }
  if(err==='no-speech'||err==='aborted'){return}
  micFailureCount++;
  if(err==='network'||err==='language-not-supported'||err==='language-unavailable'){
-  if(micFailureCount>=3){
-   stopListening();show('Tarayıcının ses tanıma bağlantısı çalışmıyor.',11000);
-   return;
-  }
+  if(micFailureCount>=3){stopListening();return;}
   micRestartAt=Date.now()+Math.min(12000,2000*micFailureCount);
-  show('Ses bağlantısı kontrol ediliyor. Sorun devam ederse yazılı mesaj kullanabilirsiniz.',4000);
  }else{
-  if(micFailureCount>=4){
-   stopListening();show('Ses algılama başlatılamadı. Mikrofon iznini ve tarayıcı ayarlarını kontrol edin.',10000);return;
-  }
+  if(micFailureCount>=4){stopListening();return;}
   micRestartAt=Date.now()+Math.min(8000,1500*micFailureCount);
  }
 }
 function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||yakutDeferredSpeech)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!API){stopListening();show('Bu tarayıcı ses tanımayı desteklemiyor. Chrome veya Edge kullanın.',9000);return}
+ if(!API){stopListening();return}
  const rec=new API();recognition=rec;micStarting=true;
  micStopOnly=speaking||processingSpeech;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
@@ -1010,12 +947,11 @@ function startSpeech(){
 talk.onclick=()=>{
  if(!ready)return;
  talk.hidden=false;
- if(listenEnabled&&recognition){stopListening();show('Dinleme durduruldu.',3000);return}
+ if(listenEnabled&&recognition){stopListening();return}
  listenEnabled=true;micFailureCount=0;micRestartAt=0;talk.hidden=getYakutCurrentPage()==='index.html';talk.textContent='🟢 Dinliyorum';
  if(!openingSpoken)beginYakutVisit();
  queueListen(250);
 };
-
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';
 if(hidden){stopListening();cancelYakutSpeech()}
@@ -1025,13 +961,11 @@ window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(
 function addYakutChestLogo() {
  const chest = model.getObjectByName('mixamorigSpine2');
  if (!chest) return;
-
  const artwork = document.createElement('canvas');
  artwork.width = 400;
  artwork.height = 350;
  const paint = artwork.getContext('2d', {willReadFrequently: true});
  if (!paint) return;
-
  const texture = new THREE.CanvasTexture(artwork);
  texture.colorSpace = THREE.SRGBColorSpace;
  texture.anisotropy = 4;
@@ -1056,7 +990,6 @@ function addYakutChestLogo() {
  logo.frustumCulled = false;
  model.add(logo);
  chest.attach(logo);
-
  const source = new Image();
  source.onload = () => {
   paint.drawImage(source, 942, 86, 133, 183, 162, 16, 76, 105);
@@ -1093,7 +1026,7 @@ function startYakutSession(){
   const pageOffer=sessionStorage.getItem('yakutPageOffer');
   sessionStorage.removeItem('yakutPageOffer');
   yakutPendingPageSpeech=yakutPageOfferPending&&pageOffer==='anlat:'+page;
- }catch(e){console.warn('YAKUT oturumu:',e)}
+ }catch(e){}
  resumeYakutSound();
 }
 window.addEventListener('pagehide',()=>{
