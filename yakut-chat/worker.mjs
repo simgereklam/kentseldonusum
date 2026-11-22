@@ -97,6 +97,10 @@ async function geminiAoedeSpeech(request, env, headers) {
 
 export default {
   async fetch(request, env) {
+    // Public health probe works for uptime monitors without an Origin header.
+    if (request.method === 'GET' && new URL(request.url).pathname === '/health')
+      return Response.json({ok:true, speech_endpoint:true, tts_voice:'Aoede'},
+        {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());
     if (!origin || !allowed.includes(origin)) return new Response(null, { status: 403 });
@@ -105,9 +109,6 @@ export default {
       ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type'
     } });
     const pathname = new URL(request.url).pathname;
-    if (pathname === '/health' && request.method === 'GET')
-      return Response.json({ok:true, gemini_configured:Boolean(env.GEMINI_API_KEY),
-        tts_voice:'Aoede', speech_endpoint:true}, {headers});
     if (!['/chat','/live'].includes(pathname) || request.method !== 'POST')
       return new Response(null, { status: 404, headers });
     if (!request.headers.get('Content-Type')?.startsWith('application/json')) return new Response(null, { status: 415, headers });
