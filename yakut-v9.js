@@ -108,8 +108,9 @@ function finishYakutSpeech(){
  if(listenEnabled&&!hidden)queueListen(300);
 }
 async function speak(text,retryOnFailure=true){
- const prompt=String(text||'').trim();
+ const prompt=prepareYakutSpokenText(String(text||'').trim());
  if(!prompt){queueListen(300);return}
+ stopYakutAudioOutput();
  yakutCurrentPrompt=prompt;
  speaking=true;
  yakutAudioPlaying=false;
@@ -227,11 +228,14 @@ function yakutWantsCompanyInfo(command){
  const topic=command.replace(/^(?:(?:yakut|asistan|lütfen) )+/, '');
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?|(?:şirket|firma)(?:imiz|iniz) hakkında bilgi)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
-function cancelYakutSpeech(){
+function stopYakutAudioOutput(){
  yakutLiveController?.abort();
- yakutChatController?.abort();
  for(const source of yakutLiveSources){try{source.stop()}catch(_){}}
  yakutLiveSources.clear();
+}
+function cancelYakutSpeech(){
+ stopYakutAudioOutput();
+ yakutChatController?.abort();
  ++yakutVoiceGeneration;yakutAudioPlaying=false;yakutDeferredSpeech='';
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
@@ -312,11 +316,26 @@ function yakutSpeakCurrentPage(){
  const text=intro+(content||'Bu sayfada ayrıntılı açıklama bulunamadı. Size hangi konuda yardımcı olabilirim?');
  react('agree',text,'left');
 }
-// Verified site contact details. Speak slash as 'A harfi', not a mathematical fraction.
+const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
+const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
+function speakYakutPhone(number){
+ return [number.slice(0,1),number.slice(1,4),number.slice(4,7),number.slice(7,9),number.slice(9)]
+  .map(group=>Array.from(group,digit=>yakutSpokenDigits[Number(digit)]).join(', '))
+  .join('. ');
+}
+function prepareYakutSpokenText(text){
+ for(const number of Object.values(yakutPhoneNumbers)){
+  const separator='[ .()\\-]*';
+  const digits=number.slice(1).split('').join(separator);
+  const phone=new RegExp('(?<!\\d)(?:(?:\\+?9)?0'+separator+')?'+digits+'(?!\\d)','g');
+  text=text.replace(phone,()=>speakYakutPhone(number));
+ }
+ return text;
+}
 const yakutContact={
  address:'Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, bina numarası iki yüz kırk beş, A harfi, Bahçelievler, İstanbul.',
- landline:'Sabit telefon numaramız: sıfır, iki yüz on iki, dokuz yüz elli beş, elli beş, doksan dokuz.',
- mobile:'Cep telefonu ve WhatsApp numaramız: sıfır, beş yüz kırk üç, yüz seksen bir, otuz dört, seksen beş.',
+ landline:'Ofis sabit telefon numaramız. '+yakutPhoneNumbers.office+'.',
+ mobile:'WhatsApp cep telefonu numaramız. '+yakutPhoneNumbers.whatsapp+'.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
 };
 function yakutWantsLocation(command){
@@ -352,6 +371,24 @@ function yakutContactRequest(message){
  if(asksPhone&&!asksAddress&&!asksEmail&&!/iletişim bilgi/.test(t))return yakutContact.landline+' '+yakutContact.mobile;
  if(asksEmail&&!asksAddress&&!asksPhone&&!/iletişim bilgi/.test(t))return yakutContact.email;
  return Object.values(yakutContact).join(' ');
+}
+function yakutPhoneAnswer(command){
+ const request=command
+  .replace(/^(?:(?:yakut|lütfen|bana|bize|sizin|kumtaş(?: inşaat)?(?: ın|ın)?|şirket(?:in|inizin|imizin)|firma(?:nın|nızın|mızın)) )+/,'')
+  .replace(/ (?:kaç|ne|nedir|hangisi|söyle(?:r misin(?:iz)?|yebilir misin(?:iz)?)?|ver(?:ir misin(?:iz)?|ebilir misin(?:iz)?)?|istiyorum|alabilir miyim|lazım|lütfen)(?: lütfen)?$/,'');
+ const office='(?:ofis(?:in|iniz(?:in)?|imiz(?:in)?)?|sabit)';
+ const mobile='(?:whats ?app(?: ın|ın)?|cep|mobil)';
+ const phone='(?:telefon(?:u|unu|unuz|unuzu|umuz|umuzu)?|numara(?:sı|sını|nız|nızı|mız|mızı|larınız|larını)?|hat(?:tı|tını|tınız)?)';
+ const channel='(?:'+office+'|'+mobile+')';
+ const line=new RegExp('^(?:'+channel+' |iletişim )*(?:'+phone+' )*'+phone+'$');
+ const parts=request.split(/ (?:ve|ile) /);
+ const bareChannel=new RegExp('^'+channel+'$');
+ if(!parts.every(part=>line.test(part)||bareChannel.test(part)))return null;
+ const asksOffice=new RegExp('(?:^| )'+office+'(?: |$)').test(request);
+ const asksMobile=new RegExp('(?:^| )'+mobile+'(?: |$)').test(request);
+ if(asksOffice&&!asksMobile)return yakutContact.landline;
+ if(asksMobile&&!asksOffice)return yakutContact.mobile;
+ return yakutContact.landline+' '+yakutContact.mobile;
 }
 const yakutMalikIntro='Malik hakları hakkında sizi bilgilendireyim. Kentsel dönüşümde riskli yapı tespiti ve tebligat, maliklerin karar sürecine katılımı ve sözleşme koşulları ayrı ayrı değerlendirilir. Riskli yapı tespitine itiraz ve kira yardımı gibi konularda süreler ve başvuru koşulları önemlidir. Hangisini ayrıntılı anlatalım?';
 function yakutExplainMalik(){
@@ -617,6 +654,8 @@ if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command
 if(yakutWantsCompanyInfo(command))return openYakutPage('kurumsal.html',true);
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
+const phoneAnswer=yakutPhoneAnswer(command);
+if(phoneAnswer){rememberYakutTurn(q,phoneAnswer);react('agree',phoneAnswer);return;}
 const destination=yakutPageCommand(command);
 if(destination){yakutParcelStep='';yakutScenario=null;return openYakutPage(destination);}
 if(handleYakutParcel(command))return;
@@ -891,20 +930,31 @@ function startYakutSession(){
  if(ready)return;
  clearTimeout(yakutStartTimer);
  ready=true;
+ const page=getYakutCurrentPage();
+ yakutPageOfferPending=page!=='index.html'&&Object.hasOwn(yakutPages,page);
  try{
-  if(sessionStorage.getItem('yakutGreeted')==='1'&&getYakutCurrentPage()!=='index.html'){
+  if(sessionStorage.getItem('yakutGreeted')==='1'&&page!=='index.html'){
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   const pageOffer=sessionStorage.getItem('yakutPageOffer');
-  const page=getYakutCurrentPage();
-  if(page!=='index.html'&&(pageOffer===page||pageOffer==='anlat:'+page)){
-   sessionStorage.removeItem('yakutPageOffer');
-   yakutPendingPageSpeech=pageOffer==='anlat:'+page;
-   yakutPageOfferPending=true;
-  }
+  sessionStorage.removeItem('yakutPageOffer');
+  yakutPendingPageSpeech=yakutPageOfferPending&&pageOffer==='anlat:'+page;
  }catch(e){console.warn('YAKUT oturumu:',e)}
  resumeYakutSound();
 }
+window.addEventListener('pagehide',()=>{
+ stopListening();
+ cancelYakutSpeech();
+ audioUnlocked=false;
+});
+window.addEventListener('pageshow',event=>{
+ if(!event.persisted)return;
+ if(yakutGreetingInProgress){
+  yakutGreetingInProgress=false;yakutOpeningBow=false;moveTo(yakutRightX());
+ }
+ if(Object.hasOwn(yakutPages,getYakutCurrentPage()))prepareYakutPageOffer();
+ resumeYakutSound();
+});
 async function init(){
 try{
 const [three,{GLTFLoader}]=await Promise.all([
