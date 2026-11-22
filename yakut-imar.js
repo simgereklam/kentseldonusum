@@ -78,9 +78,10 @@ function readZoningText(text) {
  const words = Object.keys(spokenNumbers).join('|') + '|virgül|nokta';
  const values = {};
  for (const [key, label] of Object.entries(labels)) {
-  const pattern = new RegExp('(?:^|[^\\p{L}])'+label+'(?:m(?:ız)?|nız)?[ \\t]*(?:[:=–-][ \\t]*|[ \\t]+)(?:(?:%[ \\t]*|yüzde[ \\t]+))?(?:'+number+'|(?:(?:'+words+')(?:[ \\t]+|(?=[^\\p{L}]|$)))+)', 'gu');
+  const labeled = label+'(?:m(?:ız)?|nız)?(?:[ \\t]*\\([ \\t]*(?:m²|m2|metrekare|e)[ \\t]*\\))?';
+  const pattern = new RegExp('(?:^|[^\\p{L}])'+labeled+'[ \\t]*(?:[:=–-][ \\t]*|[ \\t]+)(?:(?:%[ \\t]*|yüzde[ \\t]+))?(?:'+number+'|(?:(?:'+words+')(?:[ \\t]+|(?=[^\\p{L}]|$)))+)', 'gu');
   const entries = [...source.matchAll(pattern)].map(match => {
-   const content = match[0].replace(new RegExp('^[^\\p{L}]?'+label+'(?:m(?:ız)?|nız)?[ \\t]*(?:[:=–-][ \\t]*)?','u'), '').trim();
+   const content = match[0].replace(new RegExp('^[^\\p{L}]?'+labeled+'[ \\t]*(?:[:=–-][ \\t]*)?','u'), '').trim();
    return readNumber(content, key);
   }).filter(value => validValue(key, value));
   if (entries.length && entries.every(value => value === entries[0])) values[key] = entries[0];
