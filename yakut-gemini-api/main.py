@@ -35,12 +35,12 @@ async def chat(req: ChatRequest):
             contents.append({"role": "model" if item.role == "assistant" else "user", "parts": [{"text": item.text[:1500]}]})
     contents.append({"role": "user", "parts": [{"text": req.question}]})
     payload = {
-        "systemInstruction": {"parts": [{"text": "Sen Kumtaş İnşaat sitesinin YAKUT isimli Türkçe sesli asistanısın. Doğal ve kısa konuş. Güncel bilgileri doğrulamadan kesinmiş gibi söyleme. İmar verisini resmî kaynaktan doğrulamadıysan tahmin olarak belirt. Kullanıcı istediğinde sayfa gezinmesini web arayüzü yapar; sen asistan olarak bilgi ver."}]},
+        "systemInstruction": {"parts": [{"text": "Sen Kumtaş İnşaat sitesinin YAKUT isimli Türkçe sesli asistanısın. Doğal ve kısa konuş. Google Search veya başka bir Gemini arama aracı kullanma. Güncel bilgileri harici kaynaktan doğrulanmadıkça kesinmiş gibi söyleme. İmar verisini resmî kaynaktan doğrulamadıysan tahmin olarak belirt. Kullanıcı istediğinde sayfa gezinmesini web arayüzü yapar; sen asistan olarak bilgi ver."}]},
         "contents": contents,
         "generationConfig": {"temperature": 0.5, "maxOutputTokens": 1200},
     }
-    if req.research:
-        payload["tools"] = [{"google_search": {}}]
+    # Gemini Google Search is intentionally disabled. External research must use
+    # a separately configured search service; never enable Gemini tools here.
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
     try:
         async with httpx.AsyncClient(timeout=35) as client:
