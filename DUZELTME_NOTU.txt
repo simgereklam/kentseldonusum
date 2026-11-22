@@ -5,7 +5,7 @@ Kaldırılanlar:
 - Sol üstteki “KentselDönüşüm.com.tr” marka yazısı
 
 Yerine kurumsal başlık eklendi:
-- MASFEY İNŞAAT GRUP İŞTİRAKLERİ
-- Kardelen İnşaat • Örnek Yapı İnşaat • Lavinay İnşaat
+- KUMTAŞ İNŞAAT
+- Kumtaş İnşaat Kentsel Dönüşüm ve Yapı Grubu
 
 Başvuru ve WhatsApp butonları sayfa içinde bırakıldı; bunlar müşteri dönüşü için gereklidir.
