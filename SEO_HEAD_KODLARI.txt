@@ -30,8 +30,8 @@ HİZMETLERİMİZ:
 <link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/hizmetlerimiz.html">
 
 KURUMSAL:
-<title>Kurumsal | Masfey İnşaat Kentsel Dönüşüm İş Ortaklığı</title>
-<meta name="description" content="Masfey İnşaat, Kardelen İnşaat, Örnek Yapı İnşaat ve Lavinay İnşaat iş ortaklığıyla İstanbul’da güvenilir kentsel dönüşüm süreci.">
+<title>Kurumsal | Kumtaş İnşaat Kentsel Dönüşüm</title>
+<meta name="description" content="Kumtaş İnşaat güvencesiyle İstanbul’da güvenilir kentsel dönüşüm süreci.">
 <link rel="canonical" href="https://xn--kentseldnm-lcb7ea99k.com.tr/kurumsal.html">
 
 S.S.S:
