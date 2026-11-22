@@ -18,6 +18,83 @@ async function post(url, headers, body, provider, timeout = 2500) {
   return response.json();
 }
 
+
+// Gemini Aoede speech for the existing browser's /live PCM-NDJSON player.
+// Google Search is never used. This route requires a privately configured
+// GEMINI_API_KEY; the key is never sent to the browser.
+async function geminiAoedeSpeech(request, env, headers) {
+  if (!env.GEMINI_API_KEY) return Response.json({error:'Ses API anahtarı sunucuda yok'}, {status:503, headers});
+  let body;
+  try { body = await request.json(); } catch { return new Response(null, {status:400, headers}); }
+  const speech = body?.readAloud;
+  if (typeof speech !== 'string' || !speech.trim() || speech.length > 2000)
+    return new Response(null, {status:400, headers});
+  const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-tts';
+  const payload = {
+    contents: [{role:'user', parts:[{text:'Türkçe metni doğal ve sıcak kadın sesiyle, ekleme yapmadan seslendir: ' + speech}]}],
+    generationConfig: {responseModalities:['AUDIO'], speechConfig:{
+      voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}
+    }}
+  };
+  let upstream;
+  try {
+    upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'
+      + encodeURIComponent(model) + ':generateContent', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+      body:JSON.stringify(payload),
+      signal:AbortSignal.timeout(45000)
+    });
+  } catch {return Response.json({error:'Gemini ses sunucusuna erişilemedi'}, {status:502,headers});}
+  if (!upstream.ok) return Response.json({error:'Gemini ses yanıtı başarısız',status:upstream.status}, {status:502,headers});
+  let data;
+  try {data=await upstream.json();} catch {return Response.json({error:'Ses yanıtı okunamadı'}, {status:502,headers});}
+  const parts=data?.candidates?.[0]?.content?.parts || [];
+  const audio=parts.filter(p=>p.inlineData?.data).map(p=>p.inlineData);
+  if (!audio.length) return Response.json({error:'Gemini ses üretmedi'}, {status:502,headers});
+  let chunks=[];
+  try {
+    for (const part of audio) {
+      const mime=(part.mimeType||'').toLowerCase();
+      const binary=atob(part.data);
+      let start=0;
+      if(binary.slice(0,4)==='RIFF' && binary.slice(8,12)==='WAVE') {
+        // Inspect WAV chunks, ignoring any non-PCM metadata before data.
+        let off=12, dataStart=-1, formatValid=false;
+        while(off+8<=binary.length) {
+          const type=binary.slice(off,off+4);
+          const len=(binary.charCodeAt(off+4)|(binary.charCodeAt(off+5)<<8)|
+            (binary.charCodeAt(off+6)<<16)|(binary.charCodeAt(off+7)<<24))>>>0;
+          if(type==='fmt ' && len>=16) {
+            const u16=i=>binary.charCodeAt(i)|(binary.charCodeAt(i+1)<<8);
+            const u32=i=>(binary.charCodeAt(i)|(binary.charCodeAt(i+1)<<8)|
+              (binary.charCodeAt(i+2)<<16)|(binary.charCodeAt(i+3)<<24))>>>0;
+            formatValid=u16(off+8)===1 && u16(off+10)===1 && u32(off+12)===24000 && u16(off+22)===16;
+          }
+          if(type==='data') {dataStart=off+8;chunks.push(binary.slice(dataStart,dataStart+len));break;}
+          off+=8+len+(len%2);
+        }
+        if(!formatValid||dataStart<0) return Response.json({error:'Uyumsuz WAV ses biçimi'}, {status:502,headers});
+        continue;
+      }
+      if(!mime.startsWith('audio/l16')&&!mime.startsWith('audio/pcm'))
+        return Response.json({error:'Uyumsuz PCM ses biçimi'}, {status:502,headers});
+      chunks.push(binary);
+    }
+  } catch {return Response.json({error:'Ses verisi çözümlenemedi'}, {status:502,headers});}
+  const frames=[];
+  for (const pcm of chunks) {
+    if(pcm.length%2) return Response.json({error:'Eksik PCM örneği'}, {status:502,headers});
+    // Each frame contains 24 kHz, mono, signed little-endian 16 bit PCM.
+    for(let offset=0;offset<pcm.length;offset+=48000)
+      frames.push(JSON.stringify({audio:btoa(pcm.slice(offset,offset+48000))})+'\\n');
+  }
+  if (!frames.length) return Response.json({error:'Boş ses'}, {status:502,headers});
+  frames.push('{"done":true}\\n');
+  return new Response(frames.join(''), {status:200,headers:{...headers,
+    'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store'}});
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin');
@@ -27,11 +104,17 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: {
       ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type'
     } });
-    if (new URL(request.url).pathname !== '/chat' || request.method !== 'POST') return new Response(null, { status: 404, headers });
+    const pathname = new URL(request.url).pathname;
+    if (pathname === '/health' && request.method === 'GET')
+      return Response.json({ok:true, gemini_configured:Boolean(env.GEMINI_API_KEY),
+        tts_voice:'Aoede', speech_endpoint:true}, {headers});
+    if (!['/chat','/live'].includes(pathname) || request.method !== 'POST')
+      return new Response(null, { status: 404, headers });
     if (!request.headers.get('Content-Type')?.startsWith('application/json')) return new Response(null, { status: 415, headers });
     if (!env.CHAT_LIMITER) return new Response(null, { status: 503, headers });
     const { success } = await env.CHAT_LIMITER.limit({ key: request.headers.get('CF-Connecting-IP') || 'unknown' });
     if (!success) return new Response(null, { status: 429, headers });
+    if (pathname === '/live') return geminiAoedeSpeech(request, env, headers);
     let payload;
     try {
       const reader = request.body.getReader();
