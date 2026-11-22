@@ -246,7 +246,7 @@ async function lookup() {
  byId('source-note').textContent = districtName + ' Belediyesi sorgulanıyor.';
  try {
   const endpoint = new URL('/imar', document.querySelector('meta[name="yakut-chat-endpoint"]')?.content ||
-   'https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat');
+   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat');
   const response = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'},
    body:JSON.stringify({district, neighborhood, ada, parsel}),
    signal:AbortSignal.any([controller.signal, AbortSignal.timeout(18000)])});
