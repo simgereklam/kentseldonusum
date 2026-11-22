@@ -1,30 +1,48 @@
-<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>YAKUT ses denemesi</title><style>body{font:18px system-ui;max-width:640px;margin:10vh auto;padding:20px}button{font:inherit;padding:14px 22px}p{line-height:1.5}</style><h2>YAKUT – Ahenk ses motoru testi</h2><p>Bu sayfa çalışan YAKUT'u değiştirmez. Türkçe sinirsel ses motorunu doğrudan tarayıcıda dener.</p><button id="play">Ses denemesi başlat</button><p id="status" role="status">Hazır.</p><script type="module">
-const root='https://ozguradmin.github.io/ahenk-turkish-tts/';
-const msg='Merhaba, ben KUMTAŞ İnşaat asistanınız YAKUT. Size yardımcı olmak için buradayım.';
-const button=document.querySelector('#play'),status=document.querySelector('#status');
-let audioContext,worker,ready=false,n=0;
-const say=s=>status.textContent=s;
-function run(){say('Ses hazırlanıyor...');worker.postMessage({type:'say',id:++n,text:msg,style:'neutral',steps:8,speed:1,seed:0})}
-button.onclick=async()=>{
-try{
- audioContext??=new (window.AudioContext||window.webkitAudioContext)();await audioContext.resume();
- button.disabled=true;
- if(ready){run();return}
- say('Ahenk modeli yükleniyor...');
- const blob=new Blob([`import ${JSON.stringify(root+'js/worker.js')};`],{type:'text/javascript'});
- const url=URL.createObjectURL(blob);worker=new Worker(url,{type:'module'});URL.revokeObjectURL(url);
- worker.onerror=()=>{say('Ses motoru modülü yüklenemedi.');button.disabled=false};
- worker.onmessage=({data})=>{
- if(data.type==='ready'){ready=true;run()}
- if(data.type==='error'){say('Ses motoru hata verdi: '+data.message);button.disabled=false}
- if(data.type==='audio'){
- const pcm=new Float32Array(data.audio),b=audioContext.createBuffer(1,pcm.length,data.sampleRate);
- b.copyToChannel(pcm,0);const src=audioContext.createBufferSource();src.buffer=b;src.connect(audioContext.destination);
- src.start();say('Ses oynatılıyor.');src.onended=()=>say('Ses denemesi tamamlandı.');button.disabled=false;
- }
- if(data.type==='status')say('Ses motoru: '+data.stage);
- };
- worker.postMessage({type:'init',modelBase:'https://huggingface.co/ozgurguler/ahenk-cep-tr/resolve/main/onnx/',pyBase:root+'py/',variant:'f16',ep:'wasm',device:{mobile:/Android|iPhone|iPad/i.test(navigator.userAgent),ios:/iPhone|iPad/i.test(navigator.userAgent),webkit:/Safari/i.test(navigator.userAgent)},maxThreads:1,front:'js'});
-}catch(e){say('Başlatılamadı: '+e.message);button.disabled=false}
+<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>YAKUT ses denemesi</title><style>body{font:18px system-ui;max-width:640px;margin:10vh auto;padding:20px}button{font:inherit;padding:14px 22px}p{line-height:1.5}</style><h2>KUMTAŞ İNŞAAT – Yakut ses testi</h2><p>Yakut’un canlı bağlantısını denemek için düğmeye basın.</p><button id="play">Ses denemesi başlat</button><p id="status" role="status">Hazır.</p>
+<script src="yakut-site-voice.js"></script>
+<script type="module">
+const button = document.querySelector('#play');
+const status = document.querySelector('#status');
+let context;
+button.onclick = async () => {
+  button.disabled = true;
+  status.textContent = 'Yakut ses hazırlıyor…';
+  try {
+    context ??= new (window.AudioContext || window.webkitAudioContext)();
+    await context.resume();
+    const response = await fetch(new URL('/live', window.yakutChatServiceUrl), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({readAloud: 'Merhaba, ben KUMTAŞ İNŞAAT asistanınız Yakut.'}),
+      signal: AbortSignal.timeout(50000)
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    if (!response.headers.get('content-type')?.includes('application/x-ndjson'))
+      throw new Error('Ses akışı alınamadı.');
+    const frames = (await response.text()).trim().split('\n').map(line => JSON.parse(line));
+    if (!frames.at(-1)?.done) throw new Error('Ses aktarımı tamamlanamadı.');
+    const parts = frames.filter(frame => frame.audio).map(frame => atob(frame.audio));
+    const bytes = parts.reduce((sum, part) => sum + part.length, 0);
+    if (!bytes || parts.some(part => part.length % 2)) throw new Error('Ses verisi eksik.');
+    const buffer = context.createBuffer(1, bytes / 2, 24000);
+    const samples = buffer.getChannelData(0);
+    let index = 0;
+    for (const part of parts) {
+      for (let i = 0; i < part.length; i += 2) {
+        const value = part.charCodeAt(i) | (part.charCodeAt(i + 1) << 8);
+        samples[index++] = (value << 16 >> 16) / 32768;
+      }
+    }
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+    status.textContent = 'Yakut konuşuyor.';
+    await new Promise(resolve => { source.onended = resolve; source.start(); });
+    status.textContent = 'Canlı ses denemesi tamamlandı.';
+  } catch (error) {
+    status.textContent = 'Canlı ses denemesi başarısız. ' + error.message;
+  } finally {
+    button.disabled = false;
+  }
 };
 </script>

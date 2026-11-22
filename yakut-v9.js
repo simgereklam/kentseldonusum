@@ -160,7 +160,7 @@ async function speak(text,recordings=[],deferPlayback=true){
 }
 function yakutChatEndpoint(){
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content;
- return endpoint||'https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat';
+ return endpoint||window.yakutChatServiceUrl||'https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat';
 }
 async function ensureYakutAudio(){
  if(!audioUnlocked)return false;

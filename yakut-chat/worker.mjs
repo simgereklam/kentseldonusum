@@ -47,9 +47,9 @@ async function geminiAoedeSpeech(request, env, headers) {
   const speech = body?.readAloud;
   if (typeof speech !== 'string' || !speech.trim() || speech.length > 2000)
     return new Response(null, {status:400, headers});
-  const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  const model = env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts';
   const payload = {
-    contents: [{role:'user', parts:[{text:'Türkçe metni doğal ve sıcak kadın sesiyle, ekleme yapmadan seslendir: ' + speech}]}],
+    contents: [{role:'user', parts:[{text: speech, speechMetadata: {style: 'Sıcak ve doğal bir Türkçe anlatım.'}}]}],
     generationConfig: {responseModalities:['AUDIO'], speechConfig:{
       voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}
     }}

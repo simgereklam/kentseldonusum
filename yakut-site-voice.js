@@ -1,3 +1,6 @@
+window.yakutChatServiceUrl = document.querySelector('meta[name="yakut-chat-endpoint"]')?.content
+ || 'https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat';
+
 // Kurumsal siteye ait kısa yanıtlar ve bunların Aoede ses kayıtları.
 window.yakutSiteVoice = Object.freeze({
  "welcome": "Merhaba, hoş geldiniz. Ben Kumtaş İnşaat dijital asistanınız Yakut. Sizin için ne yapabilirim?",

@@ -30,12 +30,8 @@ Canlı kontrol: gerçek API alan adında `/health`; izin verilen site Origin'ind
 
 Gemini ses tarafı metinden konuşma (TTS) kullanır; çift yönlü Gemini Live ses oturumu değildir.
 
-## Review notes for the live-connection PR (2026-11-22)
+## Yayın doğrulaması
 
-The default Gemini TTS REST model was changed to `gemini-2.5-flash-preview-tts` as documented by Google. The `Aoede` voice remains unchanged. The same default is used in the Python alternative.
+Worker varsayılan olarak `gemini-3.8-flash-tts` modelini ve Aoede sesini kullanır. `CHAT_LIMITER` bağlantısı yoksa istek sınırı Worker örneği başına uygulanır.
 
-`CHAT_LIMITER` is optional at runtime; if unavailable, the Worker uses a best-effort per-isolate rate limiter. Configure account-level Cloudflare rate limiting in production because individual isolates do not share state.
-
-**Do not guess the workers.dev URL** from the Worker name. A Worker named `kumtas-yakut-chat` does not reveal the account's workers.dev subdomain. Verify the live deployment URL and ownership before editing `yakut-v9.js`, preconnect tags, or HTML meta tags. The website still targets the older chatgpt.site API address, and a PR merge does not replace that live host. The domain owner must configure a route/proxy or explicitly authorize a verified frontend URL change.
-
-**Branding caution:** The currently published site and prerecorded MP3 speech identify KUMTAŞ İNŞAAT. Do not change `yakut-site-voice.js` wording to MASFEY without verifying that brand change is intended and replacing prerecorded voice files; text-only edits would make written and spoken branding disagree.
+Yayından sonra gerçek Worker adresinde ve site Origin’i ile `/live` ve `/chat` isteklerini doğrulayın. Siteyi yalnızca doğrulanmış Worker adresine yönlendirin. Sitedeki `yakut-ses-test.html` aynı ses servisine kısa bir metin gönderir ve dönen sesi çalar. Bu test hazır MP3 dosyası kullanmaz.
