@@ -87,10 +87,10 @@ async function geminiAoedeSpeech(request, env, headers) {
     if(pcm.length%2) return Response.json({error:'Eksik PCM örneği'}, {status:502,headers});
     // Each frame contains 24 kHz, mono, signed little-endian 16 bit PCM.
     for(let offset=0;offset<pcm.length;offset+=48000)
-      frames.push(JSON.stringify({audio:btoa(pcm.slice(offset,offset+48000))})+'\\n');
+      frames.push(JSON.stringify({audio:btoa(pcm.slice(offset,offset+48000))})+'\n');
   }
   if (!frames.length) return Response.json({error:'Boş ses'}, {status:502,headers});
-  frames.push('{"done":true}\\n');
+  frames.push('{"done":true}\n');
   return new Response(frames.join(''), {status:200,headers:{...headers,
     'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store'}});
 }
