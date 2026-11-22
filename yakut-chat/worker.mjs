@@ -159,8 +159,13 @@ export default {
   async fetch(request, env) {
     // Public health probe works for uptime monitors without an Origin header.
     if (request.method === 'GET' && new URL(request.url).pathname === '/health')
-      return Response.json({ok:true, speech_endpoint:true, tts_voice:'Aoede'},
-        {headers:{'Cache-Control':'no-store'}});
+      return Response.json({
+        ok: true,
+        gemini_configured: Boolean(env.GEMINI_API_KEY),
+        tavily_configured: Boolean(env.TAVILY_API_KEY),
+        firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
+        chat_endpoint: true, speech_endpoint: true, tts_voice: 'Aoede'
+      }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());
     if (!origin || !allowed.includes(origin)) return new Response(null, { status: 403 });
