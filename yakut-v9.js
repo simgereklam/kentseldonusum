@@ -880,7 +880,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,450);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,250);
  };
  if(!micStopOnly){
   rec.onspeechstart=()=>clearTimeout(timer);
