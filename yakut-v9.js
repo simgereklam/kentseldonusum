@@ -134,7 +134,14 @@ async function speak(text,recordings=[],deferPlayback=true){
   if(!audioReady)return;
   if(turn!==yakutVoiceGeneration||hidden)return;
   queueListen(0);
-  if(navigator.onLine!==false&&Date.now()>=yakutVoiceRetryAt){
+  // Exact site recordings play locally without any Gemini or search API call.
+  const isExactSiteRecording=recordings.length>0
+   && recordings.every(key=>Object.hasOwn(yakutSiteVoice,key))
+   && recordings.map(key=>yakutSiteVoice[key]).join(' ')===String(text||'').trim();
+  if(isExactSiteRecording){
+   await playYakutRecordings(recordings,turn);
+   finished=true;
+  }else if(navigator.onLine!==false&&Date.now()>=yakutVoiceRetryAt){
    finished=await askYakutLive(endpoint,{readAloud:prompt},turn);
   }
   if(!finished&&turn===yakutVoiceGeneration&&!hidden){
@@ -668,7 +675,7 @@ async function askYakutLive(url,payload,generation){
  if(!audioUnlocked||context?.state!=='running')return false;
  const controller=new AbortController();
  yakutLiveController=controller;
- let timer=setTimeout(()=>controller.abort(),5500);
+ let timer=setTimeout(()=>controller.abort(),25000);
  let nextStart=0;
  let played=false;
  let completed=false;
