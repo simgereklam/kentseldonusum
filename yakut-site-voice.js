@@ -1,5 +1,5 @@
 window.yakutChatServiceUrl = document.querySelector('meta[name="yakut-chat-endpoint"]')?.content
- || 'https://kumtas-yakut-api.bloomyvanilla256.chatgpt.site/chat';
+ || 'https://kumtas-yakut-chat.simgereklam.workers.dev/chat';
 
 // Kurumsal siteye ait kısa yanıtlar ve bunların Aoede ses kayıtları.
 window.yakutSiteVoice = Object.freeze({
