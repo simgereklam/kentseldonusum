@@ -2,7 +2,7 @@ const cooldowns = new Map();
 const localRate = new Map();
 // Best-effort per-isolate safety net only. Production should also use a
 // Cloudflare rate-limit rule, as isolates do not share this map.
-function fallbackLimit(ip) {
+function fallbackLimit(ip, maximum = 30) {
   const now = Date.now();
   const item = localRate.get(ip);
   if (!item || now - item.start >= 60000) {
@@ -15,7 +15,7 @@ function fallbackLimit(ip) {
     return true;
   }
   item.count++;
-  return item.count <= 10;
+  return item.count <= maximum;
 }
 
 
@@ -223,17 +223,24 @@ export default {
     // Preserve availability when the optional limiter binding is missing.
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     let limited = false;
-    if (env.CHAT_LIMITER) {
+    // Voice playback is independent from chat quotas: each answer needs its
+    // own /live call. Keep a separate per-isolate safety limit for TTS costs.
+    if (pathname === '/live') {
+      limited = !fallbackLimit('voice:' + ip, 24);
+    } else if (pathname === '/imar') {
+      limited = !fallbackLimit('imar:' + ip, 20);
+    } else if (env.CHAT_LIMITER) {
       try {
         const {success} = await env.CHAT_LIMITER.limit({key: ip});
         limited = !success;
       } catch {
-        limited = !fallbackLimit(ip);
+        limited = !fallbackLimit('chat:' + ip, 30);
       }
     } else {
-      limited = !fallbackLimit(ip);
+      limited = !fallbackLimit('chat:' + ip, 30);
     }
-    if (limited) return new Response(null, {status:429, headers});
+    if (limited) return Response.json({error:'RATE_LIMIT',answer:'Çok fazla istek gönderildi. Lütfen kısa süre sonra yeniden deneyin.'},
+      {status:429,headers:{...headers,'Retry-After':'60'}});
     if (pathname === '/live') return geminiAoedeSpeech(request, env, headers);
 
     // Compatibility endpoint for the existing e-imar page. No official parcel
