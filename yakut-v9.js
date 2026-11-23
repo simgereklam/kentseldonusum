@@ -910,7 +910,7 @@ function startSpeech(){
     if(isYakutStopCommand(heard)){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
-    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\\s+)?yakut(?:\\s+|$)/,'').trim()||heard;
+    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
     if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||
        isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
        /^(?:yakut|merhaba|merhaba yakut|selam|selam yakut|alo yakut)$/.test(heard)||
