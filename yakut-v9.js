@@ -101,7 +101,7 @@ function onYakutSoundReady(){
   speak(...answer);
   return;
  }
- if(speaking||processingSpeech||yakutIsGreetingWalking){queueListen(0);return;}
+ if(speaking||processingSpeech||yakutIsGreetingWalking)return;
  // No unsolicited page narration: prioritize microphone commands.
  if(getYakutCurrentPage()==='yakut-eimar.html'){
   try{if(sessionStorage.getItem('yakutImarQuestion')){beginYakutVisit();return}}catch(_){}
@@ -165,7 +165,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
    return;
   }
   if(turn!==yakutVoiceGeneration||hidden)return;
-  queueListen(0);
+  /* Wait for Aoede before reactivating listening. */
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
    const utterance=prompt.length>350?prompt.slice(0,350).replace(/\s+\S*$/,'').trim():prompt;
@@ -871,7 +871,7 @@ function speechProblem(err){
  }
 }
 function startSpeech(){
- if(!ready||!listenEnabled||hidden||recognition)return;
+ if(!ready||!listenEnabled||hidden||recognition||(processingSpeech&&!speaking))return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
@@ -1062,8 +1062,8 @@ function startYakutSession(){
  }catch(e){}
  // Start Aoede as early as the browser allows, without pausing recognition.
  resumeYakutSound();
- queueListen(0);
- /* No unsolicited greetings */
+  greetYakutOnHome();
+  queueListen(0);
 }
 window.addEventListener('pagehide',()=>{
  stopListening();
