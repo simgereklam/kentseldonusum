@@ -58,24 +58,30 @@ class YakutVoiceEngine {
   osc.connect(gain).connect(this.context.destination);
   osc.start(now);osc.stop(now+duration+.01);
  }
- split(text,max=165){
-  const words=String(text).replace(/\s+/g,' ').trim().split(' ');
-  const chunks=[];let current='';
-  for(const word of words){
-   if(word.length>max){
-    if(current){chunks.push(current);current='';}
-    for(let i=0;i<word.length;i+=max)chunks.push(word.slice(i,i+max));
-   }else if(!current)current=word;
-   else if((current+' '+word).length<=max)current+=' '+word;
-   else{chunks.push(current);current=word;}
+ split(text,max=220){
+  const cleaned=String(text||'').replace(/\s+/g,' ').trim();
+  if(!cleaned)return [];
+  const sentences=cleaned.match(/[^.!?…]+(?:[.!?…]+|$)/g)||[cleaned];
+  const chunks=[];
+  let piece='';
+  const push=()=>{if(piece.trim())chunks.push(piece.trim());piece='';};
+  for(const sentence of sentences){
+   const words=sentence.trim().split(/\s+/).filter(Boolean);
+   if(!words.length)continue;
+   for(const word of words){
+    // Do not split Turkish words; exceptionally long tokens are spoken intact.
+    if(piece&&(piece.length+word.length+1>max))push();
+    piece=piece?piece+' '+word:word;
+   }
+   // End each sentence as one or more utterances, avoiding arbitrary joins.
+   push();
   }
-  if(current)chunks.push(current);
   return chunks;
  }
  stop(){
   this.active++;
   const current=this.current;this.current=null;
-  if(current){clearTimeout(current.timer);current.resolve(false);}
+  if(current){clearTimeout(current.timer);clearTimeout(current.nextTimer);current.resolve(false);}
   if(this.synth){try{this.synth.cancel()}catch(_){}}
   if(this.speaking){this.speaking=false;this.onEnd(false);}
   this.onLevel(0);
@@ -91,10 +97,10 @@ class YakutVoiceEngine {
   const generation=this.active;
   const voice=this.refreshVoices();
   return new Promise(resolve=>{
-   const state={resolve,timer:null};this.current=state;let index=0,started=false;
+   const state={resolve,timer:null,nextTimer:null};this.current=state;let index=0,started=false;
    const finish=ok=>{
     if(generation!==this.active||this.current!==state)return;
-    clearTimeout(state.timer);this.current=null;this.speaking=false;this.onLevel(0);
+    clearTimeout(state.timer);clearTimeout(state.nextTimer);this.current=null;this.speaking=false;this.onLevel(0);
     this.onEnd(ok);resolve(ok);
    };
    const next=()=>{
@@ -104,7 +110,11 @@ class YakutVoiceEngine {
     utterance.lang='tr-TR';utterance.rate=.88;utterance.pitch=1;utterance.volume=1;
     if(voice)utterance.voice=voice;
     let done=false;
-    const advance=()=>{if(done||generation!==this.active)return;done=true;clearTimeout(state.timer);next();};
+    const advance=()=>{if(done||generation!==this.active)return;done=true;
+     clearTimeout(state.timer);
+     // Some Android TTS backends drop the first syllable of immediate next utterances.
+     state.nextTimer=setTimeout(next,100);
+    };
     utterance.onstart=()=>{
      if(generation!==this.active)return;
      if(!started){started=true;this.speaking=true;this.onStart();}
