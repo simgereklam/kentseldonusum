@@ -62,52 +62,6 @@ function getYakutAudioDest(){
 }
 let yakutDeferredSpeech=null;
 
-let yakutLocalStop=null;
-function yakutLocalVoiceKeys(original, recordings=[]) {
- const voice=window.yakutSiteVoice;
- if(!voice)return [];
- const normalize=value=>String(value||'').toLocaleLowerCase('tr-TR').replace(/\s+/g,' ').trim();
- if(Array.isArray(recordings)&&recordings.length&&recordings.every(k=>typeof voice[k]==='string')&&
-    normalize(recordings.map(k=>voice[k]).join(' '))===normalize(original))return recordings;
- const match=Object.keys(voice).find(key=>normalize(voice[key])===normalize(original));
- return match?[match]:[];
-}
-// Existing Aoede MP3 recordings must work even when Gemini or search providers fail.
-async function playYakutLocalVoice(keys,generation){
- for(const key of keys){
-  if(generation!==yakutVoiceGeneration||hidden)return false;
-  const audio=new window.Audio(new URL('yakut-ses/'+encodeURIComponent(key)+'.mp3',url).href);
-  audio.preload='auto';audio.crossOrigin='anonymous';
-  let successful=false;
-  const finished=new Promise(resolve=>{
-   let settled=false;
-   const done=ok=>{
-    if(settled)return;
-    settled=true;audio.onended=null;audio.onerror=null;
-    if(yakutLocalStop===stop)yakutLocalStop=null;
-    resolve(ok);
-   };
-   const stop=()=>{audio.pause();try{audio.currentTime=0}catch(_){}done(false)};
-   yakutLocalStop=stop;
-   audio.onended=()=>done(true);audio.onerror=()=>done(false);
-  });
-  try{
-   if(yakutTtsContext?.createMediaElementSource){
-    const source=yakutTtsContext.createMediaElementSource(audio);
-    source.connect(getYakutAudioDest()||yakutTtsContext.destination);
-   }
-   await audio.play();
-   if(generation!==yakutVoiceGeneration||hidden){yakutLocalStop?.();return false}
-   beginYakutAudioPlayback();
-   successful=await finished;
-  }catch{
-   yakutLocalStop?.();return false;
-  }
-  if(!successful)return false;
- }
- return true;
-}
-
 let yakutVoiceRetryAt=0;
 let yakutStartTimer;
 function resumeYakutSound(){
@@ -191,8 +145,7 @@ function finishYakutSpeech(){
  if(listenEnabled&&!hidden)queueListen(50);
 }
 async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
- const original=String(text||'').trim();
- const prompt=prepareYakutSpokenText(original);
+ const prompt=prepareYakutSpokenText(String(text||'').trim());
  if(!prompt){speaking=false;processingSpeech=false;queueListen(50);return}
  if(!isHoldNotice)stopYakutAudioOutput();
  yakutCurrentPrompt=prompt;
@@ -211,8 +164,6 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   }
   if(turn!==yakutVoiceGeneration||hidden)return;
   queueListen(0);
-  const localKeys=yakutLocalVoiceKeys(original,_recordings);
-  if(localKeys.length&&await playYakutLocalVoice(localKeys,turn))return;
   if(navigator.onLine!==false){
    const sentences=prompt.length<=1800?[prompt]:(prompt.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean)||[prompt]);
    for(const sentence of sentences){
@@ -220,13 +171,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
     yakutAudioPlaying=false;
     let ok=await askYakutLive(endpoint,{readAloud:sentence},turn);
     if(!ok&&turn===yakutVoiceGeneration&&!hidden){
-     if(!isHoldNotice&&sentence!=='Biraz bekleteceğim.'){
-      await askYakutLive(endpoint,{readAloud:'Biraz bekleteceğim.'},turn);
-     }
-     await new Promise(resolve=>setTimeout(resolve,350));
-     if(turn===yakutVoiceGeneration&&!hidden){
-      ok=await askYakutLive(endpoint,{readAloud:sentence},turn);
-     }
+     console.warn('Yakut: Gemini Aoede sesi üretilemedi. MP3 veya başka TTS kullanılmayacak.');
     }
     yakutAudioPlaying=false;
     if(!ok)break;
@@ -332,7 +277,6 @@ function yakutWantsCompanyInfo(command){
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?|(?:şirket|firma)(?:imiz|iniz) hakkında bilgi)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
 function stopYakutAudioOutput(){
- yakutLocalStop?.();
  yakutLiveController?.abort();
  for(const source of yakutLiveSources){try{source.stop()}catch(_){}}
  yakutLiveSources.clear();
