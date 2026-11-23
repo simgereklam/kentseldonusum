@@ -1,17 +1,21 @@
 /**
- * YAKUT - Kumtaş İnşaat Hızlı Komut, Navigasyon, Bilgi ve Ses Motoru
+ * YAKUT - Kumtaş İnşaat Tam Cevap, Tek Komut Navigasyon, Anında Karşılama ve MP3/Ses Motoru
  */
 const YAKUT_CONFIG = {
   workerUrl: 'https://kumtas-yakut-chat.simgereklam.workers.dev',
-  defaultSpeechRate: 1.05,
-  maxSpeechChars: 1000,
+  defaultSpeechRate: 1.0,
+  // Cevap uzunluğuna sınır yok; MP3 veya ses tam metni okur
+  maxSpeechChars: 0,
   mp3Map: {
-    // İleride MP3 eklerseniz buraya tanımlayın:
+    // İleride MP3 dosyalarını buraya eklediğinde otomatik olarak öncelikli çalar:
+    // merhaba: './audio/merhaba.mp3',
+    // nasilsin: './audio/iyiyim-siz-nasilsiniz.mp3',
     // kurumsal_teklif: './audio/kurumsal-teklif.mp3',
-    // kurumsal: './audio/kurumsal-detay.mp3'
+    // kurumsal: './audio/kurumsal-detay.mp3',
+    // genel_teklif: './audio/genel-teklif.mp3'
   },
   routes: [
-    { path: 'kurumsal.html', label: 'Kurumsal sayfasına geçiyorum.', keywords: ['kurumsal', 'hakkımızda', 'hakkimizda', 'firma bilgisi', 'kumtaş kimdir'] },
+    { path: 'kurumsal.html', label: 'Kurumsal sayfasına geçiyorum.', keywords: ['kurumsal', 'kurumsal sayfa', 'kurumsal sayfası', 'hakkımızda', 'hakkimizda', 'firma bilgisi', 'kumtaş kimdir'] },
     { path: 'kentsel-donusum.html', label: 'Kentsel Dönüşüm sayfasına geçiyorum.', keywords: ['kentsel dönüşüm', 'kentsel donusum', 'dönüşüm sayfası', 'riskli bina'] },
     { path: 'projelerimiz.html', label: 'Projelerimiz sayfasına geçiyorum.', keywords: ['projeler', 'projelerimiz', 'binalar', 'örnek projeler'] },
     { path: 'hizmetlerimiz.html', label: 'Hizmetlerimiz sayfasına geçiyorum.', keywords: ['hizmetler', 'hizmetlerimiz', 'neler yapıyorsunuz'] },
@@ -22,6 +26,34 @@ const YAKUT_CONFIG = {
     { path: 'index.html', label: 'Ana sayfaya geçiyorum.', keywords: ['ana sayfa', 'anasayfa', 'başlangıç'] }
   ]
 };
+
+const SMALL_TALK_RESPONSES = [
+  {
+    key: 'nasilsin',
+    triggers: ['nasılsın', 'nasilsin', 'naber', 'ne haber', 'nasıl gidiyor', 'nasil gidiyor', 'keyfin nasıl', 'keyfin nasil'],
+    answer: 'İyiyim, teşekkür ederim. Siz nasılsınız? Kentsel dönüşüm süreci, kira ve taşınma yardımları, sözleşme adımları veya kullandığımız malzemeler hakkında nasıl yardımcı olabilirim?'
+  },
+  {
+    key: 'merhaba',
+    triggers: ['merhaba', 'selam', 'selamünaleyküm', 'selamunaleykum', 'günaydın', 'gunaydin', 'iyi akşamlar', 'iyi aksamlar', 'iyi günler', 'iyi gunler'],
+    answer: 'Merhaba! Ben Yakut, Kumtaş İnşaat asistanıyım. Bugün size nasıl yardımcı olabilirim?'
+  },
+  {
+    key: 'tesekkur',
+    triggers: ['teşekkür', 'tesekkur', 'sağ ol', 'sagol', 'sağol', 'eyvallah', 'çok sağol', 'cok sagol'],
+    answer: 'Rica ederim, ne demek! Başka bir konuda merak ettiğiniz bir şey varsa memnuniyetle anlatırım.'
+  },
+  {
+    key: 'kimsin',
+    triggers: ['sen kimsin', 'adın ne', 'adin ne', 'kimsin'],
+    answer: 'Ben Yakut; Kumtaş İnşaat için kentsel dönüşüm süreci, kira ve taşınma yardımları, sözleşme adımları ve malzeme listemiz hakkında bilgi veren dijital asistanınızım.'
+  },
+  {
+    key: 'gorusuruz',
+    triggers: ['görüşürüz', 'gorusuruz', 'hoşça kal', 'hosca kal', 'bay bay', 'bye', 'kapat'],
+    answer: 'Görüşmek üzere, sağlıklı ve güvenli günler dilerim.'
+  }
+];
 
 const KUMTAS_KNOWLEDGE = [
   {
@@ -85,6 +117,7 @@ class YakutAssistant {
     this.currentAudio = null;
     this.isSpeaking = false;
     this.pendingOffer = null;
+    this.greetedOnce = false;
     this.history = [];
     this.safetyTimer = null;
     this.navTimer = null;
@@ -114,7 +147,7 @@ class YakutAssistant {
         key: 'malzeme',
         title: 'Malzeme ve Teknik Özellikler',
         offer: 'Malzeme ve teknik detaylar sayfasındayız; kullandığımız demir, beton, kombi, yerden ısıtma ve ankastre özelliklerini anlatmamı ister misiniz?',
-        detail: KUMTAS_KNOWLEDGE[0].answer + ' ' + KUMTAS_KNOWLEDGE[1].answer
+        detail: KUMTAS_KNOWLEDGE[0].answer + ' ' + KUMTAS_KNOWLEDGE[1].answer + ' ' + KUMTAS_KNOWLEDGE[2].answer
       };
     }
     if (path.includes('imar')) {
@@ -128,26 +161,38 @@ class YakutAssistant {
     return {
       key: 'genel',
       title: 'Kentsel Dönüşüm Danışmanı',
-      offer: 'Kurumsal veya diğer sayfalarımıza geçmek isterseniz söyleyebilirsiniz; kentsel dönüşüm, kira yardımı, sözleşme veya malzeme listemiz hakkında bilgi vermemi ister misiniz?',
-      detail: KUMTAS_KNOWLEDGE[6].answer + ' ' + KUMTAS_KNOWLEDGE[0].answer
+      offer: 'Merhaba, ben Yakut. Kurumsal veya diğer sayfalarımıza geçmek isterseniz söyleyebilirsiniz; kentsel dönüşüm, kira yardımı, sözleşme veya malzeme listemiz hakkında bilgi vermemi ister misiniz?',
+      detail: KUMTAS_KNOWLEDGE[6].answer + ' ' + KUMTAS_KNOWLEDGE[0].answer + ' ' + KUMTAS_KNOWLEDGE[4].answer
     };
+  }
+
+  findSmallTalk(cleanText) {
+    if (!cleanText) return null;
+    for (const item of SMALL_TALK_RESPONSES) {
+      for (const trig of item.triggers) {
+        const ntrig = this.normalize(trig);
+        if (cleanText === ntrig || cleanText.startsWith(ntrig + ' ') || cleanText.endsWith(' ' + ntrig) || cleanText.includes(' ' + ntrig + ' ')) {
+          return item;
+        }
+      }
+    }
+    return null;
   }
 
   findNavigationRoute(cleanText) {
     if (!cleanText) return null;
-    const words = cleanText.split(' ');
+    const currentPath = this.normalize(window.location.pathname);
+
     for (const route of YAKUT_CONFIG.routes) {
       for (const kw of route.keywords) {
         const nkw = this.normalize(kw);
-        if (cleanText === nkw || cleanText.includes(nkw) || words.includes(nkw)) {
-          const currentPath = this.normalize(window.location.pathname);
-          const targetBase = route.path.replace('.html', '');
-          if (currentPath.endsWith('/' + route.path) || (route.path === 'index.html' && (currentPath === '/' || currentPath === ''))) {
-            return { ...route, alreadyHere: true };
-          }
-          if (nkw.length >= 4 || cleanText.includes('sayfa') || cleanText.includes('git') || cleanText.includes('aç') || words.includes(targetBase)) {
-            return { ...route, alreadyHere: false };
-          }
+        if (!nkw) continue;
+        if (cleanText === nkw || cleanText.includes(nkw)) {
+          const isHere =
+            currentPath.endsWith('/' + route.path) ||
+            currentPath.endsWith(route.path) ||
+            (route.path === 'index.html' && (currentPath === '' || currentPath === '/'));
+          return { ...route, alreadyHere: isHere };
         }
       }
     }
@@ -159,21 +204,25 @@ class YakutAssistant {
       clearTimeout(this.navTimer);
       this.navTimer = null;
     }
+    this.stopSpeaking();
     this.hooks.onMessage({ role: 'assistant', text: label, source: 'navigation' });
     if (typeof this.hooks.onNavigate === 'function') {
       this.hooks.onNavigate(targetPath, label);
     }
-    // Kısa onay sonrası sayfaya gecikmesiz geçiş yap
     this.navTimer = setTimeout(() => {
       window.location.href = targetPath;
-    }, 220);
+    }, 150);
   }
 
-  async greetOnPageOpen({ autoSpeak = false } = {}) {
+  async greetOnPageOpen({ autoSpeak = true, force = false } = {}) {
+    if (this.greetedOnce && !force) return this.pendingOffer?.offer || null;
+    this.greetedOnce = true;
+
     const sec = this.detectPageSection();
     this.pendingOffer = {
       sectionKey: sec.key,
       sectionTitle: sec.title,
+      offer: sec.offer,
       text: sec.detail
     };
     this.hooks.onMessage({ role: 'assistant', text: sec.offer, source: 'page-offer' });
@@ -229,7 +278,6 @@ class YakutAssistant {
     const question = String(rawQuestion || '').trim();
     if (!question) return null;
 
-    // Yeni komut gelir gelmez önceki yarım sesi anında durdur ve kilidi aç
     this.stopSpeaking();
 
     this.hooks.onMessage({ role: 'user', text: question, source: 'user' });
@@ -238,7 +286,7 @@ class YakutAssistant {
 
     const clean = this.normalize(question);
 
-    // 0. Sayfa geçiş komutu varsa bekletmeden yönlendir ("kurumsal", "iletişim", "bölgeler" vb.)
+    // 1. Tek komutla sayfa açma ("kurumsal", "iletişim", "bölgeler" vb.)
     const navMatch = this.findNavigationRoute(clean);
     if (navMatch && !navMatch.alreadyHere) {
       this.navigateTo(navMatch.path, navMatch.label);
@@ -251,11 +299,23 @@ class YakutAssistant {
       return samePageMsg;
     }
 
+    // 2. Günlük sohbet / selamlaşma / hal-hatır
+    const smallTalk = this.findSmallTalk(clean);
+    if (smallTalk) {
+      this.history.push({ role: 'assistant', text: smallTalk.answer });
+      this.history = this.history.slice(-8);
+      this.hooks.onMessage({ role: 'assistant', text: smallTalk.answer, source: 'small-talk' });
+      if (speakResponse) {
+        this.speak(smallTalk.answer, smallTalk.key);
+      }
+      return smallTalk.answer;
+    }
+
     let answer = null;
     let mp3Key = null;
     let source = 'local';
 
-    // 1. Açılış / bölüm teklifine onay varsa ("evet", "isteriz", "anlat")
+    // 3. Açılış teklifine onay ("evet", "isteriz", "anlat")
     if (this.pendingOffer && this.isAffirmative(clean)) {
       answer = this.pendingOffer.text;
       mp3Key = this.pendingOffer.sectionKey;
@@ -263,12 +323,12 @@ class YakutAssistant {
       source = 'section-detail';
     }
 
-    // 2. Yerel bilgi bankası (anında, ağ beklemeden)
+    // 4. Yerel bilgi bankası (sınırsız tam metin)
     if (!answer) {
       answer = this.findLocalKnowledgeAnswer(question);
     }
 
-    // 3. Yerel bilgi bankasında yoksa Worker /chat hattına sor (hızlı zaman aşımı ile)
+    // 5. Yerel bilgi bankasında yoksa Worker /chat hattına sor
     if (!answer) {
       source = 'worker-chat';
       try {
@@ -281,7 +341,7 @@ class YakutAssistant {
             history: this.history,
             research: true
           }),
-          signal: AbortSignal.timeout(7000)
+          signal: AbortSignal.timeout(8000)
         });
         const data = await res.json();
         answer = data?.answer || 'Bu konuda şu an net bir bilgiye ulaşamadım; dilerseniz kentsel dönüşüm, sözleşme, kira ve taşınma yardımı veya malzeme listemiz hakkında sorabilirsiniz.';
@@ -344,10 +404,11 @@ class YakutAssistant {
         this.setSpeakingState(false);
       };
 
+      // Uzun MP3 dosyalarının kesilmemesi için geniş süre (5 dakika)
       this.safetyTimer = setTimeout(() => {
         cleanup();
         reject(new Error('MP3_TIMEOUT'));
-      }, 30000);
+      }, 300000);
 
       audio.onplay = () => this.setSpeakingState(true);
       audio.onended = () => {
@@ -368,8 +429,11 @@ class YakutAssistant {
 
   speakFallbackBrowser(text) {
     return new Promise((resolve) => {
-      const clipped = String(text || '').slice(0, YAKUT_CONFIG.maxSpeechChars);
-      if (!clipped || !('speechSynthesis' in window)) {
+      const fullText = YAKUT_CONFIG.maxSpeechChars > 0
+        ? String(text || '').slice(0, YAKUT_CONFIG.maxSpeechChars)
+        : String(text || '');
+
+      if (!fullText || !('speechSynthesis' in window)) {
         this.setSpeakingState(false);
         resolve(false);
         return;
@@ -379,7 +443,7 @@ class YakutAssistant {
         window.speechSynthesis.cancel();
       } catch {}
 
-      const utter = new SpeechSynthesisUtterance(clipped);
+      const utter = new SpeechSynthesisUtterance(fullText);
       utter.lang = 'tr-TR';
       utter.rate = YAKUT_CONFIG.defaultSpeechRate;
 
@@ -396,10 +460,11 @@ class YakutAssistant {
         resolve(ok);
       };
 
+      // Uzun cevapların yarım kalmaması için geniş güvenlik süresi
       this.safetyTimer = setTimeout(() => {
         try { window.speechSynthesis.cancel(); } catch {}
         finish(false);
-      }, Math.max(7000, clipped.length * 85));
+      }, Math.max(25000, fullText.length * 140));
 
       utter.onstart = () => this.setSpeakingState(true);
       utter.onend = () => finish(true);
