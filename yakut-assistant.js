@@ -1,13 +1,15 @@
 /**
- * YAKUT - Kumtaş İnşaat Tam Cevap, Tek Komut Navigasyon, Anında Karşılama ve MP3/Ses Motoru
+ * YAKUT - Kumtaş İnşaat Türkçe, Tek Kadın Ses Odaklı, Anında Komut ve Sayfa Yönlendirme Motoru
  */
 const YAKUT_CONFIG = {
   workerUrl: 'https://kumtas-yakut-chat.simgereklam.workers.dev',
+  language: 'tr-TR',
   defaultSpeechRate: 1.0,
-  // Cevap uzunluğuna sınır yok; MP3 veya ses tam metni okur
   maxSpeechChars: 0,
+  // Robotsu tarayıcı sesini kapatıp MP3 + /live kadın sesini kullanmak için false
+  allowBrowserSpeechFallback: false,
   mp3Map: {
-    // İleride MP3 dosyalarını buraya eklediğinde otomatik olarak öncelikli çalar:
+    // İleride MP3 eklersen buraya yaz; yoksa /live hattından Türkçe kadın sesiyle okur:
     // merhaba: './audio/merhaba.mp3',
     // nasilsin: './audio/iyiyim-siz-nasilsiniz.mp3',
     // kurumsal_teklif: './audio/kurumsal-teklif.mp3',
@@ -46,7 +48,7 @@ const SMALL_TALK_RESPONSES = [
   {
     key: 'kimsin',
     triggers: ['sen kimsin', 'adın ne', 'adin ne', 'kimsin'],
-    answer: 'Ben Yakut; Kumtaş İnşaat için kentsel dönüşüm süreci, kira ve taşınma yardımları, sözleşme adımları ve malzeme listemiz hakkında bilgi veren dijital asistanınızım.'
+    answer: 'Ben Yakut; Kumtaş İnşaat için kentsel dönüşüm süreci, kira ve taşınma yardımları, sözleşme adımları ve malzeme listemiz hakkında bilgi veren Türkçe dijital asistanınızım.'
   },
   {
     key: 'gorusuruz',
@@ -106,6 +108,12 @@ const KUMTAS_KNOWLEDGE = [
   }
 ];
 
+function looksEnglish(text) {
+  const clean = String(text || '').toLowerCase();
+  const engHits = ['hello', 'hi there', 'how can i help', 'i am an ai', 'language model', 'sure,', 'of course,', 'sorry,', 'as an ai'];
+  return engHits.some(w => clean.includes(w));
+}
+
 class YakutAssistant {
   constructor(hooks = {}) {
     this.hooks = {
@@ -115,6 +123,7 @@ class YakutAssistant {
       onError: hooks.onError || (() => {})
     };
     this.currentAudio = null;
+    this.audioCtx = null;
     this.isSpeaking = false;
     this.pendingOffer = null;
     this.greetedOnce = false;
@@ -209,9 +218,8 @@ class YakutAssistant {
     if (typeof this.hooks.onNavigate === 'function') {
       this.hooks.onNavigate(targetPath, label);
     }
-    this.navTimer = setTimeout(() => {
-      window.location.href = targetPath;
-    }, 150);
+    // Hemen yönlendir ki komut geç kalmasın
+    window.location.href = targetPath;
   }
 
   async greetOnPageOpen({ autoSpeak = true, force = false } = {}) {
@@ -299,7 +307,7 @@ class YakutAssistant {
       return samePageMsg;
     }
 
-    // 2. Günlük sohbet / selamlaşma / hal-hatır
+    // 2. Günlük sohbet / selamlaşma / hal-hatır (anında, ağ beklemeden)
     const smallTalk = this.findSmallTalk(clean);
     if (smallTalk) {
       this.history.push({ role: 'assistant', text: smallTalk.answer });
@@ -323,12 +331,12 @@ class YakutAssistant {
       source = 'section-detail';
     }
 
-    // 4. Yerel bilgi bankası (sınırsız tam metin)
+    // 4. Yerel bilgi bankası (anında, tam metin, sıfır bekleme)
     if (!answer) {
       answer = this.findLocalKnowledgeAnswer(question);
     }
 
-    // 5. Yerel bilgi bankasında yoksa Worker /chat hattına sor
+    // 5. Yerel bilgi bankasında yoksa Worker /chat hattına sor (Türkçe zorunlu)
     if (!answer) {
       source = 'worker-chat';
       try {
@@ -336,17 +344,20 @@ class YakutAssistant {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            question,
+            question: `${question} (Yanıtı mutlaka %100 akıcı Türkçe ver, kesinlikle İngilizce kullanma.)`,
             reference: this.getPageContextText(),
             history: this.history,
             research: true
           }),
-          signal: AbortSignal.timeout(8000)
+          signal: AbortSignal.timeout(5000)
         });
         const data = await res.json();
-        answer = data?.answer || 'Bu konuda şu an net bir bilgiye ulaşamadım; dilerseniz kentsel dönüşüm, sözleşme, kira ve taşınma yardımı veya malzeme listemiz hakkında sorabilirsiniz.';
+        const candidate = String(data?.answer || '').trim();
+        answer = (!candidate || looksEnglish(candidate))
+          ? 'Bu konuda size Türkçe olarak kentsel dönüşüm süreci, kira ve taşınma yardımları, sözleşme adımları veya kullandığımız 1. sınıf malzemeler hakkında hemen bilgi verebilirim.'
+          : candidate;
       } catch {
-        answer = 'Şu an yanıt biraz gecikti; kurumsal sayfa, malzeme listesi, kira yardımı veya sözleşme konularında hemen yardımcı olabilirim.';
+        answer = 'Şu an dış bağlantı yavaş; kurumsal sayfa, malzeme listesi, kira yardımı veya sözleşme konularında hemen yardımcı olabilirim.';
         source = 'fallback';
       }
     }
@@ -404,7 +415,6 @@ class YakutAssistant {
         this.setSpeakingState(false);
       };
 
-      // Uzun MP3 dosyalarının kesilmemesi için geniş süre (5 dakika)
       this.safetyTimer = setTimeout(() => {
         cleanup();
         reject(new Error('MP3_TIMEOUT'));
@@ -427,65 +437,75 @@ class YakutAssistant {
     });
   }
 
-  speakFallbackBrowser(text) {
-    return new Promise((resolve) => {
-      const fullText = YAKUT_CONFIG.maxSpeechChars > 0
-        ? String(text || '').slice(0, YAKUT_CONFIG.maxSpeechChars)
-        : String(text || '');
+  async playWorkerFemaleLive(text) {
+    const clipped = String(text || '').trim();
+    if (!clipped) return false;
+    try {
+      const res = await fetch(`${YAKUT_CONFIG.workerUrl}/live`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ readAloud: clipped.slice(0, 1950) }),
+        signal: AbortSignal.timeout(15000)
+      });
+      if (!res.ok) return false;
+      const raw = await res.text();
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      const pcmParts = [];
+      for (const line of lines) {
+        try {
+          const obj = JSON.parse(line);
+          if (obj?.audio) {
+            const bin = atob(obj.audio);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            pcmParts.push(bytes);
+          }
+        } catch {}
+      }
+      if (!pcmParts.length) return false;
 
-      if (!fullText || !('speechSynthesis' in window)) {
-        this.setSpeakingState(false);
-        resolve(false);
-        return;
+      const totalLen = pcmParts.reduce((acc, b) => acc + b.length, 0);
+      const merged = new Uint8Array(totalLen);
+      let pos = 0;
+      for (const b of pcmParts) {
+        merged.set(b, pos);
+        pos += b.length;
       }
 
-      try {
-        window.speechSynthesis.cancel();
-      } catch {}
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return false;
+      if (!this.audioCtx) this.audioCtx = new AudioCtx({ sampleRate: 24000 });
+      if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
 
-      const utter = new SpeechSynthesisUtterance(fullText);
-      utter.lang = 'tr-TR';
-      utter.rate = YAKUT_CONFIG.defaultSpeechRate;
-
-      const voices = window.speechSynthesis.getVoices?.() || [];
-      const trVoice = voices.find(v => String(v.lang || '').toLowerCase().startsWith('tr'));
-      if (trVoice) utter.voice = trVoice;
-
-      const finish = (ok) => {
-        if (this.safetyTimer) {
-          clearTimeout(this.safetyTimer);
-          this.safetyTimer = null;
-        }
-        this.setSpeakingState(false);
-        resolve(ok);
-      };
-
-      // Uzun cevapların yarım kalmaması için geniş güvenlik süresi
-      this.safetyTimer = setTimeout(() => {
-        try { window.speechSynthesis.cancel(); } catch {}
-        finish(false);
-      }, Math.max(25000, fullText.length * 140));
-
-      utter.onstart = () => this.setSpeakingState(true);
-      utter.onend = () => finish(true);
-      utter.onerror = () => finish(false);
-
-      try {
-        window.__YAKUT_ALLOW_NATIVE_SPEECH__ = true;
-        window.speechSynthesis.speak(utter);
-      } catch {
-        finish(false);
-      } finally {
-        setTimeout(() => {
-          window.__YAKUT_ALLOW_NATIVE_SPEECH__ = false;
-        }, 50);
+      const sampleCount = Math.floor(merged.length / 2);
+      const audioBuffer = this.audioCtx.createBuffer(1, sampleCount, 24000);
+      const channel = audioBuffer.getChannelData(0);
+      const view = new DataView(merged.buffer, merged.byteOffset, sampleCount * 2);
+      for (let i = 0; i < sampleCount; i++) {
+        channel[i] = view.getInt16(i * 2, true) / 32768;
       }
-    });
+
+      return await new Promise((resolve) => {
+        const src = this.audioCtx.createBufferSource();
+        src.buffer = audioBuffer;
+        src.connect(this.audioCtx.destination);
+        this.setSpeakingState(true);
+        src.onended = () => {
+          this.setSpeakingState(false);
+          resolve(true);
+        };
+        src.start();
+      });
+    } catch {
+      this.setSpeakingState(false);
+      return false;
+    }
   }
 
   async speak(text, mp3Key = null) {
     this.stopSpeaking();
 
+    // 1. Önce varsa MP3 çal
     const mp3Url = mp3Key && YAKUT_CONFIG.mp3Map[mp3Key];
     if (mp3Url) {
       try {
@@ -494,7 +514,16 @@ class YakutAssistant {
       } catch {}
     }
 
-    return this.speakFallbackBrowser(text);
+    // 2. MP3 yoksa robotsu erkek sesi yerine doğrudan /live (Aoede kadın sesi) ile oku
+    const playedLive = await this.playWorkerFemaleLive(text);
+    if (playedLive) return true;
+
+    // 3. Yalnızca açıkça izin verilirse ve kadın ses bulunursa tarayıcıyı kullan
+    if (!YAKUT_CONFIG.allowBrowserSpeechFallback || !('speechSynthesis' in window)) {
+      this.setSpeakingState(false);
+      return false;
+    }
+    return false;
   }
 }
 
