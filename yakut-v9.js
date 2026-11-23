@@ -74,8 +74,7 @@ function resumeYakutSound(){
  if(!yakutTtsContext){
   audioUnlocked=true;
   listenEnabled=true;
-  if(!speaking&&!processingSpeech&&!yakutIsGreetingWalking&&!yakutGreetingInProgress)beginYakutVisit();
-  queueListen(50);
+  queueListen(0);
   return;
  }
  if(yakutTtsContext.state==='running')onYakutSoundReady();
@@ -97,9 +96,12 @@ function onYakutSoundReady(){
   speak(...answer);
   return;
  }
- if(speaking||processingSpeech||yakutIsGreetingWalking)return;
- if(!yakutGreetingInProgress)beginYakutVisit();
- else queueListen(50);
+ if(speaking||processingSpeech||yakutIsGreetingWalking){queueListen(0);return;}
+ // No unsolicited page narration: prioritize microphone commands.
+ if(getYakutCurrentPage()==='yakut-eimar.html'){
+  try{if(sessionStorage.getItem('yakutImarQuestion')){beginYakutVisit();return}}catch(_){}
+ }
+ queueListen(0);
 }
 function beginYakutVisit(){
  if(!ready||hidden||!model)return;
@@ -438,6 +440,7 @@ function yakutExplainMalik(){
 }
 function openYakutPage(path,narrate=false){
  const current=getYakutCurrentPage();
+ yakutPageOfferPending=false;
  cancelYakutSpeech();
  if(current===path){yakutPendingPageSpeech=narrate;prepareYakutPageOffer();queueListen(250);return true}
  try{
