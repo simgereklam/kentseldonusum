@@ -414,6 +414,9 @@ function handleYakutOfferAnswer(t){
  return false;
 }
 function yakutSpeakCurrentPage(){
+ const page=getYakutCurrentPage().replace(/\.html$/,'');
+ const localText=window.yakutSiteVoice?.[page];
+ if(localText){react('agree',localText,'left',[page]);return}
  handle('Şu an bulunduğumuz ' + yakutPageName(getYakutCurrentPage()) + ' sayfasındaki bilgileri bana akıcı ve doğal şekilde özetleyip anlat.');
 }
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
