@@ -13,7 +13,7 @@ const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat’ın yapay zekâ asistanı Yakut. Sizi dinliyorum.';
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=gemini-only-20261123',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=gemini-only-20261123b',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
