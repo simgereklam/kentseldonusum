@@ -787,7 +787,7 @@ async function yakutLiveConversation(question,reference,generation){
    };
    socket.onerror=done;socket.onclose=done;
   });
-  if(lastEnded)await Promise.race([lastEnded,new Promise(resolve=>setTimeout(resolve,15000))]);
+  if(lastEnded)await Promise.race([lastEnded,new Promise(resolve=>setTimeout(resolve,60000))]);
   return played;
  }catch(e){console.info('Yakut Live:',e?.message||e);return played}
  finally{
