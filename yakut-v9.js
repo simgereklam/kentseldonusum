@@ -17,7 +17,7 @@ css.textContent=`
 #yakut-v9 canvas{display:block;width:100%;height:100%}
 #yakut-map-link{position:fixed;right:14px;bottom:74px;z-index:135;background:#09638c;color:white;padding:10px 14px;border-radius:20px;font:700 14px Arial,sans-serif;text-decoration:none}
 #yakut-map-link[hidden]{display:none}
-#yakut-v9-ui{display:none!important}
+#yakut-v9-ui[hidden]{display:none!important}
 #yakut-v9-ui{position:fixed;bottom:14px;left:3px;z-index:130;display:flex;gap:6px;align-items:center;max-width:calc(100vw - 24px);font:600 13px Arial,sans-serif}
 #yakut-v9-ui button{border:1px solid #4fb3e9;background:#095983;color:#fff;border-radius:18px;padding:9px 12px;cursor:pointer;box-shadow:0 3px 10px #0003}
 #yakut-v9-ui button:hover{background:#137aaa}
@@ -30,7 +30,7 @@ document.head.appendChild(css);
 const stage=document.createElement('div');stage.id='yakut-v9';stage.setAttribute('aria-label','Hareketli 3D YAKUT asistanı');
 stage.appendChild(document.createElement('canvas'));
 const ui=document.createElement('div');ui.id='yakut-v9-ui';
-ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Mikrofon izni ver" hidden>🎤 İzin Ver</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
+ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Yakut sesini etkinleştir">🔊 Sesi Aç</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
 document.body.append(stage,ui);
 const talk=ui.querySelector('#yakut-talk'),close=ui.querySelector('#yakut-close');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
@@ -73,13 +73,14 @@ function resumeYakutSound(){
  }
  if(!yakutTtsContext){
   audioUnlocked=true;
+  talk.hidden=true;
   listenEnabled=true;
   queueListen(0);
   return;
  }
  if(yakutTtsContext.state==='running')onYakutSoundReady();
  else yakutTtsContext.resume().then(onYakutSoundReady).catch(()=>{
-  audioUnlocked=true;
+  // Keep the visible sound-enable button available for another user gesture.
   listenEnabled=true;
   queueListen(50);
  });
@@ -87,6 +88,7 @@ function resumeYakutSound(){
 function onYakutSoundReady(){
  if(!ready||hidden)return;
  audioUnlocked=true;
+ talk.hidden=true;
  listenEnabled=true;
  if(yakutDeferredSpeech){
   const answer=yakutDeferredSpeech;
@@ -823,7 +825,7 @@ function releaseYakutMic(){
 }
 function stopListening(){
  listenEnabled=false;clearTimeout(listenRetry);releaseYakutMic();
- talk.textContent='🎤 YAKUT';
+ talk.textContent='🔊 Sesi Aç';
 }
 function speechProblem(err){
  if(!listenEnabled||hidden)return;
@@ -930,11 +932,10 @@ function startSpeech(){
  }
 }
 talk.onclick=()=>{
- if(!ready)return;
- talk.hidden=false;
- if(listenEnabled&&recognition){stopListening();return}
- listenEnabled=true;micFailureCount=0;micRestartAt=0;talk.hidden=getYakutCurrentPage()==='index.html';talk.textContent='🟢 Dinliyorum';
- queueListen(50);
+ // A real click is required by some browsers to unlock Web Audio playback.
+ listenEnabled=true;micFailureCount=0;micRestartAt=0;
+ resumeYakutSound();
+ queueListen(0);
 };
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';
