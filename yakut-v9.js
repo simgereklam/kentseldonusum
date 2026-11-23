@@ -285,6 +285,8 @@ function yakutWantsCompanyInfo(command){
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?|(?:şirket|firma)(?:imiz|iniz) hakkında bilgi)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
 function stopYakutAudioOutput(){
+ try{yakutRealtimeSocket?.close()}catch(_){}
+ yakutRealtimeSocket=null;
  yakutLiveController?.abort();
  for(const source of yakutLiveSources){try{source.stop()}catch(_){}}
  yakutLiveSources.clear();
@@ -718,6 +720,70 @@ async function askYakutLive(url,payload,generation){
  if(generation!==yakutVoiceGeneration)return false;
  return completed;
 }
+
+let yakutRealtimeSocket=null;
+async function yakutLiveConversation(question,reference,generation){
+ if(!audioUnlocked||!yakutTtsContext||yakutTtsContext.state!=='running')return false;
+ let socket=null,played=false,nextStart=0,lastEnded=null;
+ const clock=setTimeout(()=>{try{socket?.close()}catch(_){}},26000);
+ try{
+  const response=await fetch(new URL('/live-token',yakutChatEndpoint()),{
+   method:'POST',headers:{'Content-Type':'application/json'},body:'{}',
+   signal:AbortSignal.timeout(12000)
+  });
+  if(!response.ok)return false;
+  const auth=await response.json();
+  if(!auth.token||!auth.model||generation!==yakutVoiceGeneration)return false;
+  socket=new WebSocket('wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token='+encodeURIComponent(auth.token));
+  yakutRealtimeSocket=socket;
+  await new Promise(resolve=>{
+   let settled=false,sent=false;
+   const done=()=>{if(!settled){settled=true;resolve()}};
+   socket.onopen=()=>socket.send(JSON.stringify({setup:{
+    model:'models/'+String(auth.model).replace(/^models\//,''),
+    generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}}},
+    systemInstruction:{parts:[{text:'Sen Kumtaş İnşaat asistanı Yakut\'sun. Doğal ve sıcak Türkçe konuş. Sorulara en fazla iki kısa cümleyle hızlı cevap ver. Sayfa değiştirme komutları tarayıcıda yerel yönetilir. Kaynağı olmayan güncel bilgi uydurma.'}]}
+   }}));
+   socket.onmessage=e=>{
+    if(generation!==yakutVoiceGeneration){done();socket.close();return}
+    let msg;try{msg=JSON.parse(e.data)}catch(_){return}
+    if(msg.setupComplete&&!sent){
+     sent=true;
+     socket.send(JSON.stringify({clientContent:{turns:[{role:'user',parts:[{text:'Soru: '+question+'\nSayfa bağlamı: '+reference.slice(0,750)}]}],turnComplete:true}}));
+    }
+    const content=msg.serverContent;
+    for(const part of content?.modelTurn?.parts||[]){
+     const base64=part.inlineData?.data;
+     if(!base64)continue;
+     const mime=String(part.inlineData.mimeType||'').toLowerCase();
+     if(mime&&!/audio\/(pcm|l16)/.test(mime))continue;
+     let pcm;try{pcm=atob(base64)}catch(_){continue}
+     const len=Math.floor(pcm.length/2);if(!len)continue;
+     const buffer=yakutTtsContext.createBuffer(1,len,24000),samples=buffer.getChannelData(0);
+     for(let i=0;i<len;i++){let v=pcm.charCodeAt(2*i)|(pcm.charCodeAt(2*i+1)<<8);samples[i]=(v<<16>>16)/32768}
+     const source=yakutTtsContext.createBufferSource();source.buffer=buffer;
+     source.connect(getYakutAudioDest()||yakutTtsContext.destination);
+     const start=Math.max(nextStart,yakutTtsContext.currentTime);
+     nextStart=start+buffer.duration;source.start(start);
+     yakutLiveSources.add(source);
+     lastEnded=new Promise(finish=>{source.onended=()=>{yakutLiveSources.delete(source);finish()}});
+     if(!played){played=true;beginYakutAudioPlayback()}
+    }
+    if(content?.turnComplete||content?.interrupted)done();
+   };
+   socket.onerror=done;socket.onclose=done;
+  });
+  if(lastEnded)await Promise.race([lastEnded,new Promise(resolve=>setTimeout(resolve,15000))]);
+  return played;
+ }catch(e){console.info('Yakut Live:',e?.message||e);return played}
+ finally{
+  clearTimeout(clock);
+  if(yakutRealtimeSocket===socket)yakutRealtimeSocket=null;
+  try{socket?.close()}catch(_){}
+  if(played&&generation===yakutVoiceGeneration)finishYakutSpeech();
+ }
+}
+
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
@@ -807,6 +873,7 @@ processingSpeech=true;
     'Yakut sunucusu HTTP '+response.status+' hatası verdi.');
    return {answer:reason,serverError:true};
   };
+  if(!research&&await yakutLiveConversation(q,reference,generation))return;
   let result=await ask(research);
   const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
   if(!research&&needsSearch)result=await ask(true);
