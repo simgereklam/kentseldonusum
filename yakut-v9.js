@@ -165,16 +165,11 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   if(turn!==yakutVoiceGeneration||hidden)return;
   queueListen(0);
   if(navigator.onLine!==false){
-   const sentences=prompt.length<=1800?[prompt]:(prompt.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean)||[prompt]);
-   for(const sentence of sentences){
-    if(turn!==yakutVoiceGeneration||hidden)break;
-    yakutAudioPlaying=false;
-    let ok=await askYakutLive(endpoint,{readAloud:sentence},turn);
-    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
-     console.warn('Yakut: Gemini Aoede sesi üretilemedi. MP3 veya başka TTS kullanılmayacak.');
-    }
-    yakutAudioPlaying=false;
-    if(!ok)break;
+   // A single request avoids inconsistent deliveries and overlapping TTS.
+   const utterance=prompt.length<=1900?prompt:prompt.slice(0,1900).replace(/\s+\S*$/,'').trim();
+   const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
+   if(!ok&&turn===yakutVoiceGeneration&&!hidden){
+    console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
    }
   }
  }catch(error){
@@ -761,8 +756,8 @@ processingSpeech=true;
   processingSpeech=false;react('agree',reply,'center');return;
  }
  if(weather){yakutWeatherPending='';yakutWeatherCity=weather.city;}
- let answer='Biraz bekleteceğim.';
- let generation=yakutVoiceGeneration;
+ let answer='Şu anda yanıt alamadım. Lütfen tekrar sorun.';
+ const generation=yakutVoiceGeneration;
  const url=new URL(yakutChatEndpoint());
  const research=Boolean(weather||webRequest||officialResearch);
  const contact=yakutContactRequest(q);
@@ -771,17 +766,8 @@ processingSpeech=true;
  const controller=new AbortController();
  yakutChatController=controller;
  queueListen(0);
- let researchNotice;
- let noticeTimer;
  try{
   const ask=async search=>{
-   if(search&&audioUnlocked){
-    noticeTimer=setTimeout(()=>{
-     if(generation!==yakutVoiceGeneration||hidden)return;
-     researchNotice=speak('Biraz bekleteceğim.',[],false,true);
-     generation=yakutVoiceGeneration;
-    },350);
-   }
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined}),
     signal:AbortSignal.any([controller.signal,AbortSignal.timeout(search?23500:10000)])});
@@ -790,23 +776,18 @@ processingSpeech=true;
   let result=await ask(research);
   const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
   if(!research&&needsSearch)result=await ask(true);
-  if(generation!==yakutVoiceGeneration)return;
-  if(typeof result?.answer==='string'&&result.answer.trim()){
+  if(generation!==yakutVoiceGeneration||hidden)return;
+  if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.trim()!=='WEB_ARAMASI_GEREKLI'){
    answer=result.answer.trim().replace(/\*\*/g,'');
    rememberYakutTurn(q,answer);
-  }else if(needsSearch)answer='Biraz bekleteceğim.';
+  }else if(needsSearch)answer='Güncel bilgiye şu anda ulaşamadım. Lütfen tekrar sorun.';
  }catch(error){
   if(!controller.signal.aborted)console.warn('Yakut sohbet isteği:',error);
  }finally{
-  clearTimeout(noticeTimer);
   if(yakutChatController===controller)yakutChatController=null;
  }
- if(researchNotice&&generation===yakutVoiceGeneration){
-  if(yakutAudioPlaying)await researchNotice;
-  else yakutLiveController?.abort();
- }
- if(generation!==yakutVoiceGeneration)return;
-processingSpeech=false;
+ if(generation!==yakutVoiceGeneration||hidden)return;
+ processingSpeech=false;
 react('agree',answer,'center');
 }
 function queueListen(delay=50){
