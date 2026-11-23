@@ -326,11 +326,24 @@
         window.location.href = `https://wa.me/905431813485?text=${encodeURIComponent(text)}`;
     });
 </script>
-
+<script defer src="yakut-site-voice.js?v=site-sesi-20261122"></script><script defer src="yakut-v9.js?v=ses-kesilme-koruma-20261123"></script>
 <script defer src="./yakut-assistant.js"></script>
 <script defer>
     window.addEventListener('DOMContentLoaded', function() {
         if (!window.YakutAssistant) return;
+
+        // yakut-assistant.js devredeyken eski ses motorlarının çakışıp kilitlenmesini engelle
+        window.__YAKUT_ASSISTANT_ACTIVE__ = true;
+        if ('speechSynthesis' in window) {
+            try {
+                const origSpeak = window.speechSynthesis.speak.bind(window.speechSynthesis);
+                window.speechSynthesis.speak = function(utter) {
+                    if (window.__YAKUT_ALLOW_NATIVE_SPEECH__) {
+                        return origSpeak(utter);
+                    }
+                };
+            } catch {}
+        }
 
         const avatarEl = document.querySelector('[data-yakut-avatar], #yakut-avatar, .yakut-avatar');
         const yakut = new window.YakutAssistant({
