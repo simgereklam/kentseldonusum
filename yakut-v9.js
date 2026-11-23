@@ -169,7 +169,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   /* Wait for Aoede before reactivating listening. */
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length>350?prompt.slice(0,350).replace(/\s+\S*$/,'').trim():prompt;
+   const utterance=prompt.length>230?prompt.slice(0,230).replace(/\s+\S*$/,'').trim():prompt;
    const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
     console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
@@ -909,7 +909,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,550);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,430);
  };
  rec.onspeechstart=()=>clearTimeout(timer);
  rec.onspeechend=waitForSentenceEnd;
