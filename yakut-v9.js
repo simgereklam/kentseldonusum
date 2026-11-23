@@ -790,8 +790,8 @@ processingSpeech=true;
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
  const controller=new AbortController();
  yakutChatController=controller;
- queueListen(0);
- try{
+ releaseYakutMic();
+  try{
   const ask=async search=>{
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined}),
@@ -830,8 +830,8 @@ react('agree',answer,'center');
 }
 function queueListen(delay=50){
  clearTimeout(listenRetry);
- if(!ready||!listenEnabled||hidden)return;
- const stopOnly=speaking||processingSpeech;
+ if(!ready||!listenEnabled||hidden||(processingSpeech&&!speaking))return;
+  const stopOnly=speaking||processingSpeech;
  if(recognition){
   micStopOnly=stopOnly;
   return;
@@ -901,7 +901,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,380);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,550);
  };
  rec.onspeechstart=()=>clearTimeout(timer);
  rec.onspeechend=waitForSentenceEnd;
@@ -925,8 +925,7 @@ function startSpeech(){
     if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||
        isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
        /^(?:yakut|merhaba yakut|selam yakut|alo yakut)$/.test(heard)){
-     releaseYakutMic();cancelYakutSpeech();
-     Promise.resolve(handle(raw)).finally(()=>queueListen(100));
+     // Ignore wake words echoed from Yakut's loudspeaker.
      return;
     }
    }
@@ -1064,7 +1063,7 @@ function startYakutSession(){
  // Start Aoede as early as the browser allows, without pausing recognition.
  resumeYakutSound();
  queueListen(0);
- greetYakutOnHome();
+ /* No unsolicited greetings */
 }
 window.addEventListener('pagehide',()=>{
  stopListening();
