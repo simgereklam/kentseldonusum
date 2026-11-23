@@ -214,7 +214,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   const localKeys=yakutLocalVoiceKeys(original,_recordings);
   if(localKeys.length&&await playYakutLocalVoice(localKeys,turn))return;
   if(navigator.onLine!==false){
-   const sentences=prompt.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean)||[prompt];
+   const sentences=prompt.length<=1800?[prompt]:(prompt.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean)||[prompt]);
    for(const sentence of sentences){
     if(turn!==yakutVoiceGeneration||hidden)break;
     yakutAudioPlaying=false;
