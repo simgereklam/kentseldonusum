@@ -11,6 +11,18 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat’ın yapay zekâ asistanı Yakut. Sizi dinliyorum.';
+const yakutVoiceReady=new Promise(resolve=>{
+ const script=document.createElement('script');
+ script.src=new URL('yakut-voice-engine.js',document.currentScript.src).href;
+ script.onload=()=>resolve(window.YakutVoiceEngine?new window.YakutVoiceEngine({
+  onStart:()=>beginYakutAudioPlayback(),
+  onError:error=>console.warn('Yakut yerel ses:',error)
+ }):null);
+ script.onerror=()=>resolve(null);
+ document.head.appendChild(script);
+});
+let yakutLocalVoice=null;
+yakutVoiceReady.then(voice=>{yakutLocalVoice=voice;});
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -130,10 +142,12 @@ function beginYakutVisit(){
  if(!speaking&&!processingSpeech)queueListen(50);
 }
 function handleYakutActivation(event){
+ yakutLocalVoice?.unlock();
  if(!event.isTrusted||navigator.userActivation?.isActive===false||hidden)return;
  micFailureCount=0;micRestartAt=0;
  listenEnabled=true;
  resumeYakutSound();
+ if(!yakutGreetingRequested&&getYakutCurrentPage()==='index.html')greetYakutOnHome();
 }
 document.addEventListener('click',handleYakutActivation,true);
 document.addEventListener('keydown',handleYakutActivation,true);
@@ -149,40 +163,26 @@ function finishYakutSpeech(){
 }
 async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
  const prompt=prepareYakutSpokenText(String(text||'').trim());
- if(!prompt){speaking=false;processingSpeech=false;queueListen(50);return}
+ if(!prompt)return;
  if(!isHoldNotice)stopYakutAudioOutput();
  yakutCurrentPrompt=prompt;
- speaking=true;
- yakutAudioPlaying=false;
+ speaking=true;processingSpeech=false;yakutAudioPlaying=false;
  const turn=++yakutVoiceGeneration;
- const endpoint=yakutChatEndpoint();
- let audioReady=false;
  try{
-  audioReady=await ensureYakutAudio();
-  if(!audioReady&&deferPlayback&&!hidden){
-   speaking=false;
-   yakutDeferredSpeech=[prompt,[],deferPlayback,isHoldNotice];
-    talk.hidden=false;talk.textContent='🔊 Yakut’u Başlat';
+  const engine=await yakutVoiceReady;
+  if(turn!==yakutVoiceGeneration||hidden)return;
+  if(!engine){
+   console.warn('Yakut: ücretsiz tarayıcı ses motoru yüklenemedi.');
    return;
   }
-  if(turn!==yakutVoiceGeneration||hidden)return;
-  /* Wait for Aoede before reactivating listening. */
-  if(navigator.onLine!==false){
-   // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length>900?prompt.slice(0,900).replace(/\s+\S*$/,'').trim():prompt;
-   const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
-   if(!ok&&turn===yakutVoiceGeneration&&!hidden){
-    console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
-   }
-  }
- }catch(error){
-  console.warn('Yakut ses isteği:',error);
- }finally{
-  if(turn===yakutVoiceGeneration){
-   finishYakutSpeech();
-  }
- }
+  const ok=await engine.speak(prompt);
+  if(ok&&prompt===prepareYakutSpokenText(welcome)){
+   try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
+  }else if(!ok&&prompt===prepareYakutSpokenText(welcome))yakutGreetingRequested=false;
+ }catch(error){console.warn('Yakut ücretsiz ses:',error)}
+ finally{if(turn===yakutVoiceGeneration)finishYakutSpeech();}
 }
+
 function yakutChatEndpoint(){
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content;
  return endpoint||window.yakutChatServiceUrl||'https://kumtas-yakut-chat.simgereklam.workers.dev/chat';
@@ -297,6 +297,7 @@ function yakutWantsCompanyInfo(command){
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
 function stopYakutAudioOutput(){
+ yakutLocalVoice?.stop();
  try{yakutRealtimeSocket?.close()}catch(_){}
  yakutRealtimeSocket=null;
  yakutLiveController?.abort();
@@ -893,7 +894,7 @@ processingSpeech=true;
     'Yakut sunucusu HTTP '+response.status+' hatası verdi.');
    return {answer:reason,serverError:true};
   };
-  if(!research&&await yakutLiveConversation(q,reference,generation))return;
+  // Text answers use the configured Gemini chat route; audio stays browser-local.
   let result=await ask(research);
   const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
   if(!research&&needsSearch)result=await ask(true);
@@ -1071,9 +1072,11 @@ function startSpeech(){
  }
 }
 talk.onclick=()=>{
+ yakutLocalVoice?.unlock();
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  resumeYakutSound();
+ if(!yakutGreetingRequested&&getYakutCurrentPage()==='index.html')greetYakutOnHome();
  queueListen(0);
 };
 close.onclick=()=>{
@@ -1140,9 +1143,11 @@ function greetYakutOnHome(){
  let greeted=false;
  try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(greeted)return;
+ // Browser speech often needs a user gesture on Android.
+ if(navigator.userActivation?.isActive===false)return;
  yakutGreetingRequested=true;
  openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
- try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
+ // Only mark the greeting delivered after audible speech completes.
  // Exactly one opening greeting per browser tab. The browser may require
  // a real click to unlock Aoede audio; do not create a second greeting.
  speak(welcome);
@@ -1203,7 +1208,9 @@ const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vec
 normalScale=1.55/Math.max(size.y,0.01);
 model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
 basePosition=model.position.clone();
-model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary)face=o}});
+model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false;
+ if(o.morphTargetDictionary&&!face&&Object.keys(o.morphTargetDictionary).some(n=>/jawOpen|viseme|blink/i.test(n)))face=o;
+});
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
@@ -1218,6 +1225,7 @@ startYakutSession();
 if(audioUnlocked)queueListen(0);
 const clock=new THREE.Clock();
 let lastCanvasWidth=0,lastCanvasHeight=0;
+let blinkTime=0,blinkAt=2.5,blinkPhase=0;
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
 const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
@@ -1247,7 +1255,11 @@ positionStage();
 walkTimer+=dt;
 }
 if(face){
-let amp=0;
+blinkTime+=dt;
+if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
+const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
+blinkPhase=Math.max(0,blinkPhase-dt);
+let amp=yakutAudioPlaying?.35:0;
 if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData){
  yakutAnalyser.getByteTimeDomainData(yakutAnalyserData);
  let sum=0;
@@ -1255,7 +1267,10 @@ if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData)
  amp=Math.min(1,Math.sqrt(sum/yakutAnalyserData.length)*5.5);
 }
 for(const [name,i] of Object.entries(face.morphTargetDictionary)){
-const influence=/jawOpen|viseme_A/i.test(name)?amp*.75:/viseme_O/i.test(name)?amp*.22:0;
+const isMouth=/jawOpen|viseme_A|viseme_O/i.test(name);
+const isBlink=/eyeBlink|blinkLeft|blinkRight|eyesClosed|blink/i.test(name);
+if(!isMouth&&!isBlink)continue; // Keep authored facial expressions intact.
+const influence=isBlink?blink:/viseme_O/i.test(name)?amp*.22:amp*.75;
 face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],influence,48,dt)}
 }
 }
