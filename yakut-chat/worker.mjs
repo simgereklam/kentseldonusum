@@ -342,7 +342,7 @@ export default {
         // Older 2.5 family allows disabling reasoning to avoid empty output;
         // newer Gemini 3.x generations manage reasoning automatically.
         const generationConfig={temperature:0.35,maxOutputTokens:2048};
-        if (/^gemini-2\\.5-/.test(currentModel)) generationConfig.thinkingConfig={thinkingBudget:0};
+        if (currentModel.startsWith('gemini-2.5-')) generationConfig.thinkingConfig={thinkingBudget:0};
         googleResponse=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'
           + encodeURIComponent(currentModel) + ':generateContent', {
           method:'POST',
