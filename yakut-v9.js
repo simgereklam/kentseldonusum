@@ -248,22 +248,19 @@ function yakutPageName(path){
 }
 function yakutPageCommand(command){
  const raw=normalizeYakutCommand(command);
- const hasAction=/(?:^| )(?:aç|açabilir|açar|göster|git|gidelim|geç|götür|yönlendir|sayfa|sayfaya|sayfasına|sayfasını|sayfayı|sayfalarına)(?: |$)/.test(raw);
- let words=raw
-  .replace(/^(?:(?:yakut|asistan|lütfen|hadi|hemen|beni|bizi|bana|bize) )+/,'')
-  .replace(/\b(?:sayfasını|sayfasına|sayfası|sayfayı|sayfaya|sayfayı|sayfa|sayfalarına|sayfalara|sayfalar)\b/g,' ')
-  .replace(/\b(?:açar mısın|açabilir misin|açabilir miyiz|açar mısınız|aç|gösterir misin|göster|gidelim|git|geç|götür|yönlendir|lütfen|istiyorum|istiyorum aç)\b/g,' ')
-  .replace(/\s+/g,' ').trim();
+ const hasAction=/(?:^| )(?:aç|açar|açabilir|göster|git|gidelim|geç|götür|yönlendir|sayfa|sayfaya|sayfasına|sayfasını|sayfayı)(?: |$)/.test(raw);
+ const removeWords=['sayfasını','sayfasına','sayfası','sayfayı','sayfaya','sayfa','sayfalarına','sayfalara','sayfalar','açar mısınız','açar mısın','açabilir misiniz','açabilir misin','açar','aç','gösterir misin','göster','gidelim','git','geç','götür','yönlendir','lütfen','istiyorum'];
+ let words=' '+raw.replace(/^(?:(?:yakut|asistan|lütfen|hadi|hemen|beni|bizi|bana|bize) )+/,'')+' ';
+ for(const phrase of removeWords)words=words.split(' '+phrase+' ').join(' ');
+ words=words.replace(/\s+/g,' ').trim();
  if(!words)return null;
- // A page name by itself is a navigation command; questions about the business are not.
+ // Exact page names also work, but incidental business questions never navigate.
  if(!hasAction&&!Object.values(yakutPages).some(names=>names.some(n=>normalizeYakutCommand(n)===words)))return null;
  const entries=Object.entries(yakutPages).sort((a,b)=>Math.max(...b[1].map(n=>n.length))-Math.max(...a[1].map(n=>n.length)));
  for(const [path,names] of entries){
   for(const name of names){
    const label=normalizeYakutCommand(name);
-   if(words===label||words===label+'a'||words===label+'e'||words===label+'ya'||words===label+'ye'||
-      words===label+'ı'||words===label+'i'||words===label+'yı'||words===label+'yi')
-    return path;
+   if(words===label||['a','e','ya','ye','ı','i','yı','yi'].some(suffix=>words===label+suffix||words===label+' '+suffix))return path;
   }
  }
  return null;
@@ -294,7 +291,10 @@ function isYakutHomeCommand(message){
 }
 function yakutWantsCompanyInfo(command){
  const topic=command.replace(/^(?:(?:yakut|asistan|lütfen) )+/, '');
- return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?|(?:şirket|firma)(?:imiz|iniz) hakkında bilgi)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
+ if(/(?:sayfasını|sayfasına|sayfayı|sayfaya) (?:aç|göster|git|geç)/.test(topic))return false;
+ if(/(?:kumtaş|şirket|firmamız|firmanız|hakkımızda)/.test(topic)&&
+    /(?:hakkında|bilgi|anlat|tanıt|ne iş|neler yap|kimdir|nedir)/.test(topic))return true;
+ return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
 function stopYakutAudioOutput(){
  try{yakutRealtimeSocket?.close()}catch(_){}
