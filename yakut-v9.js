@@ -10,7 +10,7 @@ if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
-const welcome='Merhaba, ben Yakut. Size nasıl yardımcı olabilirim?';
+const welcome='Merhaba, ben Yakut. Sizi dinliyorum.';
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -40,6 +40,7 @@ let processingSpeech=false;
 let micStartTimer;
 let micStopOnly=false;
 let lastWakeAt=0;
+let yakutGreetingRequested=false;
 let yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
 let yakutCurrentPrompt='',yakutLastOfferAt=0,yakutLastInputAt=0,yakutOpeningBow=false,yakutSpeechEndedAt=0;
@@ -826,15 +827,16 @@ function releaseYakutMic(){
 }
 function stopListening(){
  listenEnabled=false;clearTimeout(listenRetry);releaseYakutMic();
- talk.textContent='🔊 Sesi Aç';
+ talk.hidden=false;
+ talk.textContent='🎤 Mikrofonu Aç';
 }
 function speechProblem(err){
  if(!listenEnabled||hidden)return;
  if(err==='not-allowed'||err==='service-not-allowed'){
-  stopListening();return;
+  stopListening();talk.hidden=false;talk.textContent='🎤 Mikrofon İzni';return;
  }
  if(err==='audio-capture'){
-  stopListening();return;
+  stopListening();talk.hidden=false;talk.textContent='🎤 Mikrofonu Aç';return;
  }
  if(err==='no-speech'||err==='aborted'){return}
  micFailureCount++;
@@ -844,14 +846,14 @@ function speechProblem(err){
  }else if(err==='language-not-supported'||err==='language-unavailable'){
   stopListening();return;
  }else{
-  if(micFailureCount>=5){stopListening();return;}
+  if(micFailureCount>=5){stopListening();talk.textContent='🎤 Mikrofonu Aç';return;}
   micRestartAt=Date.now()+Math.min(5000,1000*micFailureCount);
  }
 }
 function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!API){stopListening();return}
+ if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
  micStopOnly=speaking||processingSpeech;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
@@ -1005,6 +1007,17 @@ function addYakutChestLogo() {
  };
  source.src = chestLogoUrl;
 }
+function greetYakutOnHome(){
+ if(yakutGreetingRequested||hidden||getYakutCurrentPage()!=='index.html')return;
+ let greeted=false;
+ try{greeted=sessionStorage.getItem('yakutGreeted')==='1'&&!yakutFreshReload}catch(_){}
+ if(greeted)return;
+ yakutGreetingRequested=true;
+ openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
+ try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
+ // Start immediately. If browser audio is blocked, play only after user activation.
+ speak(welcome);
+}
 function startYakutSession(){
  if(ready)return;
  clearTimeout(yakutStartTimer);
@@ -1021,6 +1034,7 @@ function startYakutSession(){
   yakutPendingPageSpeech=yakutPageOfferPending&&pageOffer==='anlat:'+page;
  }catch(e){}
  queueListen(0);
+ greetYakutOnHome();
 }
 window.addEventListener('pagehide',()=>{
  stopListening();
