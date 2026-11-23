@@ -10,7 +10,7 @@ if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
-const welcome='Merhaba, ben Yakut. Sizi dinliyorum.';
+const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat’ın yapay zekâ asistanı Yakut. Sizi dinliyorum.';
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -168,7 +168,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   queueListen(0);
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length>420?prompt.slice(0,420).replace(/\s+\S*$/,'').trim():prompt;
+   const utterance=prompt.length>350?prompt.slice(0,350).replace(/\s+\S*$/,'').trim():prompt;
    const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
     console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
@@ -1034,12 +1034,13 @@ function addYakutChestLogo() {
 function greetYakutOnHome(){
  if(yakutGreetingRequested||hidden||getYakutCurrentPage()!=='index.html')return;
  let greeted=false;
- try{greeted=sessionStorage.getItem('yakutGreeted')==='1'&&!yakutFreshReload}catch(_){}
+ try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(greeted)return;
  yakutGreetingRequested=true;
  openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
  try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
- // Start immediately. If browser audio is blocked, play only after user activation.
+ // Exactly one opening greeting per browser tab. The browser may require
+ // a real click to unlock Aoede audio; do not create a second greeting.
  speak(welcome);
 }
 function startYakutSession(){
@@ -1169,6 +1170,6 @@ document.addEventListener('yakut:eimar-result',event=>{
   else react('agree',event.detail,'left');
  }
 });
-yakutStartTimer=setTimeout(startYakutSession,1200);
+yakutStartTimer=setTimeout(startYakutSession,0);
 init();
 })();
