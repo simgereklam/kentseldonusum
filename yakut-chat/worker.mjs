@@ -47,7 +47,11 @@ async function geminiAoedeSpeech(request, env, headers) {
   const speech = body?.readAloud;
   if (typeof speech !== 'string' || !speech.trim() || speech.length > 2000)
     return new Response(null, {status:400, headers});
-  const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  // Preview TTS models retired on 2026-11-17; keep the Aoede voice but
+  // transparently upgrade a stale GEMINI_TTS_MODEL environment override.
+  const configuredTts = String(env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts').trim();
+  const retiredTts = new Set(['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview']);
+  const model = retiredTts.has(configuredTts) ? 'gemini-3.8-flash-tts' : configuredTts;
   const payload = {
     contents: [{role:'user', parts:[{text: 'Sıcak, güven veren ve doğal Türkçe diksiyonla sadece şu metni oku: ' + speech}]}],
     generationConfig: {responseModalities:['AUDIO'], speechConfig:{
@@ -226,7 +230,9 @@ export default {
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
         tinyfish_configured: Boolean(env.TINYFISH_API_KEY),
-        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede'
+        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede',
+        tts_model: ['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview'].includes(String(env.GEMINI_TTS_MODEL||''))
+          ? 'gemini-3.8-flash-tts' : (env.GEMINI_TTS_MODEL||'gemini-3.8-flash-tts')
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());

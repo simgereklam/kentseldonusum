@@ -26,7 +26,12 @@ const yakutVoiceReady=new Promise(resolve=>{
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
   onStart:()=>beginYakutAudioPlayback(),
-  onError:error=>console.warn('Yakut Gemini ses:',error)
+  onError:error=>{
+   console.warn('Yakut Gemini ses:',error);
+   talk.hidden=false;
+   talk.textContent='🔊 Ses hatası · Tekrar dene';
+   talk.title=String(error?.message||error||'Ses servisi hatası').slice(0,140);
+  }
  }):null);
  script.onerror=()=>resolve(null);
  document.head.appendChild(script);
@@ -107,6 +112,10 @@ function onYakutSoundReady(){
   speaking=false;yakutIsGreetingWalking=false;
   speak(...answer);return;
  }
+ if(getYakutCurrentPage()==='index.html'&&!yakutGreetingRequested){
+  greetYakutOnHome();
+  if(speaking)return;
+ }
  if(!speaking&&!processingSpeech&&!yakutIsGreetingWalking)queueListen(0);
 }
 function beginYakutVisit(){
@@ -134,7 +143,6 @@ function handleYakutActivation(event){
  micFailureCount=0;micRestartAt=0;
  listenEnabled=true;
  resumeYakutSound();
- if(!yakutGreetingRequested&&getYakutCurrentPage()==='index.html')greetYakutOnHome();
 }
 document.addEventListener('click',handleYakutActivation,true);
 document.addEventListener('keydown',handleYakutActivation,true);
@@ -900,7 +908,6 @@ talk.onclick=()=>{
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  resumeYakutSound();
- if(!yakutGreetingRequested&&getYakutCurrentPage()==='index.html')greetYakutOnHome();
  queueListen(0);
 };
 close.onclick=()=>{
@@ -967,8 +974,8 @@ function greetYakutOnHome(){
  let greeted=false;
  try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(greeted)return;
- // Browser speech often needs a user gesture on Android.
- if(navigator.userActivation?.isActive===false)return;
+ // Wait for the browser to unlock Web Audio on a trusted click.
+ if(!audioUnlocked||!yakutVoice?.ready)return;
  yakutGreetingRequested=true;
  openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
  // Only mark the greeting delivered after audible speech completes.
