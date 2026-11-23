@@ -4,7 +4,7 @@ compatibility_date = "2026-11-21"
 
 [vars]
 SITE_ORIGINS = "https://xn--kentseldnm-lcb7ea99k.com.tr,https://www.xn--kentseldnm-lcb7ea99k.com.tr,https://kentseldönüşüm.com.tr,https://www.kentseldönüşüm.com.tr"
-GEMINI_TTS_MODEL = "gemini-3.8-flash-tts"
+GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
 
 [[ratelimits]]
 name = "CHAT_LIMITER"
