@@ -11,6 +11,21 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat’ın yapay zekâ asistanı Yakut. Sizi dinliyorum.';
+const yakutVoiceReady=new Promise(resolve=>{
+ const script=document.createElement('script');
+ script.src=new URL('yakut-gemini-voice.js?v=gemini-only-20261123',document.currentScript.src).href;
+ script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
+  endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
+  'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
+  onStart:()=>beginYakutAudioPlayback(),
+  onError:error=>console.warn('Yakut Gemini ses:',error)
+ }):null);
+ script.onerror=()=>resolve(null);
+ document.head.appendChild(script);
+});
+let yakutVoice=null;
+yakutVoiceReady.then(engine=>{yakutVoice=engine;});
+
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -55,59 +70,36 @@ const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
 next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
-let audioUnlocked=false,yakutTtsContext=null,yakutAnalyser=null,yakutAnalyserData=null,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
-function getYakutAudioDest(){
- if(!yakutTtsContext)return null;
- if(!yakutAnalyser){
-  yakutAnalyser=yakutTtsContext.createAnalyser();
-  yakutAnalyser.fftSize=256;
-  yakutAnalyserData=new Uint8Array(yakutAnalyser.frequencyBinCount);
-  yakutAnalyser.connect(yakutTtsContext.destination);
- }
- return yakutAnalyser;
-}
+let audioUnlocked=false,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
 let yakutDeferredSpeech=null;
-
 let yakutVoiceRetryAt=0;
 let yakutStartTimer;
 function resumeYakutSound(){
- if(!yakutTtsContext){
-  const Audio=window.AudioContext||window.webkitAudioContext;
-  if(Audio){try{yakutTtsContext=new Audio()}catch(_){}}
- }
- if(!yakutTtsContext){
-  audioUnlocked=true;
-  talk.hidden=true;
-  listenEnabled=true;
-  queueListen(0);
+ // Unlock in the original trusted click whenever the engine has loaded.
+ const engine=yakutVoice;
+ if(!engine){
+  yakutVoiceReady.then(v=>{
+   if(v&&ready&&!hidden){
+    v.unlock().then(ok=>{if(ok)onYakutSoundReady();else{talk.hidden=false;talk.textContent='🔊 Sesi Aç';}});
+   }
+  });
   return;
  }
- if(yakutTtsContext.state==='running')onYakutSoundReady();
- else yakutTtsContext.resume().then(onYakutSoundReady).catch(()=>{
-  // Keep the visible sound-enable button available for another user gesture.
-  listenEnabled=true;
-  queueListen(50);
+ engine.unlock().then(ok=>{
+  if(ok)onYakutSoundReady();
+  else{talk.hidden=false;talk.textContent='🔊 Sesi Aç';}
  });
 }
 function onYakutSoundReady(){
  if(!ready||hidden)return;
  audioUnlocked=true;
- talk.hidden=true;
- listenEnabled=true;
+ talk.hidden=true;listenEnabled=true;
  if(yakutDeferredSpeech){
-  const answer=yakutDeferredSpeech;
-  yakutDeferredSpeech=null;
-  speaking=false;
-  yakutIsGreetingWalking=false;
-  speak(...answer);
-  return;
+  const answer=yakutDeferredSpeech;yakutDeferredSpeech=null;
+  speaking=false;yakutIsGreetingWalking=false;
+  speak(...answer);return;
  }
- if(speaking||processingSpeech||yakutIsGreetingWalking)return;
- // No unsolicited page narration: prioritize microphone commands.
- if(getYakutCurrentPage()==='yakut-eimar.html'){
-  try{if(sessionStorage.getItem('yakutImarQuestion')){beginYakutVisit();return}}catch(_){}
- }
- queueListen(0);
+ if(!speaking&&!processingSpeech&&!yakutIsGreetingWalking)queueListen(0);
 }
 function beginYakutVisit(){
  if(!ready||hidden||!model)return;
@@ -152,40 +144,24 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
  const prompt=prepareYakutSpokenText(String(text||'').trim());
  if(!prompt)return;
  if(!isHoldNotice)stopYakutAudioOutput();
- yakutCurrentPrompt=prompt;
- speaking=true;processingSpeech=false;yakutAudioPlaying=false;
+ yakutCurrentPrompt=prompt;speaking=true;yakutAudioPlaying=false;
  const turn=++yakutVoiceGeneration;
  try{
-  const readyAudio=await ensureYakutAudio();
-  if(!readyAudio){
-   if(deferPlayback&&!hidden){
+  const voice=await yakutVoiceReady;
+  if(turn!==yakutVoiceGeneration||hidden)return;
+  if(!voice){console.warn('Yakut: Gemini ses motoru yüklenemedi.');return;}
+  if(!voice.ready){
+   if(deferPlayback){
     yakutDeferredSpeech=[prompt,[],true,isHoldNotice];
-    talk.hidden=false;talk.textContent='🔊 Yakut’u Başlat';
+    talk.hidden=false;talk.textContent='🔊 Sesi Aç';
    }
    return;
   }
-  // A single Gemini Aoede voice is used throughout the entire site.
-  // Split long replies without dropping any words; the previous 900-character truncation is forbidden.
-  const pieces=[];let remaining=prompt;
-  while(remaining.length){
-   if(remaining.length<=1400){pieces.push(remaining);break;}
-   let cut=remaining.lastIndexOf(' ',1400);
-   if(cut<350)cut=1400;
-   pieces.push(remaining.slice(0,cut).trim());
-   remaining=remaining.slice(cut).trim();
-  }
-  let playedAll=true;
-  for(const text of pieces){
-   if(turn!==yakutVoiceGeneration||hidden){playedAll=false;break;}
-   const ok=await askYakutLive(yakutChatEndpoint(),{readAloud:text},turn);
-   if(!ok){playedAll=false;break;}
-  }
-  if(playedAll&&turn===yakutVoiceGeneration&&prompt===prepareYakutSpokenText(welcome)){
+  const ok=await voice.speak(prompt);
+  if(ok&&prompt===prepareYakutSpokenText(welcome)){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
-  }else if(!playedAll&&prompt===prepareYakutSpokenText(welcome)){
-   yakutGreetingRequested=false;
-  }
- }catch(error){console.warn('Yakut Gemini Aoede ses hatası:',error);}
+  }else if(!ok&&prompt===prepareYakutSpokenText(welcome)){yakutGreetingRequested=false;}
+ }catch(error){console.warn('Yakut Gemini Aoede:',error);}
  finally{if(turn===yakutVoiceGeneration)finishYakutSpeech();}
 }
 
@@ -193,16 +169,7 @@ function yakutChatEndpoint(){
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content;
  return endpoint||window.yakutChatServiceUrl||'https://kumtas-yakut-chat.simgereklam.workers.dev/chat';
 }
-async function ensureYakutAudio(){
- if(!audioUnlocked)return false;
- const Audio=window.AudioContext||window.webkitAudioContext;
- if(!Audio)return true;
- yakutTtsContext??=new Audio();
- if(yakutTtsContext.state!=='running'){
-  await Promise.race([yakutTtsContext.resume().catch(()=>{}),new Promise(resolve=>setTimeout(resolve,800))]);
- }
- return yakutTtsContext.state==='running';
-}
+async function ensureYakutAudio(){return Boolean(yakutVoice?.ready);}
 function positionStage(){stage.style.transform='translate3d('+Math.round(posX)+'px,0,0)'}
 function leftGreetingX(){return 0}
 function yakutRightX(){return Math.max(0,innerWidth-stage.offsetWidth)}
@@ -302,13 +269,7 @@ function yakutWantsCompanyInfo(command){
     /(?:hakkında|bilgi|anlat|tanıt|ne iş|neler yap|kimdir|nedir)/.test(topic))return true;
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
-function stopYakutAudioOutput(){
- try{yakutRealtimeSocket?.close()}catch(_){}
- yakutRealtimeSocket=null;
- yakutLiveController?.abort();
- for(const source of yakutLiveSources){try{source.stop()}catch(_){}}
- yakutLiveSources.clear();
-}
+function stopYakutAudioOutput(){yakutVoice?.stop();}
 function cancelYakutSpeech(){
  stopYakutAudioOutput();
  yakutChatController?.abort();
@@ -650,8 +611,6 @@ function rememberYakutTurn(question,answer){
   {role:'assistant',text:answer.slice(0,420)}].slice(-4);
  try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
 }
-const yakutLiveSources=new Set();
-let yakutLiveController=null;
 let yakutChatController=null;
 function beginYakutAudioPlayback(){
  yakutGestureClock=0;
@@ -660,153 +619,6 @@ function beginYakutAudioPlayback(){
  }
  yakutAudioPlaying=true;
 }
-async function askYakutLive(url,payload,generation){
- const context=yakutTtsContext;
- if(!audioUnlocked)return false;
- const controller=new AbortController();
- yakutLiveController=controller;
- let timer=setTimeout(()=>controller.abort(),55000);
- let nextStart=0;
- let played=false;
- let completed=false;
- let playbackEnded;
- let reader;
- try{
-  const response=await fetch(new URL('/live',url),{method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify(payload),signal:controller.signal});
-  if(!response.ok&&generation===yakutVoiceGeneration){
-   const delay=Number(response.headers.get('Retry-After'))*1000;
-   yakutVoiceRetryAt=Date.now()+Math.min(2500,Math.max(800,delay||0));
-  }
-  if(!response.ok||!response.body||!response.headers.get('Content-Type')?.includes('application/x-ndjson'))return false;
-  reader=response.body.getReader();
-  const decoder=new TextDecoder();
-  let pending='';
-  for(;;){
-   const {value,done}=await reader.read();
-   if(done)break;
-   pending+=decoder.decode(value,{stream:true});
-   const lines=pending.split('\n');
-   pending=lines.pop();
-   for(const line of lines){
-    if(!line)continue;
-    const frame=JSON.parse(line);
-    if(frame.error)throw new Error(frame.error);
-    if(frame.done)completed=true;
-    if(!frame.audio)continue;
-    if(controller.signal.aborted||generation!==yakutVoiceGeneration)return false;
-    clearTimeout(timer);
-    timer=setTimeout(()=>controller.abort(),20000);
-    const pcm=atob(frame.audio);
-    const length=Math.floor(pcm.length/2);
-    if(!length)continue;
-    if(context){
-     const buffer=context.createBuffer(1,length,24000);
-     const samples=buffer.getChannelData(0);
-     for(let index=0;index<length;index++){
-      const value=pcm.charCodeAt(index*2)|(pcm.charCodeAt(index*2+1)<<8);
-      samples[index]=(value<<16>>16)/32768;
-     }
-     const source=context.createBufferSource();
-     source.buffer=buffer;source.connect(getYakutAudioDest()||context.destination);
-     const startAt=Math.max(nextStart,context.currentTime);
-     nextStart=startAt+buffer.duration;
-     source.start(startAt);
-     yakutLiveSources.add(source);
-     playbackEnded=new Promise(resolve=>{
-      source.onended=()=>{yakutLiveSources.delete(source);resolve();};
-     });
-    }
-    if(!played){
-     beginYakutAudioPlayback();
-    }
-    played=true;
-   }
-  }
- }catch(error){
-  if(!played&&generation===yakutVoiceGeneration){
-   yakutVoiceRetryAt=Date.now()+1000;
-   console.info('Yakut Live geçişi:',error.message);
-  }
- }finally{
-  clearTimeout(timer);
-  if(reader)reader.cancel().catch(()=>{});
-  if(yakutLiveController===controller)yakutLiveController=null;
- }
- if(!played||generation!==yakutVoiceGeneration)return false;
- if(playbackEnded)await playbackEnded;
- if(generation!==yakutVoiceGeneration)return false;
- return completed;
-}
-
-let yakutRealtimeSocket=null;
-async function yakutLiveConversation(question,reference,generation){
- if(!audioUnlocked||!yakutTtsContext||yakutTtsContext.state!=='running')return false;
- let socket=null,played=false,nextStart=0,lastEnded=null,turnCompleted=false,wasInterrupted=false;
- let clock=setTimeout(()=>{try{socket?.close()}catch(_){}},11500);
- const keepAlive=()=>{clearTimeout(clock);clock=setTimeout(()=>{console.warn('Yakut Live: no audio for 30 seconds');try{socket?.close()}catch(_){}},30000)};
- try{
-  const response=await fetch(new URL('/live-token',yakutChatEndpoint()),{
-   method:'POST',headers:{'Content-Type':'application/json'},body:'{}',
-   signal:AbortSignal.timeout(3500)
-  });
-  if(!response.ok)return false;
-  const auth=await response.json();
-  if(!auth.token||!auth.model||generation!==yakutVoiceGeneration)return false;
-  socket=new WebSocket('wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token='+encodeURIComponent(auth.token));
-  yakutRealtimeSocket=socket;
-  await new Promise(resolve=>{
-   let settled=false,sent=false;
-   const done=()=>{if(!settled){settled=true;resolve()}};
-   socket.onopen=()=>socket.send(JSON.stringify({setup:{
-    model:'models/'+String(auth.model).replace(/^models\//,''),
-    generationConfig:{responseModalities:['AUDIO'],speechConfig:{voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}}},
-    systemInstruction:{parts:[{text:'Sen Kumtaş İnşaat asistanı Yakut\'sun. Doğal ve sıcak Türkçe konuş. Sorulara en fazla iki kısa cümleyle hızlı cevap ver. Sayfa değiştirme komutları tarayıcıda yerel yönetilir. Kaynağı olmayan güncel bilgi uydurma.'}]}
-   }}));
-   socket.onmessage=e=>{
-    if(generation!==yakutVoiceGeneration){done();socket.close();return}
-    let msg;try{msg=JSON.parse(e.data)}catch(_){return}
-    if(msg.setupComplete&&!sent){
-     sent=true;
-     socket.send(JSON.stringify({clientContent:{turns:[{role:'user',parts:[{text:'Soru: '+question+'\nSayfa bağlamı: '+reference.slice(0,750)}]}],turnComplete:true}}));
-    }
-    const content=msg.serverContent;
-    for(const part of content?.modelTurn?.parts||[]){
-     const base64=part.inlineData?.data;
-     if(!base64)continue;
-     const mime=String(part.inlineData.mimeType||'').toLowerCase();
-     if(mime&&!/audio\/(pcm|l16)/.test(mime))continue;
-     let pcm;try{pcm=atob(base64)}catch(_){continue}
-     const len=Math.floor(pcm.length/2);if(!len)continue;
-     const buffer=yakutTtsContext.createBuffer(1,len,24000),samples=buffer.getChannelData(0);
-     for(let i=0;i<len;i++){let v=pcm.charCodeAt(2*i)|(pcm.charCodeAt(2*i+1)<<8);samples[i]=(v<<16>>16)/32768}
-     const source=yakutTtsContext.createBufferSource();source.buffer=buffer;
-     source.connect(getYakutAudioDest()||yakutTtsContext.destination);
-     const start=Math.max(nextStart,yakutTtsContext.currentTime);
-     nextStart=start+buffer.duration;source.start(start);
-     yakutLiveSources.add(source);
-     lastEnded=new Promise(finish=>{source.onended=()=>{yakutLiveSources.delete(source);finish()}});
-     if(!played){played=true;beginYakutAudioPlayback()}
-     keepAlive();
-    }
-    if(content?.turnComplete){turnCompleted=true;done()}
-    else if(content?.interrupted){wasInterrupted=true;done()}
-   };
-   socket.onerror=()=>{console.warn('Yakut Live socket error');done()};
-   socket.onclose=e=>{if(!turnCompleted&&generation===yakutVoiceGeneration)console.warn('Yakut Live closed early:',e.code);done()};
-  });
-  if(lastEnded)await Promise.race([lastEnded,new Promise(resolve=>setTimeout(resolve,60000))]);
-  if(played&&!turnCompleted)console.warn('Yakut Live partial audio: no paid automatic retry',wasInterrupted?'interrupted':'disconnected');
-  return played;
- }catch(e){console.info('Yakut Live:',e?.message||e);return played}
- finally{
-  clearTimeout(clock);
-  if(yakutRealtimeSocket===socket)yakutRealtimeSocket=null;
-  try{socket?.close()}catch(_){}
-  if(played&&generation===yakutVoiceGeneration)finishYakutSpeech();
- }
-}
-
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
@@ -1264,12 +1076,7 @@ if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;
 const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
 blinkPhase=Math.max(0,blinkPhase-dt);
 let amp=yakutAudioPlaying?.35:0;
-if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData){
- yakutAnalyser.getByteTimeDomainData(yakutAnalyserData);
- let sum=0;
- for(let k=0;k<yakutAnalyserData.length;k++){const d=(yakutAnalyserData[k]-128)/128;sum+=d*d;}
- amp=Math.min(1,Math.sqrt(sum/yakutAnalyserData.length)*5.5);
-}
+if(yakutAudioPlaying&&yakutVoice)amp=yakutVoice.getLevel();
 for(const [name,i] of Object.entries(face.morphTargetDictionary)){
 const isMouth=/jawOpen|viseme_A|viseme_O/i.test(name);
 const isBlink=/eyeBlink|blinkLeft|blinkRight|eyesClosed|blink/i.test(name);
