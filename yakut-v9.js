@@ -147,6 +147,7 @@ function handleYakutActivation(event){
  micFailureCount=0;micRestartAt=0;
  listenEnabled=true;
  resumeYakutSound();
+ if(!yakutGreetingRequested&&getYakutCurrentPage()==='index.html')greetYakutOnHome();
 }
 document.addEventListener('click',handleYakutActivation,true);
 document.addEventListener('keydown',handleYakutActivation,true);
@@ -177,7 +178,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   const ok=await engine.speak(prompt);
   if(ok&&prompt===prepareYakutSpokenText(welcome)){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
-  }
+  }else if(!ok&&prompt===prepareYakutSpokenText(welcome))yakutGreetingRequested=false;
  }catch(error){console.warn('Yakut ücretsiz ses:',error)}
  finally{if(turn===yakutVoiceGeneration)finishYakutSpeech();}
 }
@@ -1075,6 +1076,7 @@ talk.onclick=()=>{
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  resumeYakutSound();
+ if(!yakutGreetingRequested&&getYakutCurrentPage()==='index.html')greetYakutOnHome();
  queueListen(0);
 };
 close.onclick=()=>{
@@ -1141,6 +1143,8 @@ function greetYakutOnHome(){
  let greeted=false;
  try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(greeted)return;
+ // Browser speech often needs a user gesture on Android.
+ if(navigator.userActivation?.isActive===false)return;
  yakutGreetingRequested=true;
  openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
  // Only mark the greeting delivered after audible speech completes.
