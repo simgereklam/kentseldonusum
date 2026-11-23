@@ -11,6 +11,18 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat’ın yapay zekâ asistanı Yakut. Sizi dinliyorum.';
+const yakutVoiceReady=new Promise(resolve=>{
+ const script=document.createElement('script');
+ script.src=new URL('yakut-voice-engine.js',document.currentScript.src).href;
+ script.onload=()=>resolve(window.YakutVoiceEngine?new window.YakutVoiceEngine({
+  onStart:()=>beginYakutAudioPlayback(),
+  onError:error=>console.warn('Yakut yerel ses:',error)
+ }):null);
+ script.onerror=()=>resolve(null);
+ document.head.appendChild(script);
+});
+let yakutLocalVoice=null;
+yakutVoiceReady.then(voice=>{yakutLocalVoice=voice;});
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -130,6 +142,7 @@ function beginYakutVisit(){
  if(!speaking&&!processingSpeech)queueListen(50);
 }
 function handleYakutActivation(event){
+ yakutLocalVoice?.unlock();
  if(!event.isTrusted||navigator.userActivation?.isActive===false||hidden)return;
  micFailureCount=0;micRestartAt=0;
  listenEnabled=true;
@@ -149,55 +162,26 @@ function finishYakutSpeech(){
 }
 async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
  const prompt=prepareYakutSpokenText(String(text||'').trim());
- if(!prompt){speaking=false;processingSpeech=false;queueListen(50);return}
+ if(!prompt)return;
  if(!isHoldNotice)stopYakutAudioOutput();
  yakutCurrentPrompt=prompt;
- speaking=true;
- yakutAudioPlaying=false;
+ speaking=true;processingSpeech=false;yakutAudioPlaying=false;
  const turn=++yakutVoiceGeneration;
- const endpoint=yakutChatEndpoint();
- let audioReady=false;
  try{
-  audioReady=await ensureYakutAudio();
-  if(!audioReady&&deferPlayback&&!hidden){
-   speaking=false;
-   yakutDeferredSpeech=[prompt,[],deferPlayback,isHoldNotice];
-    talk.hidden=false;talk.textContent='🔊 Yakut’u Başlat';
+  const engine=await yakutVoiceReady;
+  if(turn!==yakutVoiceGeneration||hidden)return;
+  if(!engine){
+   console.warn('Yakut: ücretsiz tarayıcı ses motoru yüklenemedi.');
    return;
   }
-  if(turn!==yakutVoiceGeneration||hidden)return;
-  /* Wait for Aoede before reactivating listening. */
-  if(navigator.onLine!==false){
-   // A single request avoids inconsistent deliveries and overlapping TTS.
-   const segments=[];
-   let remaining=prompt;
-   while(remaining.length){
-    if(remaining.length<=780){segments.push(remaining);break;}
-    let cut=remaining.lastIndexOf(' ',780);
-    if(cut<350)cut=780;
-    segments.push(remaining.slice(0,cut).trim());
-    remaining=remaining.slice(cut).trim();
-   }
-   let ok=true;
-   for(const utterance of segments){
-    if(turn!==yakutVoiceGeneration||hidden){ok=false;break;}
-    if(!await askYakutLive(endpoint,{readAloud:utterance},turn)){ok=false;break;}
-   }
-   if(ok&&prompt===prepareYakutSpokenText(welcome)){
-    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
-   }
-   if(!ok&&turn===yakutVoiceGeneration&&!hidden){
-    console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
-   }
+  const ok=await engine.speak(prompt);
+  if(ok&&prompt===prepareYakutSpokenText(welcome)){
+   try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
   }
- }catch(error){
-  console.warn('Yakut ses isteği:',error);
- }finally{
-  if(turn===yakutVoiceGeneration){
-   finishYakutSpeech();
-  }
- }
+ }catch(error){console.warn('Yakut ücretsiz ses:',error)}
+ finally{if(turn===yakutVoiceGeneration)finishYakutSpeech();}
 }
+
 function yakutChatEndpoint(){
  const endpoint=document.querySelector('meta[name="yakut-chat-endpoint"]')?.content;
  return endpoint||window.yakutChatServiceUrl||'https://kumtas-yakut-chat.simgereklam.workers.dev/chat';
@@ -312,6 +296,7 @@ function yakutWantsCompanyInfo(command){
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
 function stopYakutAudioOutput(){
+ yakutLocalVoice?.stop();
  try{yakutRealtimeSocket?.close()}catch(_){}
  yakutRealtimeSocket=null;
  yakutLiveController?.abort();
@@ -908,7 +893,7 @@ processingSpeech=true;
     'Yakut sunucusu HTTP '+response.status+' hatası verdi.');
    return {answer:reason,serverError:true};
   };
-  if(!research&&await yakutLiveConversation(q,reference,generation))return;
+  // Text answers use the configured Gemini chat route; audio stays browser-local.
   let result=await ask(research);
   const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
   if(!research&&needsSearch)result=await ask(true);
@@ -1086,6 +1071,7 @@ function startSpeech(){
  }
 }
 talk.onclick=()=>{
+ yakutLocalVoice?.unlock();
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  resumeYakutSound();
@@ -1269,7 +1255,7 @@ blinkTime+=dt;
 if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
 const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
 blinkPhase=Math.max(0,blinkPhase-dt);
-let amp=0;
+let amp=yakutAudioPlaying?.35:0;
 if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData){
  yakutAnalyser.getByteTimeDomainData(yakutAnalyserData);
  let sum=0;
