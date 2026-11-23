@@ -895,7 +895,8 @@ function startSpeech(){
     if(isYakutStopCommand(heard)){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
-    if(yakutPageCommand(heard)||isYakutHomeCommand(heard)||
+    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
+    if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
        /^(?:yakut|merhaba|merhaba yakut|selam|selam yakut|alo yakut)$/.test(heard)){
      releaseYakutMic();cancelYakutSpeech();
      Promise.resolve(handle(result[0].transcript)).finally(()=>queueListen(100));
@@ -906,8 +907,9 @@ function startSpeech(){
   }
   const latestTranscript=results.slice(e.resultIndex).map(r=>r[0]?.transcript||'').join(' ').trim();
   const instant=normalizeYakutCommand(latestTranscript);
+  const wakeCommand=instant.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||instant;
   if(results.slice(e.resultIndex).some(r=>r.isFinal)&&
-    (/^(?:yakut|merhaba|selam|alo)$/.test(instant)||yakutPageCommand(instant)||isYakutHomeCommand(instant))){
+    (/^(?:yakut|merhaba|selam|alo)$/.test(instant)||yakutPageCommand(instant)||yakutPageCommand(wakeCommand)||isYakutHomeCommand(instant)||isYakutHomeCommand(wakeCommand))){
    finalText=latestTranscript;submit();return;
   }
   finalText=results.filter(result=>result.isFinal)
