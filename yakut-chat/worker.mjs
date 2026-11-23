@@ -47,7 +47,11 @@ async function geminiAoedeSpeech(request, env, headers) {
   const speech = body?.readAloud;
   if (typeof speech !== 'string' || !speech.trim() || speech.length > 2000)
     return new Response(null, {status:400, headers});
-  const model = env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  // Preview TTS models retired on 2026-11-17; keep the Aoede voice but
+  // transparently upgrade a stale GEMINI_TTS_MODEL environment override.
+  const configuredTts = String(env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts').trim();
+  const retiredTts = new Set(['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview']);
+  const model = retiredTts.has(configuredTts) ? 'gemini-3.8-flash-tts' : configuredTts;
   const payload = {
     contents: [{role:'user', parts:[{text: 'Sıcak, güven veren ve doğal Türkçe diksiyonla sadece şu metni oku: ' + speech}]}],
     generationConfig: {responseModalities:['AUDIO'], speechConfig:{
