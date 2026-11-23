@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 
+  function activateGalleryLightbox(){
+  if(document.querySelector('.img-lightbox')) return;
   var zoomImages = Array.prototype.slice.call(document.querySelectorAll('.project-card img, .step-card img'));
   if(zoomImages.length){
     var currentIndex = 0;
@@ -79,4 +81,7 @@ document.addEventListener('DOMContentLoaded', function(){
       if(e.key === 'ArrowRight') move(1);
     });
   }
+  }
+  document.addEventListener('yakut:gallery-ready',activateGalleryLightbox);
+  activateGalleryLightbox();
 });
