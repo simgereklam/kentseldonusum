@@ -8,6 +8,7 @@ if(location.protocol==='http:'&&/^(?:www\.)?xn--kentseldnm-lcb7ea99k\.com\.tr$/i
 }
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
+const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben KUMTAŞ İnşaat dijital asistanınız YAKUT. Sizin için ne yapabilirim?';
 const css=document.createElement('style');
@@ -100,7 +101,7 @@ function onYakutSoundReady(){
  else queueListen(50);
 }
 function beginYakutVisit(){
- if(!ready||hidden)return;
+ if(!ready||hidden||!model)return;
  if(getYakutCurrentPage()==='yakut-eimar.html'){
   let question;
   try{
@@ -113,7 +114,7 @@ function beginYakutVisit(){
   try{if(sessionStorage.getItem('yakutExplainMalik')==='1'){yakutExplainMalik();return}}catch(_){}
  }
  let alreadyGreeted=false;
- try{alreadyGreeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
+ try{alreadyGreeted=!yakutFreshReload&&sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
  if(getYakutCurrentPage()==='index.html' && !yakutFirstGreetingDone && !alreadyGreeted){
   yakutFirstGreetingDone=true;openingSpoken=true;openingGreeted=true;
   try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
@@ -833,9 +834,11 @@ function speechProblem(err){
  }
  if(err==='no-speech'||err==='aborted'){return}
  micFailureCount++;
- if(err==='network'||err==='language-not-supported'||err==='language-unavailable'){
-  if(micFailureCount>=4){stopListening();return;}
-  micRestartAt=Date.now()+Math.min(6000,1200*micFailureCount);
+ if(err==='network'){
+  // Temporary browser speech-network failures must not disable an invisible microphone.
+  micRestartAt=Date.now()+Math.min(15000,1200*micFailureCount);
+ }else if(err==='language-not-supported'||err==='language-unavailable'){
+  stopListening();return;
  }else{
   if(micFailureCount>=5){stopListening();return;}
   micRestartAt=Date.now()+Math.min(5000,1000*micFailureCount);
@@ -871,7 +874,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,250);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,800);
  };
  if(!micStopOnly){
   rec.onspeechstart=()=>clearTimeout(timer);
@@ -998,7 +1001,7 @@ function startYakutSession(){
  const page=getYakutCurrentPage();
  yakutPageOfferPending=page!=='index.html'&&Object.hasOwn(yakutPages,page);
  try{
-  if(sessionStorage.getItem('yakutGreeted')==='1'){
+  if(!yakutFreshReload&&sessionStorage.getItem('yakutGreeted')==='1'){
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   const pageOffer=sessionStorage.getItem('yakutPageOffer');
@@ -1050,18 +1053,24 @@ gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 let greetedBefore=false;
 try{greetedBefore=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
-if(yakutGreetingInProgress)posX=centerAnswerX();
-else if(getYakutCurrentPage()==='index.html'&&!openingGreeted&&!greetedBefore)posX=leftGreetingX();
-else posX=yakutRightX();
+// Every full load starts from the same left-hand position, including refresh.
+// Walk to the center/right only after the initial greeting when requested.
+posX=leftGreetingX();
 targetX=posX;model.rotation.y=0;phase='idle';play('wait');
 positionStage();
 startYakutSession();
+if(audioUnlocked)beginYakutVisit();
 const clock=new THREE.Clock();
+let lastCanvasWidth=0,lastCanvasHeight=0;
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
 const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
-renderer.setSize(Math.max(rect.width,1),Math.max(rect.height,1),false);
-camera.aspect=Math.max(rect.width,1)/Math.max(rect.height,1);camera.updateProjectionMatrix();
+const canvasW=Math.max(Math.round(rect.width),1),canvasH=Math.max(Math.round(rect.height),1);
+if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
+ lastCanvasWidth=canvasW;lastCanvasHeight=canvasH;
+ renderer.setSize(canvasW,canvasH,false);
+ camera.aspect=canvasW/canvasH;camera.updateProjectionMatrix();
+}
 if(!hidden){
 mixer.update(dt);
 if(yakutAudioPlaying && phase==='idle'){

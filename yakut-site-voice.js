@@ -1,7 +1,7 @@
 window.yakutChatServiceUrl = document.querySelector('meta[name="yakut-chat-endpoint"]')?.content
  || 'https://kumtas-yakut-chat.simgereklam.workers.dev/chat';
 
-// Kurumsal siteye ait kısa yanıtlar ve bunların Aoede ses kayıtları.
+// Kurumsal siteye ait yerel bilgi metinleri; ses yalnızca Gemini Aoede API üzerinden üretilir.
 window.yakutSiteVoice = Object.freeze({
  "welcome": "Merhaba, hoş geldiniz. Ben Kumtaş İnşaat dijital asistanınız Yakut. Sizin için ne yapabilirim?",
  "index": "Ana sayfadayız. Burada ücretsiz ön değerlendirme talebi gönderebilir, hizmet bölgelerini inceleyebilir ve E-İmar hesabını açabilirsiniz.",
