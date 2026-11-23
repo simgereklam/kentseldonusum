@@ -243,7 +243,7 @@ function yakutPageName(path){
  return yakutPages[path]?.[0]||document.querySelector('h1')?.textContent.trim()||'açık';
 }
 function yakutPageCommand(command){
- const words=command
+ const words=normalizeYakutCommand(command)
   .replace(/^(?:(?:yakut|asistan|lütfen|hadi|hemen|beni|bizi|aç|göster) )+/,'')
   .replace(/(?: (?:lütfen|aç(?:ar mısın(?:ız)?)?|git|geç|götür|göster|dön|yönlendir|girmek istiyorum))+$/,'');
  const withoutPage=words.replace(/ sayfa(?:sı(?:na|nı)?|ya|yı)?$/,'');
@@ -707,6 +707,7 @@ async function askYakutLive(url,payload,generation){
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
+const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
 if(isYakutStopCommand(command)){stopYakutAnswer();return}
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(/^(?:yakut|yakut dinle|merhaba|merhaba yakut|selam|selam yakut|alo|alo yakut)$/.test(command)){
@@ -719,7 +720,7 @@ if(/^(?:yakut|yakut dinle|merhaba|merhaba yakut|selam|selam yakut|alo|alo yakut)
  try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
  return;
 }
-if(isYakutHomeCommand(command))return openYakutPage('index.html');
+if(isYakutHomeCommand(command)||isYakutHomeCommand(spokenCommand))return openYakutPage('index.html');
 if(/(?:hangi sayfadayız|hangi sayfadasın|hangi sayfadayım|bu sayfanın adı|şu an neredeyiz)/.test(command)){
  react('agree',yakutPageIntro(getYakutCurrentPage()),'left');return;
 }
@@ -740,7 +741,7 @@ if(getYakutCurrentPage()==='yakut-eimar.html'){
  try{sessionStorage.setItem('yakutImarQuestion',q.slice(0,500))}catch(_){}
  return openYakutPage('yakut-eimar.html');
 }
-const destination=yakutPageCommand(command);
+const destination=yakutPageCommand(command)||yakutPageCommand(spokenCommand);
 if(destination){yakutParcelStep='';yakutScenario=null;return openYakutPage(destination);}
 if(handleYakutParcel(command))return;
 if(handleYakutOfferAnswer(command))return;
@@ -856,12 +857,14 @@ function startSpeech(){
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;talk.textContent='🟢 Dinliyorum'};
  let finalText='';
+ let interimText='';
  let hasInterim=false;
  let timer;
  const submit=()=>{
   clearTimeout(timer);
-  const candidate=finalText.trim();
+  const candidate=(finalText||interimText).trim();
   finalText='';
+  interimText='';
   hasInterim=false;
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
   releaseYakutMic();
@@ -892,7 +895,8 @@ function startSpeech(){
     if(isYakutStopCommand(heard)){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
-    if(yakutPageCommand(heard)||isYakutHomeCommand(heard)||
+    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
+    if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
        /^(?:yakut|merhaba|merhaba yakut|selam|selam yakut|alo yakut)$/.test(heard)){
      releaseYakutMic();cancelYakutSpeech();
      Promise.resolve(handle(result[0].transcript)).finally(()=>queueListen(100));
@@ -903,20 +907,25 @@ function startSpeech(){
   }
   const latestTranscript=results.slice(e.resultIndex).map(r=>r[0]?.transcript||'').join(' ').trim();
   const instant=normalizeYakutCommand(latestTranscript);
+  const wakeCommand=instant.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||instant;
   if(results.slice(e.resultIndex).some(r=>r.isFinal)&&
-    (/^(?:yakut|merhaba|selam|alo)$/.test(instant)||yakutPageCommand(instant)||isYakutHomeCommand(instant))){
+    (/^(?:yakut|merhaba|selam|alo)$/.test(instant)||yakutPageCommand(instant)||yakutPageCommand(wakeCommand)||isYakutHomeCommand(instant)||isYakutHomeCommand(wakeCommand))){
    finalText=latestTranscript;submit();return;
   }
   finalText=results.filter(result=>result.isFinal)
-   .map(result=>result[0].transcript.trim()).join(' ');
-  hasInterim=results.some(result=>!result.isFinal&&result[0].transcript.trim());
+   .map(result=>result[0].transcript.trim()).join(' ').trim();
+  interimText=results.filter(result=>!result.isFinal)
+   .map(result=>result[0].transcript.trim()).join(' ').trim();
+  hasInterim=Boolean(interimText);
+  // Some browsers end recognition with only an interim result.
+  // Preserve the heard question instead of silently discarding it.
   waitForSentenceEnd();
  };
  rec.onerror=e=>{if(recognition!==rec)return;clearTimeout(timer);releaseYakutMic();micLastError=e.error||'unknown';speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(150)};
  rec.onend=()=>{
   if(recognition!==rec)return;
   clearTimeout(timer);
-  if(finalText.trim()&&submit())return;
+  if((finalText.trim()||interimText.trim())&&submit())return;
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){talk.textContent='🟢 Dinliyorum';queueListen(120)}
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
