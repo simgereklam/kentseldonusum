@@ -40,6 +40,8 @@ let processingSpeech=false;
 let micStartTimer;
 let micStopOnly=false;
 let lastWakeAt=0;
+let lastUserUtterance='',lastUserUtteranceAt=0;
+let yakutTurnInFlight=false;
 let yakutGreetingRequested=false;
 let yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
@@ -141,7 +143,7 @@ function finishYakutSpeech(){
   yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();
   moveTo(yakutRightX());
  }
- if(yakutPageOfferPending && !yakutOfferSpoken && !yakutIsGreetingWalking)offerYakutPage();
+ // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden)queueListen(50);
 }
 async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
@@ -166,7 +168,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   queueListen(0);
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length<=1900?prompt:prompt.slice(0,1900).replace(/\s+\S*$/,'').trim();
+   const utterance=prompt.length>420?prompt.slice(0,420).replace(/\s+\S*$/,'').trim():prompt;
    const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
     console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
@@ -718,6 +720,11 @@ async function askYakutLive(url,payload,generation){
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
+// Browser speech recognition may resend the same phrase when restarted.
+// Do not generate a second reply for a single utterance.
+const now=Date.now();
+if(command===lastUserUtterance && now-lastUserUtteranceAt<7000)return;
+lastUserUtterance=command;lastUserUtteranceAt=now;
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
 if(isYakutStopCommand(command)){stopYakutAnswer();return}
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
@@ -763,13 +770,15 @@ const weather=yakutWeatherRequest(command);
 const webRequest=/(?:araştır|internet|kaynak|webde ara|güncel|bugün|yarın|son dakika|en son|maç|skor|kaç kaç|kim kazandı|kim yendi|fikstür|puan durumu|haber|döviz|dolar|euro|altın|ne yenir|nerede yenir|gezilecek)/.test(command);
 const officialResearch=/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.test(command);
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
+if(yakutTurnInFlight)return;
+yakutTurnInFlight=true;
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
   yakutWeatherPending=weather.period;
   const reply='Hangi şehir için hava durumuna bakayım?';
   rememberYakutTurn(q,reply);
-  processingSpeech=false;react('agree',reply,'center');return;
+  processingSpeech=false;yakutTurnInFlight=false;react('agree',reply,'center');return;
  }
  if(weather){yakutWeatherPending='';yakutWeatherCity=weather.city;}
  let answer='Şu anda yanıt alamadım. Lütfen tekrar sorun.';
@@ -813,6 +822,7 @@ processingSpeech=true;
   }
  }finally{
   if(yakutChatController===controller)yakutChatController=null;
+  yakutTurnInFlight=false;
  }
  if(generation!==yakutVoiceGeneration||hidden)return;
  processingSpeech=false;
@@ -890,7 +900,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,500);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,300);
  };
  rec.onspeechstart=()=>clearTimeout(timer);
  rec.onspeechend=waitForSentenceEnd;
@@ -899,7 +909,7 @@ function startSpeech(){
   micFailureCount=0;
   clearTimeout(timer);
   const results=Array.from(e.results);
-  if(speaking||processingSpeech||micStopOnly){
+  if(speaking||processingSpeech){
    // Accept real interruptions while speaking; ignore text recognized from
    // Yakut's own Aoede speaker output to avoid a voice feedback loop.
    for(const result of results.slice(e.resultIndex)){
@@ -913,8 +923,7 @@ function startSpeech(){
     const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
     if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||
        isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
-       /^(?:yakut|merhaba|merhaba yakut|selam|selam yakut|alo yakut)$/.test(heard)||
-       heard.split(' ').length>=2){
+       /^(?:yakut|merhaba yakut|selam yakut|alo yakut)$/.test(heard)){
      releaseYakutMic();cancelYakutSpeech();
      Promise.resolve(handle(raw)).finally(()=>queueListen(100));
      return;
