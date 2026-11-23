@@ -169,8 +169,23 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   /* Wait for Aoede before reactivating listening. */
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length>900?prompt.slice(0,900).replace(/\s+\S*$/,'').trim():prompt;
-   const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
+   const segments=[];
+   let remaining=prompt;
+   while(remaining.length){
+    if(remaining.length<=780){segments.push(remaining);break;}
+    let cut=remaining.lastIndexOf(' ',780);
+    if(cut<350)cut=780;
+    segments.push(remaining.slice(0,cut).trim());
+    remaining=remaining.slice(cut).trim();
+   }
+   let ok=true;
+   for(const utterance of segments){
+    if(turn!==yakutVoiceGeneration||hidden){ok=false;break;}
+    if(!await askYakutLive(endpoint,{readAloud:utterance},turn)){ok=false;break;}
+   }
+   if(ok&&prompt===prepareYakutSpokenText(welcome)){
+    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
+   }
    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
     console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
    }
@@ -1142,7 +1157,7 @@ function greetYakutOnHome(){
  if(greeted)return;
  yakutGreetingRequested=true;
  openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
- try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
+ // Only mark the greeting delivered after audible speech completes.
  // Exactly one opening greeting per browser tab. The browser may require
  // a real click to unlock Aoede audio; do not create a second greeting.
  speak(welcome);
@@ -1203,7 +1218,9 @@ const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vec
 normalScale=1.55/Math.max(size.y,0.01);
 model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
 basePosition=model.position.clone();
-model.traverse(o=>{if(o.isSkinnedMesh){o.frustumCulled=false;if(o.morphTargetDictionary)face=o}});
+model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false;
+ if(o.morphTargetDictionary&&!face&&Object.keys(o.morphTargetDictionary).some(n=>/jawOpen|viseme|blink/i.test(n)))face=o;
+});
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
@@ -1218,6 +1235,7 @@ startYakutSession();
 if(audioUnlocked)queueListen(0);
 const clock=new THREE.Clock();
 let lastCanvasWidth=0,lastCanvasHeight=0;
+let blinkTime=0,blinkAt=2.5,blinkPhase=0;
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
 const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
@@ -1247,6 +1265,10 @@ positionStage();
 walkTimer+=dt;
 }
 if(face){
+blinkTime+=dt;
+if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
+const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
+blinkPhase=Math.max(0,blinkPhase-dt);
 let amp=0;
 if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData){
  yakutAnalyser.getByteTimeDomainData(yakutAnalyserData);
@@ -1255,7 +1277,10 @@ if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData)
  amp=Math.min(1,Math.sqrt(sum/yakutAnalyserData.length)*5.5);
 }
 for(const [name,i] of Object.entries(face.morphTargetDictionary)){
-const influence=/jawOpen|viseme_A/i.test(name)?amp*.75:/viseme_O/i.test(name)?amp*.22:0;
+const isMouth=/jawOpen|viseme_A|viseme_O/i.test(name);
+const isBlink=/eyeBlink|blinkLeft|blinkRight|eyesClosed|blink/i.test(name);
+if(!isMouth&&!isBlink)continue; // Keep authored facial expressions intact.
+const influence=isBlink?blink:/viseme_O/i.test(name)?amp*.22:amp*.75;
 face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],influence,48,dt)}
 }
 }
