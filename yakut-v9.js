@@ -29,7 +29,9 @@ const yakutVoiceReady=new Promise(resolve=>{
   onError:error=>{
    console.warn('Yakut Gemini ses:',error);
    talk.hidden=false;
-   talk.textContent='🔊 Ses hatası · Tekrar dene';
+   talk.textContent=String(error?.message).endsWith('_429')
+    ? '🔊 Ses kullanım sınırı · Sonra dene'
+    : '🔊 Ses hatası · Tekrar dene';
    talk.title=String(error?.message||error||'Ses servisi hatası').slice(0,140);
   }
  }):null);
@@ -67,7 +69,6 @@ let micFailureCount=0,micLastError='',micRestartAt=0;
 let emptyRecognitionCount=0;
 let processingSpeech=false;
 let micStartTimer;
-let micStopOnly=false;
 let lastWakeAt=0;
 let lastUserUtterance='',lastUserUtteranceAt=0;
 let yakutTurnInFlight=false;
@@ -173,6 +174,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
    }
    return;
   }
+  queueListen(100);
   const ok=await voice.speak(prompt);
   if(ok&&prompt===prepareYakutSpokenText(welcome)){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
@@ -711,7 +713,7 @@ processingSpeech=true;
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
  const controller=new AbortController();
  yakutChatController=controller;
- releaseYakutMic();
+ queueListen(100);
   try{
   const ask=async search=>{
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
@@ -752,12 +754,7 @@ react('agree',answer,'center');
 }
 function queueListen(delay=50){
  clearTimeout(listenRetry);
- if(!ready||!listenEnabled||hidden||processingSpeech||speaking)return;
-  const stopOnly=speaking||processingSpeech;
- if(recognition){
-  micStopOnly=stopOnly;
-  return;
- }
+ if(!ready||!listenEnabled||hidden||recognition)return;
  const ms=Math.max(delay,micRestartAt-Date.now(),0);
  listenRetry=setTimeout(startSpeech,ms);
 }
@@ -799,13 +796,12 @@ function speechProblem(err){
  }
 }
 function startSpeech(){
- if(!ready||!listenEnabled||hidden||recognition||processingSpeech||speaking||document.hidden)return;
+ if(!ready||!listenEnabled||hidden||recognition||document.hidden)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
- micStopOnly=speaking||processingSpeech;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
- rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;talk.textContent='🟢 Dinliyorum'};
+ rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
  let hasInterim=false;
@@ -818,7 +814,7 @@ function startSpeech(){
   finalText='';
   interimText='';
   hasInterim=false;
-  if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
+  if(recognition!==rec||!candidate||!listenEnabled||hidden||speaking||processingSpeech)return false;
   releaseYakutMic();
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
@@ -840,6 +836,7 @@ function startSpeech(){
   clearTimeout(timer);
   const results=Array.from(e.results);
   if(speaking||processingSpeech){
+   finalText='';interimText='';hasInterim=false;
    // Accept real interruptions while speaking; ignore text recognized from
    // Yakut's own Aoede speaker output to avoid a voice feedback loop.
    for(const result of results.slice(e.resultIndex)){
@@ -885,6 +882,7 @@ function startSpeech(){
   if((finalText.trim()||interimText.trim())&&submit())return;
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
+    if(speaking||processingSpeech){queueListen(250);return;}
     if(!hadRecognitionError){
      emptyRecognitionCount++;
      if(emptyRecognitionCount>=4){stopListening();talk.textContent='🎤 Konuşmak için dokun';return;}
