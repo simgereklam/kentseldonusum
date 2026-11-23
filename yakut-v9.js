@@ -22,7 +22,7 @@ const yakutVoiceReady=new Promise(resolve=>{
  document.head.appendChild(script);
 });
 let yakutLocalVoice=null;
-yakutVoiceReady.then(voice=>{yakutLocalVoice=voice;});
+yakutVoiceReady.then(voice=>{yakutLocalVoice=voice;updateYakutVoiceChoices();});
 const css=document.createElement('style');
 css.textContent=`
 #yakut-v9{position:fixed;left:0;bottom:52px;width:clamp(255px,28vw,370px);height:min(73dvh,clamp(380px,53vw,580px));z-index:110;pointer-events:none;will-change:transform;filter:drop-shadow(0 6px 12px #001c3273)}
@@ -42,9 +42,32 @@ document.head.appendChild(css);
 const stage=document.createElement('div');stage.id='yakut-v9';stage.setAttribute('aria-label','Hareketli 3D YAKUT asistanı');
 stage.appendChild(document.createElement('canvas'));
 const ui=document.createElement('div');ui.id='yakut-v9-ui';
-ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Yakut sesini etkinleştir">🔊 Sesi Aç</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
+ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Yakut sesini etkinleştir">🔊 Sesi Aç</button><select id="yakut-voice-choice" aria-label="Yakut Türkçe ses seçimi" style="max-width:120px;background:#095983;color:#fff;border:1px solid #4fb3e9;border-radius:12px;padding:8px 4px"><option value="">🎙️ Ses seç</option></select><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
 document.body.append(stage,ui);
 const talk=ui.querySelector('#yakut-talk'),close=ui.querySelector('#yakut-close');
+const voiceChoice=ui.querySelector('#yakut-voice-choice');
+function updateYakutVoiceChoices(){
+ const engine=yakutLocalVoice;
+ if(!engine)return;
+ const voices=engine.getTurkishVoices();
+ const selected=engine.selectedVoiceName||engine.voice?.name||'';
+ voiceChoice.replaceChildren();
+ const title=document.createElement('option');title.value='';title.textContent=voices.length?'🎙️ Ses seç':'Türkçe ses yok';voiceChoice.append(title);
+ for(const voice of voices){
+  const option=document.createElement('option');
+  option.value=voice.name;option.textContent=voice.name;
+  voiceChoice.append(option);
+ }
+ voiceChoice.value=voices.some(v=>v.name===selected)?selected:'';
+ voiceChoice.title=voices.length?'Ses listesinden birini seçip örneği dinleyin':'Telefonun Türkçe metin okuma sesini yükleyin';
+}
+voiceChoice.addEventListener('change',()=>{
+ if(!yakutLocalVoice?.chooseVoice(voiceChoice.value))return;
+ stopYakutAnswer();
+ yakutLocalVoice.speak('Merhaba, ben Yakut. Bu sesle size yardımcı olabilirim.');
+});
+window.speechSynthesis?.addEventListener?.('voiceschanged',updateYakutVoiceChoices);
+
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
 let openingGreeted=false,openingSpoken=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
@@ -143,6 +166,7 @@ function beginYakutVisit(){
 }
 function handleYakutActivation(event){
  yakutLocalVoice?.unlock();
+ if(event.target?.closest?.('#yakut-voice-choice'))return;
  if(!event.isTrusted||navigator.userActivation?.isActive===false||hidden)return;
  micFailureCount=0;micRestartAt=0;
  listenEnabled=true;
@@ -1073,6 +1097,7 @@ function startSpeech(){
 }
 talk.onclick=()=>{
  yakutLocalVoice?.unlock();
+ updateYakutVoiceChoices();
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  resumeYakutSound();
