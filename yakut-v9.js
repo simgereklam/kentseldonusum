@@ -1048,6 +1048,8 @@ function startYakutSession(){
   sessionStorage.removeItem('yakutPageOffer');
   yakutPendingPageSpeech=yakutPageOfferPending&&pageOffer==='anlat:'+page;
  }catch(e){}
+ // Start Aoede as early as the browser allows, without pausing recognition.
+ resumeYakutSound();
  queueListen(0);
  greetYakutOnHome();
 }
