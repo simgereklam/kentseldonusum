@@ -11,6 +11,14 @@ const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat’ın yapay zekâ asistanı Yakut. Sizi dinliyorum.';
+// Discard the old assistant's stale greeting flag once after migrating to Gemini-only audio.
+try{
+ if(sessionStorage.getItem('yakutGeminiOnlyMigration')!=='2'){
+  sessionStorage.removeItem('yakutGreeted');
+  sessionStorage.setItem('yakutGeminiOnlyMigration','2');
+ }
+}catch(_){}
+
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
  script.src=new URL('yakut-gemini-voice.js?v=gemini-only-20261123b',document.currentScript.src).href;
