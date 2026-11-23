@@ -5,7 +5,7 @@ Bu klasör yalnızca API sunucusunu içerir. Site HTML/JS dosyalarına dokunulma
 ## Uç noktalar
 
 - GET /health: Anahtarların sunucuda ayarlı olup olmadığını boolean olarak bildirir, değerlerini göstermez.
-- POST /chat: {question,reference,history,research}; dış bilgi sorularına Gemini yanıt verir. research=true ise önce Tavily, sonuç alınmazsa Firecrawl aranır ve arama metinleri Gemini'ye verilir. Gemini Google Search kapalıdır.
+- POST /chat: {question,reference,history,research}; dış bilgi sorularına Gemini yanıt verir. research=true ise Tavily, Firecrawl ve TinyFish paralel aranır, ilk uygun arama kaynakları Gemini'ye verilir. Gemini Google Search kapalıdır.
 - POST /live: {readAloud}; Gemini Aoede TTS, 24kHz mono 16-bit PCM sesini NDJSON base64 formatında gönderir.
 
 ## Gizli anahtarlar ve dağıtım
@@ -17,6 +17,7 @@ npx wrangler login
 npx wrangler secret put GEMINI_API_KEY
 npx wrangler secret put TAVILY_API_KEY
 npx wrangler secret put FIRECRAWL_API_KEY
+npx wrangler secret put TINYFISH_API_KEY
 npx wrangler deploy
 ```
 
@@ -32,6 +33,6 @@ Gemini ses tarafı metinden konuşma (TTS) kullanır; çift yönlü Gemini Live 
 
 ## Yayın doğrulaması
 
-Worker varsayılan olarak `gemini-3.8-flash-tts` modelini ve Aoede sesini kullanır. `CHAT_LIMITER` bağlantısı yoksa istek sınırı Worker örneği başına uygulanır.
+Worker varsayılan olarak `gemini-2.5-flash-preview-tts` modelini ve Aoede sesini kullanır. Yazılı sohbet modeli ayrı `GEMINI_CHAT_MODEL` değişkeninden alınır. MP3 veya alternatif ses motoru kullanılmaz. `CHAT_LIMITER` bağlantısı yoksa istek sınırı Worker örneği başına uygulanır.
 
 Yayından sonra gerçek Worker adresinde ve site Origin’i ile `/live` ve `/chat` isteklerini doğrulayın. Siteyi yalnızca doğrulanmış Worker adresine yönlendirin. Sitedeki `yakut-ses-test.html` aynı ses servisine kısa bir metin gönderir ve dönen sesi çalar. Bu test hazır MP3 dosyası kullanmaz.
