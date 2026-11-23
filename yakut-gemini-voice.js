@@ -53,10 +53,11 @@ class YakutGeminiVoice{
   if(!this.ready){this.onError(new Error('AUDIO_LOCKED'));return false;}
   const controller=new AbortController();this.controller=controller;
   let started=false,success=false;
-  const timeout=setTimeout(()=>controller.abort(),70000);
+  let timeout=null;
   try{
    for(const phrase of parts){
     if(token!==this.generation)return false;
+    timeout=setTimeout(()=>controller.abort(),65000);
     const response=await fetch(new URL('/live',this.endpoint),{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({readAloud:phrase}),signal:controller.signal
@@ -118,6 +119,7 @@ class YakutGeminiVoice{
     }finally{
      try{reader.releaseLock()}catch(_){}
     }
+    clearTimeout(timeout);timeout=null;
     if(!doneFlag)throw new Error('GEMINI_AUDIO_INCOMPLETE');
     // Wait for the entire scheduled audio, not just last voice frame or HTTP body.
     await Promise.all(playbacks);
