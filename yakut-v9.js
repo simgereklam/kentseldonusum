@@ -166,7 +166,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   queueListen(0);
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length<=1900?prompt:prompt.slice(0,1900).replace(/\\s+\\S*$/,'').trim();
+   const utterance=prompt.length<=1900?prompt:prompt.slice(0,1900).replace(/\s+\S*$/,'').trim();
    const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
     console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
@@ -778,7 +778,7 @@ processingSpeech=true;
   if(!research&&needsSearch)result=await ask(true);
   if(generation!==yakutVoiceGeneration||hidden)return;
   if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.trim()!=='WEB_ARAMASI_GEREKLI'){
-   answer=result.answer.trim().replace(/\\*\\*/g,'');
+   answer=result.answer.trim().replace(/\*\*/g,'');
    rememberYakutTurn(q,answer);
   }else if(needsSearch)answer='Güncel bilgiye şu anda ulaşamadım. Lütfen tekrar sorun.';
  }catch(error){
