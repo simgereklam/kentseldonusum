@@ -230,7 +230,9 @@ export default {
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
         tinyfish_configured: Boolean(env.TINYFISH_API_KEY),
-        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede'
+        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede',
+        tts_model: ['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview'].includes(String(env.GEMINI_TTS_MODEL||''))
+          ? 'gemini-3.8-flash-tts' : (env.GEMINI_TTS_MODEL||'gemini-3.8-flash-tts')
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());
