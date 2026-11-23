@@ -770,8 +770,16 @@ processingSpeech=true;
   const ask=async search=>{
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined}),
-    signal:AbortSignal.any([controller.signal,AbortSignal.timeout(search?23500:10000)])});
-   return response.ok?response.json():null;
+    signal:AbortSignal.any([controller.signal,AbortSignal.timeout(search?45000:25000)])});
+   let result=null;
+   try{result=await response.json()}catch(_){}
+   if(response.ok)return result;
+   const reason=typeof result?.answer==='string'&&result.answer.trim()
+    ?result.answer.trim():(response.status===429?'Yakut yoğun kullanım nedeniyle kısa süre bekliyor. Lütfen yeniden deneyin.':
+    response.status===403?'Yakut bağlantısı site yetkilendirmesi nedeniyle reddedildi.':
+    response.status===503?'Gemini veya internet araması geçici olarak yanıt vermiyor.':
+    'Yakut sunucusu HTTP '+response.status+' hatası verdi.');
+   return {answer:reason,serverError:true};
   };
   let result=await ask(research);
   const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
@@ -782,7 +790,11 @@ processingSpeech=true;
    rememberYakutTurn(q,answer);
   }else if(needsSearch)answer='Güncel bilgiye şu anda ulaşamadım. Lütfen tekrar sorun.';
  }catch(error){
-  if(!controller.signal.aborted)console.warn('Yakut sohbet isteği:',error);
+  if(!controller.signal.aborted){
+   console.warn('Yakut sohbet isteği:',error);
+   answer=error?.name==='TimeoutError'?'Gemini yanıtı zaman aşımına uğradı. Lütfen yeniden deneyin.':
+    'Yakut sunucusuna bağlanılamıyor. Lütfen bağlantıyı kontrol edin.';
+  }
  }finally{
   if(yakutChatController===controller)yakutChatController=null;
  }
