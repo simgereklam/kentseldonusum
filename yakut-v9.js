@@ -169,7 +169,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   /* Wait for Aoede before reactivating listening. */
   if(navigator.onLine!==false){
    // A single request avoids inconsistent deliveries and overlapping TTS.
-   const utterance=prompt.length>230?prompt.slice(0,230).replace(/\s+\S*$/,'').trim():prompt;
+   const utterance=prompt.length>900?prompt.slice(0,900).replace(/\s+\S*$/,'').trim():prompt;
    const ok=await askYakutLive(endpoint,{readAloud:utterance},turn);
    if(!ok&&turn===yakutVoiceGeneration&&!hidden){
     console.warn('Yakut: Gemini Aoede sesi üretilemedi; başka ses kaynağı kullanılmayacak.');
@@ -247,14 +247,26 @@ function yakutPageName(path){
  return yakutPages[path]?.[0]||document.querySelector('h1')?.textContent.trim()||'açık';
 }
 function yakutPageCommand(command){
- const words=normalizeYakutCommand(command)
-  .replace(/^(?:(?:yakut|asistan|lütfen|hadi|hemen|beni|bizi|aç|göster) )+/,'')
-  .replace(/(?: (?:lütfen|aç(?:ar mısın(?:ız)?)?|git|geç|götür|göster|dön|yönlendir|girmek istiyorum))+$/,'');
- const withoutPage=words.replace(/ sayfa(?:sı(?:na|nı)?|ya|yı)?$/,'');
- return Object.entries(yakutPages).find(([path,names])=>names.some(name=>{
-  const label=normalizeYakutCommand(name);
-  return words===label||withoutPage===label||['a','e','ya','ye','ı','i','u','ü','yı','yi','yu','yü'].some(suffix=>words===label+suffix||words===label+' '+suffix);
- }))?.[0]||null;
+ const raw=normalizeYakutCommand(command);
+ const hasAction=/(?:^| )(?:aç|açabilir|açar|göster|git|gidelim|geç|götür|yönlendir|sayfa|sayfaya|sayfasına|sayfasını|sayfayı|sayfalarına)(?: |$)/.test(raw);
+ let words=raw
+  .replace(/^(?:(?:yakut|asistan|lütfen|hadi|hemen|beni|bizi|bana|bize) )+/,'')
+  .replace(/\b(?:sayfasını|sayfasına|sayfası|sayfayı|sayfaya|sayfayı|sayfa|sayfalarına|sayfalara|sayfalar)\b/g,' ')
+  .replace(/\b(?:açar mısın|açabilir misin|açabilir miyiz|açar mısınız|aç|gösterir misin|göster|gidelim|git|geç|götür|yönlendir|lütfen|istiyorum|istiyorum aç)\b/g,' ')
+  .replace(/\s+/g,' ').trim();
+ if(!words)return null;
+ // A page name by itself is a navigation command; questions about the business are not.
+ if(!hasAction&&!Object.values(yakutPages).some(names=>names.some(n=>normalizeYakutCommand(n)===words)))return null;
+ const entries=Object.entries(yakutPages).sort((a,b)=>Math.max(...b[1].map(n=>n.length))-Math.max(...a[1].map(n=>n.length)));
+ for(const [path,names] of entries){
+  for(const name of names){
+   const label=normalizeYakutCommand(name);
+   if(words===label||words===label+'a'||words===label+'e'||words===label+'ya'||words===label+'ye'||
+      words===label+'ı'||words===label+'i'||words===label+'yı'||words===label+'yi')
+    return path;
+  }
+ }
+ return null;
 }
 function normalizeYakutCommand(message){
  return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim();
@@ -725,11 +737,12 @@ let yakutRealtimeSocket=null;
 async function yakutLiveConversation(question,reference,generation){
  if(!audioUnlocked||!yakutTtsContext||yakutTtsContext.state!=='running')return false;
  let socket=null,played=false,nextStart=0,lastEnded=null;
- const clock=setTimeout(()=>{try{socket?.close()}catch(_){}},13000);
+ let clock=setTimeout(()=>{try{socket?.close()}catch(_){}},11500);
+ const keepAlive=()=>{clearTimeout(clock);clock=setTimeout(()=>{try{socket?.close()}catch(_){}},15000)};
  try{
   const response=await fetch(new URL('/live-token',yakutChatEndpoint()),{
    method:'POST',headers:{'Content-Type':'application/json'},body:'{}',
-   signal:AbortSignal.timeout(12000)
+   signal:AbortSignal.timeout(3500)
   });
   if(!response.ok)return false;
   const auth=await response.json();
@@ -768,6 +781,7 @@ async function yakutLiveConversation(question,reference,generation){
      yakutLiveSources.add(source);
      lastEnded=new Promise(finish=>{source.onended=()=>{yakutLiveSources.delete(source);finish()}});
      if(!played){played=true;beginYakutAudioPlayback()}
+     keepAlive();
     }
     if(content?.turnComplete||content?.interrupted)done();
    };
@@ -811,7 +825,10 @@ if(/(?:hangi sayfadayız|hangi sayfadasın|hangi sayfadayım|bu sayfanın adı|�
 }
 if(yakutParcelStep==='ilçe'&&handleYakutParcel(command))return;
 if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command)){react('agree',yakutScenarioAnswer(q));return;}
-if(yakutWantsCompanyInfo(command))return openYakutPage('kurumsal.html',true);
+if(yakutWantsCompanyInfo(command)){
+ const about=window.yakutSiteVoice?.kurumsal||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
+ react('agree',about.replace(/^Kurumsal sayfasındayız\.\s*/,''),'left');return;
+}
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
 const phoneAnswer=yakutPhoneAnswer(command);
