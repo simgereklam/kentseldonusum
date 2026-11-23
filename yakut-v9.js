@@ -16,6 +16,8 @@ const yakutVoiceReady=new Promise(resolve=>{
  script.src=new URL('yakut-voice-engine.js',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutVoiceEngine?new window.YakutVoiceEngine({
   onStart:()=>beginYakutAudioPlayback(),
+  onEnd:()=>{yakutAudioPlaying=false;yakutMouthLevel=0;},
+  onLevel:level=>{yakutMouthLevel=level;},
   onError:error=>console.warn('Yakut yerel ses:',error)
  }):null);
  script.onerror=()=>resolve(null);
@@ -68,7 +70,7 @@ voiceChoice.addEventListener('change',()=>{
 });
 window.speechSynthesis?.addEventListener?.('voiceschanged',updateYakutVoiceChoices);
 
-let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
+let THREE,model,mixer,face,faces=[],jawBone=null,jawRestX=0,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
 let openingGreeted=false,openingSpoken=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
 let emptyRecognitionCount=0;
@@ -90,6 +92,7 @@ const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
 next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
+let yakutMouthLevel=0,yakutLipClock=0;
 let audioUnlocked=false,yakutTtsContext=null,yakutAnalyser=null,yakutAnalyserData=null,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
 function getYakutAudioDest(){
  if(!yakutTtsContext)return null;
@@ -226,18 +229,18 @@ function leftGreetingX(){return 0}
 function yakutRightX(){return Math.max(0,innerWidth-stage.offsetWidth)}
 function centerAnswerX(){return Math.max(0,(innerWidth-stage.offsetWidth)/2)}
 function finishYakutGreetingWalk(){
- yakutIsGreetingWalking=false;yakutGreetingInProgress=true;phase='greeting';if(model)model.rotation.y=0;
+ yakutIsGreetingWalking=false;
+ if(model)model.rotation.y=0;
  const bow=findYakutGesture('bow');
- if(bow&&clips[bow]){yakutOpeningBow=true;play(bow,true)}
+ if(bow&&clips[bow]){yakutOpeningBow=true;phase='greeting';play(bow,true)}
  else completeYakutOpening();
 }
 function completeYakutOpening(){
  yakutOpeningBow=false;
- try{sessionStorage.setItem('yakutGreeted','1');sessionStorage.setItem('yakutVisited','1')}catch(_){}
  phase='idle';play('wait');
- speak(welcome);
+ // Spoken greeting is initiated at the real user gesture, never duplicated on arrival.
 }
-function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else play('wait')}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
@@ -1172,9 +1175,15 @@ function greetYakutOnHome(){
  if(navigator.userActivation?.isActive===false)return;
  yakutGreetingRequested=true;
  openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
- // Only mark the greeting delivered after audible speech completes.
- // Exactly one opening greeting per browser tab. The browser may require
- // a real click to unlock Aoede audio; do not create a second greeting.
+ // Start speech on this trusted click, before its activation expires.
+ if(model){
+  const center=centerAnswerX();
+  if(Math.abs(center-posX)>12){
+   yakutIsGreetingWalking=true;
+   moveTo(center);
+   if(phase!=='walking')finishYakutGreetingWalk();
+  }else finishYakutGreetingWalk();
+ }
  speak(welcome);
 }
 function startYakutSession(){
@@ -1233,9 +1242,16 @@ const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vec
 normalScale=1.55/Math.max(size.y,0.01);
 model.scale.setScalar(normalScale);model.position.set(-center.x*normalScale,-center.y*normalScale,-center.z*normalScale);
 basePosition=model.position.clone();
-model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false;
- if(o.morphTargetDictionary&&!face&&Object.keys(o.morphTargetDictionary).some(n=>/jawOpen|viseme|blink/i.test(n)))face=o;
+model.traverse(o=>{
+ if(o.isSkinnedMesh)o.frustumCulled=false;
+ if(o.morphTargetDictionary&&o.morphTargetInfluences?.length){
+  const names=Object.keys(o.morphTargetDictionary);
+  if(names.some(n=>/jaw|mouth|viseme|blink|eye.?close/i.test(n)))faces.push(o);
+ }
+ if(o.isBone&&/^(?:mixamorig)?jaw$/i.test(o.name)){jawBone=o;jawRestX=o.rotation.x;}
 });
+face=faces[0]||null;
+console.info('Yakut model facial controls:',faces.map(o=>Object.keys(o.morphTargetDictionary)),jawBone?.name||'jaw bone unavailable');
 scene.add(model);mixer=new THREE.AnimationMixer(model);
 gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
@@ -1279,24 +1295,25 @@ positionStage();
 }else if(phase==='idle'&&!reduced){
 walkTimer+=dt;
 }
-if(face){
-blinkTime+=dt;
-if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
-const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
-blinkPhase=Math.max(0,blinkPhase-dt);
-let amp=yakutAudioPlaying?.35:0;
-if(yakutAudioPlaying&&yakutLiveSources.size>0&&yakutAnalyser&&yakutAnalyserData){
- yakutAnalyser.getByteTimeDomainData(yakutAnalyserData);
- let sum=0;
- for(let k=0;k<yakutAnalyserData.length;k++){const d=(yakutAnalyserData[k]-128)/128;sum+=d*d;}
- amp=Math.min(1,Math.sqrt(sum/yakutAnalyserData.length)*5.5);
-}
-for(const [name,i] of Object.entries(face.morphTargetDictionary)){
-const isMouth=/jawOpen|viseme_A|viseme_O/i.test(name);
-const isBlink=/eyeBlink|blinkLeft|blinkRight|eyesClosed|blink/i.test(name);
-if(!isMouth&&!isBlink)continue; // Keep authored facial expressions intact.
-const influence=isBlink?blink:/viseme_O/i.test(name)?amp*.22:amp*.75;
-face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],influence,48,dt)}
+if(faces.length||jawBone){
+ blinkTime+=dt;yakutLipClock+=dt;
+ if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
+ const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
+ blinkPhase=Math.max(0,blinkPhase-dt);
+ // Web Speech API does not expose PCM; use speech lifecycle-driven approximate movement.
+ const pulse=.32+.68*Math.abs(Math.sin(yakutLipClock*15.5));
+ const amp=yakutAudioPlaying?Math.min(1,Math.max(.2,yakutMouthLevel)*pulse):0;
+ for(const mesh of faces){
+  for(const [name,i] of Object.entries(mesh.morphTargetDictionary)){
+   const isBlink=/eye.?blink|blink|eyes.?closed|eye.?close/i.test(name);
+   const isOpen=/jaw.?open|mouth.?open|viseme[_-]?(?:a|aa|ah|0|1)$/i.test(name);
+   const isO=/viseme[_-]?(?:o|oh|u|ou)$/i.test(name);
+   if(!isBlink&&!isOpen&&!isO)continue;
+   const influence=isBlink?blink:isO?amp*.25:amp*.72;
+   mesh.morphTargetInfluences[i]=THREE.MathUtils.damp(mesh.morphTargetInfluences[i],influence,22,dt);
+  }
+ }
+ if(jawBone)jawBone.rotation.x=THREE.MathUtils.damp(jawBone.rotation.x,jawRestX+amp*.14,18,dt);
 }
 }
 renderer.render(scene,camera);
