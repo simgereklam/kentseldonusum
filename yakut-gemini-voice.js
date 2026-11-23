@@ -52,7 +52,8 @@ class YakutGeminiVoice{
   if(!parts.length)return false;
   if(!this.ready){this.onError(new Error('AUDIO_LOCKED'));return false;}
   const controller=new AbortController();this.controller=controller;
-  let started=false;
+  let started=false,success=false;
+  const timeout=setTimeout(()=>controller.abort(),70000);
   try{
    for(const phrase of parts){
     if(token!==this.generation)return false;
@@ -121,13 +122,19 @@ class YakutGeminiVoice{
     // Wait for the entire scheduled audio, not just last voice frame or HTTP body.
     await Promise.all(playbacks);
    }
-   return token===this.generation&&started;
+   success=token===this.generation&&started;
+   return success;
   }catch(error){
    if(token===this.generation&&!controller.signal.aborted)this.onError(error);
    return false;
   }finally{
+   clearTimeout(timeout);
    if(token===this.generation){
-    this.controller=null;this.playing=false;this.onEnd(true);
+    if(!success){
+     for(const item of this.sources){try{item.source.stop()}catch(_){}item.finish();}
+     this.sources.clear();
+    }
+    this.controller=null;this.playing=false;this.onEnd(success);
    }
   }
  }
