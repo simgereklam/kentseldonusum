@@ -256,6 +256,16 @@ function yakutPageCommand(command){
 function normalizeYakutCommand(message){
  return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim();
 }
+function isYakutOwnVoice(text){
+ const heard=normalizeYakutCommand(text);
+ const own=normalizeYakutCommand(yakutCurrentPrompt);
+ if(!heard||!own)return false;
+ if(own.includes(heard)||heard.includes(own))return true;
+ const words=heard.split(' ').filter(word=>word.length>2);
+ if(words.length<3)return false;
+ const ownWords=new Set(own.split(' '));
+ return words.filter(word=>ownWords.has(word)).length/words.length>=0.75;
+}
 function isYakutStopCommand(command){
  return /(?:^| )(?:dur|durun|sus|susun|konuşma|kes|yeter|tamam|bekle|bi saniye|bir saniye|kapat)(?: |$)/.test(command) && command.split(' ').length <= 5;
 }
@@ -890,18 +900,23 @@ function startSpeech(){
   clearTimeout(timer);
   const results=Array.from(e.results);
   if(speaking||processingSpeech||micStopOnly){
-   // Continue to recognize wake and navigation commands even during playback.
+   // Accept real interruptions while speaking; ignore text recognized from
+   // Yakut's own Aoede speaker output to avoid a voice feedback loop.
    for(const result of results.slice(e.resultIndex)){
     if(!result.isFinal)continue;
-    const heard=normalizeYakutCommand(result[0].transcript);
+    const raw=result[0]?.transcript||'';
+    const heard=normalizeYakutCommand(raw);
+    if(!heard||isYakutOwnVoice(raw))continue;
     if(isYakutStopCommand(heard)){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
-    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
-    if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
-       /^(?:yakut|merhaba|merhaba yakut|selam|selam yakut|alo yakut)$/.test(heard)){
+    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\\s+)?yakut(?:\\s+|$)/,'').trim()||heard;
+    if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||
+       isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
+       /^(?:yakut|merhaba|merhaba yakut|selam|selam yakut|alo yakut)$/.test(heard)||
+       heard.split(' ').length>=2){
      releaseYakutMic();cancelYakutSpeech();
-     Promise.resolve(handle(result[0].transcript)).finally(()=>queueListen(100));
+     Promise.resolve(handle(raw)).finally(()=>queueListen(100));
      return;
     }
    }
