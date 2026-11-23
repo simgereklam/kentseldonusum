@@ -97,56 +97,55 @@
     </section>
 
     <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const gallery = document.getElementById('dynamic-gallery');
-        let html = "";
-        
-        // 1. TAMAMLANAN PROJELER (Klasörde 1'den 100'e kadar kaç tane varsa bulur)
-        for(let i=1; i<=100; i++) {
-            html += `
-            <div class="project-card" id="tamam-card-${i}">
-                <img src="tamam.${i}.jpg" alt="Tamamlanan Proje ${i}" 
-                     onload="document.getElementById('tamam-card-${i}').classList.add('loaded')" 
-                     onerror="document.getElementById('tamam-card-${i}').remove()">
-                <div class="body">
-                    <span class="tag">Tamamlanan Proje</span>
-                    <h3>Tamamlanan Proje ${i}</h3>
-                    <p>Anahtar teslim bina yenileme ve dış cephe uygulaması.</p>
-                </div>
-            </div>`;
+    document.addEventListener('DOMContentLoaded', async function() {
+      const gallery = document.getElementById('dynamic-gallery');
+      if (!gallery) return;
+      try {
+        // Load only images that actually exist; do not request 300 guesses.
+        const response = await fetch('resimler.json');
+        if (!response.ok) throw new Error('Galeri listesi okunamadı');
+        const items = await response.json();
+        const kinds = [
+          ['tamamlanmis', 'Tamamlanan Proje', 'Anahtar teslim bina yenileme ve dış cephe uygulaması.'],
+          ['devam-eden', 'Devam Eden Proje', 'Kaba inşaat, temel ve yapı yükselme süreci.'],
+          ['ornekler', 'Proje Örneği', 'Kentsel dönüşüm ve kat karşılığı inşaat için örnek proje yaklaşımı.']
+        ];
+        const groups = new Map(kinds.map(([key]) => [key, []]));
+        for (const item of Array.isArray(items) ? items : []) {
+          if (!groups.has(item.kategori) || !/^(?:tamam|kaba|proje)\.\d+\.(?:jpg|png)$/i.test(item.src)) continue;
+          groups.get(item.kategori).push(item);
         }
-
-        // 2. KABA İNŞAAT PROJELERİ (Klasörde 1'den 100'e kadar kaç tane varsa bulur)
-        for(let i=1; i<=100; i++) {
-            html += `
-            <div class="project-card" id="kaba-card-${i}">
-                <img src="kaba.${i}.png" alt="Devam Eden Proje ${i}" 
-                     onload="document.getElementById('kaba-card-${i}').classList.add('loaded')" 
-                     onerror="document.getElementById('kaba-card-${i}').remove()">
-                <div class="body">
-                    <span class="tag">Devam Eden Proje</span>
-                    <h3>Devam Eden Kaba İnşaat ${i}</h3>
-                    <p>Kaba inşaat, temel ve yapı yükselme süreci.</p>
-                </div>
-            </div>`;
+        const fragment = document.createDocumentFragment();
+        for (const [key, prefix, description] of kinds) {
+          for (const item of groups.get(key)) {
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            const img = document.createElement('img');
+            img.src = item.src;
+            img.alt = String(item.baslik || prefix);
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.addEventListener('load', () => card.classList.add('loaded'), {once:true});
+            img.addEventListener('error', () => card.remove(), {once:true});
+            const body = document.createElement('div');
+            body.className = 'body';
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = prefix;
+            const title = document.createElement('h3');
+            title.textContent = String(item.baslik || prefix);
+            const info = document.createElement('p');
+            info.textContent = description;
+            body.append(tag, title, info);
+            card.append(img, body);
+            fragment.appendChild(card);
+          }
         }
-
-        // 3. PROJE ÖRNEKLERİ (Klasörde 1'den 100'e kadar kaç tane varsa bulur)
-        for(let i=1; i<=100; i++) {
-            html += `
-            <div class="project-card" id="proje-card-${i}">
-                <img src="proje.${i}.png" alt="Proje Örneği ${i}" 
-                     onload="document.getElementById('proje-card-${i}').classList.add('loaded')" 
-                     onerror="document.getElementById('proje-card-${i}').remove()">
-                <div class="body">
-                    <span class="tag">Proje Örneği</span>
-                    <h3>Mimari Proje Örneği ${i}</h3>
-                    <p>Kentsel dönüşüm ve kat karşılığı inşaat için örnek proje yaklaşımı.</p>
-                </div>
-            </div>`;
-        }
-        
-        gallery.innerHTML = html;
+        gallery.replaceChildren(fragment);
+        document.dispatchEvent(new Event('yakut:gallery-ready'));
+      } catch (error) {
+        console.warn('Proje galerisi:', error);
+      }
     });
     </script>
 
