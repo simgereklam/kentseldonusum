@@ -725,7 +725,7 @@ let yakutRealtimeSocket=null;
 async function yakutLiveConversation(question,reference,generation){
  if(!audioUnlocked||!yakutTtsContext||yakutTtsContext.state!=='running')return false;
  let socket=null,played=false,nextStart=0,lastEnded=null;
- const clock=setTimeout(()=>{try{socket?.close()}catch(_){}},26000);
+ const clock=setTimeout(()=>{try{socket?.close()}catch(_){}},13000);
  try{
   const response=await fetch(new URL('/live-token',yakutChatEndpoint()),{
    method:'POST',headers:{'Content-Type':'application/json'},body:'{}',
