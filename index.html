@@ -122,7 +122,7 @@
         .copy{text-align:center;border-top:1px solid rgba(255,255,255,.08);padding-top:18px;margin-top:28px;font-size:13px;color:#8ea0b8}
         .float-wa{position:fixed;right:20px;bottom:20px;z-index:120;background:var(--green);color:white;border-radius:999px;padding:14px 20px;font-weight:950;box-shadow:0 18px 36px rgba(24,183,95,.32)}
 
-        /* TABLET VE MOBİL MENÜ + MOBİLDE LOGO AÇILIŞINI KALDIRMA AYARI */
+        /* TABLET VE MOBİL MENÜ */
         @media(max-width:980px){
             .navwrap{height:54px;align-items:center;flex-direction:row;padding:0 12px;gap:8px}
             .brand-company{display:none !important;}
@@ -153,7 +153,7 @@
 
         @media(max-width:640px){
             .container{padding:0 16px}
-            .grid-2,.grid-3,.grid-4,.footer-grid{grid-template-columns:1fr}
+            .footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
         }
     </style>
@@ -203,11 +203,15 @@
             <h1>Geç Kalmadan Riskli Binanızı Birlikte Yenileyelim</h1>
             <p>Riskli binanızı güvenle yenileyin. Ücretsiz ön değerlendirme ile dönüşüm sürecinizi ve yapı potansiyelinizi hemen öğrenin.</p>
         </div>
-
     </div>
 </section>
 
-<section style="padding:20px 16px;background:#092340;text-align:center;color:#fff"><strong style="font-size:22px">YAKUT e-İmar ve Ön Proje</strong><p style="margin:8px auto;max-width:700px">Ada/parsel resmî sorgu bağlantısı ve doğruladığınız imar değerleriyle yaklaşık bina yerleşimi.</p><a href="yakut-eimar.html" style="display:inline-block;background:#ff8b25;color:#06182c;border-radius:12px;padding:13px 20px;font-weight:900">e-İmar Analizini Aç</a></section>
+<section style="padding:20px 16px;background:#092340;text-align:center;color:#fff">
+    <strong style="font-size:22px">YAKUT e-İmar ve Ön Proje</strong>
+    <p style="margin:8px auto;max-width:700px">Ada/parsel resmî sorgu bağlantısı ve doğruladığınız imar değerleriyle yaklaşık bina yerleşimi.</p>
+    <a href="yakut-eimar.html" style="display:inline-block;background:#ff8b25;color:#06182c;border-radius:12px;padding:13px 20px;font-weight:900">e-İmar Analizini Aç</a>
+</section>
+
 <!-- POTANSİYEL HESAPLAMA FORMU -->
 <section class="section">
     <div class="container">
@@ -219,31 +223,40 @@
             </div>
             <form class="form" data-whatsapp-form>
                 <div>
-                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Toplam Arsa Alanı (m²)</label>
-                    <input type="number" name="Arsa Metrekaresi" placeholder="Örn: 450" required>
+                    <label for="arsa-m2" style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Toplam Arsa Alanı (m²)</label>
+                    <input id="arsa-m2" type="number" name="Arsa Metrekaresi" placeholder="Örn: 450" min="1" required>
                 </div>
                 <div>
-                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Mevcut Kat Sayısı</label>
-                    <input type="number" name="Mevcut Kat Sayısı" placeholder="Örn: 5" required>
+                    <label for="kat-sayisi" style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Mevcut Kat Sayısı</label>
+                    <input id="kat-sayisi" type="number" name="Mevcut Kat Sayısı" placeholder="Örn: 5" min="1" required>
                 </div>
                 <div>
-                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Bulunduğu İlçe</label>
-                    <select name="İlçe" required>
+                    <label for="ilce-secim" style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Bulunduğu İlçe</label>
+                    <select id="ilce-secim" name="İlçe" required>
                         <option value="">İlçe seçin</option>
-                        <option>Yenibosna</option><option>Bahçelievler</option><option>Bakırköy</option><option>Bağcılar</option><option>Güngören</option><option>Avcılar</option><option>Esenler</option><option>Küçükçekmece</option><option>Zeytinburnu</option><option>Diğer</option>
+                        <option>Yenibosna</option>
+                        <option>Bahçelievler</option>
+                        <option>Bakırköy</option>
+                        <option>Bağcılar</option>
+                        <option>Güngören</option>
+                        <option>Avcılar</option>
+                        <option>Esenler</option>
+                        <option>Küçükçekmece</option>
+                        <option>Zeytinburnu</option>
+                        <option>Diğer</option>
                     </select>
                 </div>
                 <div>
-                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Ada / Parsel Bilgisi</label>
-                    <input type="text" name="Ada Parsel" placeholder="Örn: Ada 124 Parsel 6">
+                    <label for="ada-parsel" style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Ada / Parsel Bilgisi</label>
+                    <input id="ada-parsel" type="text" name="Ada Parsel" placeholder="Örn: Ada 124 Parsel 6">
                 </div>
                 <div>
-                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Mevcut Dükkan Sayısı (Varsa)</label>
-                    <input type="number" name="Dükkan Sayısı" placeholder="Örn: 2">
+                    <label for="dukkan-sayisi" style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">Mevcut Dükkan Sayısı (Varsa)</label>
+                    <input id="dukkan-sayisi" type="number" name="Dükkan Sayısı" placeholder="Örn: 2" min="0">
                 </div>
                 <div>
-                    <label style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">İletişim Numaranız</label>
-                    <input type="tel" name="Telefon" placeholder="05xx xxx xx xx" required>
+                    <label for="iletisim-tel" style="display:block; font-weight:950; margin-bottom:6px; font-size:14px;">İletişim Numaranız</label>
+                    <input id="iletisim-tel" type="tel" name="Telefon" placeholder="05xx xxx xx xx" required>
                 </div>
                 <button type="submit">Dönüşüm Modelini Hesapla & WhatsApp'a Aktar</button>
             </form>
@@ -300,20 +313,47 @@
     </div>
 </footer>
 
-<a class="float-wa" href="https://wa.me/905431813485?text=Merhaba, kentsel dönüşüm hakkında bilgi almak istiyorum.">WhatsApp</a>
+<a class="float-wa" href="https://wa.me/905431813485?text=Merhaba%2C%20kentsel%20d%C3%B6n%C3%BC%C5%9F%C3%BCm%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." aria-label="WhatsApp ile iletişime geç">WhatsApp</a>
 
 <script>
     document.querySelector('form[data-whatsapp-form]').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         let text = "Merhaba, web siteniz üzerinden kentsel dönüşüm potansiyel hesaplama talebi:\n";
-        for (let [key, value] of formData.entries()) {
-            if(value) text += `- ${key}: ${value}\n`;
+        for (const [key, value] of formData.entries()) {
+            if (value) text += `- ${key}: ${value}\n`;
         }
-        const encodedText = encodeURIComponent(text);
-        window.location.href = `https://wa.me/905431813485?text=${encodedText}`;
+        window.location.href = `https://wa.me/905431813485?text=${encodeURIComponent(text)}`;
     });
 </script>
-<script defer src="yakut-site-voice.js?v=site-sesi-20261122"></script><script defer src="yakut-v9.js?v=ses-kesilme-koruma-20261123"></script>
+
+<script defer src="./yakut-assistant.js"></script>
+<script defer>
+    window.addEventListener('DOMContentLoaded', function() {
+        if (!window.YakutAssistant) return;
+
+        const avatarEl = document.querySelector('[data-yakut-avatar], #yakut-avatar, .yakut-avatar');
+        const yakut = new window.YakutAssistant({
+            onSpeakingChange(speaking) {
+                if (!avatarEl) return;
+                avatarEl.classList.toggle('is-speaking', speaking);
+                avatarEl.setAttribute('data-state', speaking ? 'speaking' : 'idle');
+            },
+            onMessage(msg) {
+                console.log(`[${msg.role}] (${msg.source}):`, msg.text);
+            }
+        });
+
+        document.addEventListener('pointerdown', function onceGreeting() {
+            document.removeEventListener('pointerdown', onceGreeting);
+            yakut.greetOnPageOpen({ autoSpeak: true });
+        });
+
+        window.yakutAssistant = yakut;
+        window.gonderYakutSorusu = function(soruMetni) {
+            return yakut.handleUserMessage(soruMetni, { speakResponse: true });
+        };
+    });
+</script>
 </body>
 </html>
