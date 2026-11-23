@@ -792,7 +792,7 @@ async function yakutLiveConversation(question,reference,generation){
   if(lastEnded)await Promise.race([lastEnded,new Promise(resolve=>setTimeout(resolve,60000))]);
   if(played&&!turnCompleted)console.warn('Yakut Live partial audio: no paid automatic retry',wasInterrupted?'interrupted':'disconnected');
   return played;
- }catch(e){console.info('Yakut Live:'e?.message||e);return played}
+ }catch(e){console.info('Yakut Live:',e?.message||e);return played}
  finally{
   clearTimeout(clock);
   if(yakutRealtimeSocket===socket)yakutRealtimeSocket=null;
