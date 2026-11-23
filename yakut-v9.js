@@ -16,6 +16,7 @@ const yakutVoiceReady=new Promise(resolve=>{
  script.src=new URL('yakut-voice-engine.js',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutVoiceEngine?new window.YakutVoiceEngine({
   onStart:()=>beginYakutAudioPlayback(),
+  onEnd:()=>{yakutAudioPlaying=false;yakutMouthLevel=0;},
   onLevel:level=>{yakutMouthLevel=level;},
   onError:error=>console.warn('Yakut yerel ses:',error)
  }):null);
