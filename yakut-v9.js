@@ -834,9 +834,11 @@ function speechProblem(err){
  }
  if(err==='no-speech'||err==='aborted'){return}
  micFailureCount++;
- if(err==='network'||err==='language-not-supported'||err==='language-unavailable'){
-  if(micFailureCount>=4){stopListening();return;}
-  micRestartAt=Date.now()+Math.min(6000,1200*micFailureCount);
+ if(err==='network'){
+  // Temporary browser speech-network failures must not disable an invisible microphone.
+  micRestartAt=Date.now()+Math.min(15000,1200*micFailureCount);
+ }else if(err==='language-not-supported'||err==='language-unavailable'){
+  stopListening();return;
  }else{
   if(micFailureCount>=5){stopListening();return;}
   micRestartAt=Date.now()+Math.min(5000,1000*micFailureCount);
@@ -1059,11 +1061,16 @@ positionStage();
 startYakutSession();
 if(audioUnlocked)beginYakutVisit();
 const clock=new THREE.Clock();
+let lastCanvasWidth=0,lastCanvasHeight=0;
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
 const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
-renderer.setSize(Math.max(rect.width,1),Math.max(rect.height,1),false);
-camera.aspect=Math.max(rect.width,1)/Math.max(rect.height,1);camera.updateProjectionMatrix();
+const canvasW=Math.max(Math.round(rect.width),1),canvasH=Math.max(Math.round(rect.height),1);
+if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
+ lastCanvasWidth=canvasW;lastCanvasHeight=canvasH;
+ renderer.setSize(canvasW,canvasH,false);
+ camera.aspect=canvasW/canvasH;camera.updateProjectionMatrix();
+}
 if(!hidden){
 mixer.update(dt);
 if(yakutAudioPlaying && phase==='idle'){
