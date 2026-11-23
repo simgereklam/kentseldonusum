@@ -884,7 +884,8 @@ function startSpeech(){
  let timer;
  const submit=()=>{
   clearTimeout(timer);
-  const candidate=(finalText||interimText).trim();
+  // Web Speech may finalize only part of a sentence; keep the interim tail.
+  const candidate=[finalText,interimText].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
   finalText='';
   interimText='';
   hasInterim=false;
@@ -900,7 +901,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,300);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,380);
  };
  rec.onspeechstart=()=>clearTimeout(timer);
  rec.onspeechend=waitForSentenceEnd;
@@ -934,8 +935,10 @@ function startSpeech(){
   const latestTranscript=results.slice(e.resultIndex).map(r=>r[0]?.transcript||'').join(' ').trim();
   const instant=normalizeYakutCommand(latestTranscript);
   const wakeCommand=instant.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||instant;
+  // Never cut a spoken question off at its first 'Yakut' wake word.
   if(results.slice(e.resultIndex).some(r=>r.isFinal)&&
-    (/^(?:yakut|merhaba|selam|alo)$/.test(instant)||yakutPageCommand(instant)||yakutPageCommand(wakeCommand)||isYakutHomeCommand(instant)||isYakutHomeCommand(wakeCommand))){
+    (yakutPageCommand(instant)||yakutPageCommand(wakeCommand)||
+     isYakutHomeCommand(instant)||isYakutHomeCommand(wakeCommand))){
    finalText=latestTranscript;submit();return;
   }
   finalText=results.filter(result=>result.isFinal)
