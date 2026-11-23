@@ -146,6 +146,23 @@ async function firecrawlResearch(question, env) {
   return sources.length ? sources : null;
 }
 
+// Third independent search provider. Used for research only, NEVER for speech.
+async function searchPipeResearch(question, env) {
+  if (!env.SEARCHPIPE_API_KEY || (cooldowns.get('searchpipe') || 0) > Date.now()) return null;
+  const data = await post('https://searchpipe.tech/v1/search',
+    {Authorization:'Bearer ' + env.SEARCHPIPE_API_KEY},
+    {query:question, search_depth:'fast', max_results:5, output_type:'search_results',
+     include_raw_content:false}, 'searchpipe', 5500);
+  const results = Array.isArray(data?.results) ? data.results : [];
+  const sources = results.filter(x => typeof x.url==='string' && /^https?:\/\//.test(x.url))
+    .slice(0,5).map(x => ({
+      title:String(x.title||'').slice(0,120),
+      url:x.url.slice(0,600),
+      content:String(x.content||x.snippet||x.description||'').slice(0,900)
+    }));
+  return sources.length ? sources : null;
+}
+
 async function externalResearch(question, env) {
   if (env.TAVILY_API_KEY) {
     try {
@@ -154,7 +171,13 @@ async function externalResearch(question, env) {
     } catch { /* use another configured provider */ }
   }
   if (env.FIRECRAWL_API_KEY) {
-    try {return await firecrawlResearch(question, env);} catch { /* unavailable */ }
+    try {
+      const firecrawl=await firecrawlResearch(question, env);
+      if (firecrawl?.length) return firecrawl;
+    } catch { /* use third configured provider */ }
+  }
+  if (env.SEARCHPIPE_API_KEY) {
+    try {return await searchPipeResearch(question, env);} catch { /* unavailable */ }
   }
   return null;
 }
@@ -183,6 +206,7 @@ export default {
         gemini_configured: Boolean(env.GEMINI_API_KEY),
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
+        searchpipe_configured: Boolean(env.SEARCHPIPE_API_KEY),
         chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede'
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
@@ -271,7 +295,7 @@ export default {
     // Off-site researched questions: Tavily retrieves, Gemini alone writes the answer.
     // No Gemini Search tool, and no invented facts if sources are missing.
     if (payload.research === true) {
-      if ((!env.TAVILY_API_KEY && !env.FIRECRAWL_API_KEY) || !env.GEMINI_API_KEY)
+      if ((!env.TAVILY_API_KEY && !env.FIRECRAWL_API_KEY && !env.SEARCHPIPE_API_KEY) || !env.GEMINI_API_KEY)
         return Response.json({error:'SEARCH_NOT_CONFIGURED',
           answer:'Güncel internet araması şu anda yapılandırılmamış.'}, {status:503, headers});
       try {

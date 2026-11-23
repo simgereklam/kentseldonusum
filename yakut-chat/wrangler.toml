@@ -10,9 +10,11 @@ GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
 name = "CHAT_LIMITER"
 namespace_id = "1001"
 simple = { limit = 10, period = 60 }
-# Required private Worker secrets: GEMINI_API_KEY, TAVILY_API_KEY, FIRECRAWL_API_KEY.
+# Server-only secrets: GEMINI_API_KEY, TAVILY_API_KEY, FIRECRAWL_API_KEY, SEARCHPIPE_API_KEY.
 # Configure secrets privately with: wrangler secret put GEMINI_API_KEY
 # wrangler secret put TAVILY_API_KEY
 # wrangler secret put FIRECRAWL_API_KEY
+# wrangler secret put SEARCHPIPE_API_KEY
 # Never store API key values in this file or in frontend JavaScript.
-# Only Gemini composes answers; search uses Tavily then Firecrawl as fallback.
+# ONLY Gemini Aoede generates voice. Search providers are Tavily, Firecrawl, SearchPipe.
+# The Gemini API key must belong to a billing-enabled Google project if paid usage is required.
