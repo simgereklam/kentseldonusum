@@ -736,9 +736,9 @@ async function askYakutLive(url,payload,generation){
 let yakutRealtimeSocket=null;
 async function yakutLiveConversation(question,reference,generation){
  if(!audioUnlocked||!yakutTtsContext||yakutTtsContext.state!=='running')return false;
- let socket=null,played=false,nextStart=0,lastEnded=null;
+ let socket=null,played=false,nextStart=0,lastEnded=null,turnCompleted=false,wasInterrupted=false;
  let clock=setTimeout(()=>{try{socket?.close()}catch(_){}},11500);
- const keepAlive=()=>{clearTimeout(clock);clock=setTimeout(()=>{try{socket?.close()}catch(_){}},15000)};
+ const keepAlive=()=>{clearTimeout(clock);clock=setTimeout(()=>{console.warn('Yakut Live: no audio for 30 seconds');try{socket?.close()}catch(_){}},30000)};
  try{
   const response=await fetch(new URL('/live-token',yakutChatEndpoint()),{
    method:'POST',headers:{'Content-Type':'application/json'},body:'{}',
@@ -783,13 +783,16 @@ async function yakutLiveConversation(question,reference,generation){
      if(!played){played=true;beginYakutAudioPlayback()}
      keepAlive();
     }
-    if(content?.turnComplete||content?.interrupted)done();
+    if(content?.turnComplete){turnCompleted=true;done()}
+    else if(content?.interrupted){wasInterrupted=true;done()}
    };
-   socket.onerror=done;socket.onclose=done;
+   socket.onerror=()=>{console.warn('Yakut Live socket error');done()};
+   socket.onclose=e=>{if(!turnCompleted&&generation===yakutVoiceGeneration)console.warn('Yakut Live closed early:',e.code);done()};
   });
   if(lastEnded)await Promise.race([lastEnded,new Promise(resolve=>setTimeout(resolve,60000))]);
+  if(played&&!turnCompleted)console.warn('Yakut Live partial audio: no paid automatic retry',wasInterrupted?'interrupted':'disconnected');
   return played;
- }catch(e){console.info('Yakut Live:',e?.message||e);return played}
+ }catch(e){console.info('Yakut Live:'e?.message||e);return played}
  finally{
   clearTimeout(clock);
   if(yakutRealtimeSocket===socket)yakutRealtimeSocket=null;
