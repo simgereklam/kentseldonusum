@@ -9,20 +9,31 @@ class YakutVoiceEngine {
   this.active=0;this.current=null;this.speaking=false;this.voices=[];
   this.onStart=onStart;this.onEnd=onEnd;this.onError=onError;this.onLevel=onLevel;
   this.toneEnabled=false;
+  try{this.selectedVoiceName=localStorage.getItem('yakutPreferredVoice')||'';}catch(_){this.selectedVoiceName='';}
   this.refreshVoices();
   if(this.synth) this.synth.addEventListener?.('voiceschanged',()=>this.refreshVoices());
  }
- refreshVoices(){
+ getTurkishVoices(){
   this.voices=this.synth?.getVoices?.()||[];
-  const tr=this.voices.filter(v=>/^tr(?:-|$)/i.test(v.lang||''));
-  const female=/female|woman|kadın|selin|emel|ayşe|yelda|cemre|seda|zeynep|ipek|gamze/i;
-  const unwanted=/male|erkek|robot|espeak/i;
-  const score=v=>(/^tr-TR$/i.test(v.lang)?100: /^tr/i.test(v.lang)?80:-300)
-   +(female.test(v.name)?28:0)+(v.localService?8:0)
-   +(/natural|neural|enhanced|premium/i.test(v.name)?15:0)
-   -(unwanted.test(v.name)?40:0);
-  this.voice=tr.sort((a,b)=>score(b)-score(a))[0]||null;
+  return this.voices.filter(v=>/^tr(?:-|$)/i.test(v.lang||''));
+ }
+ refreshVoices(){
+  const tr=this.getTurkishVoices();
+  const female=/(?:^|[\s_(-])(?:female|woman|kadın|selin|emel|ayşe|yelda|cemre|seda|zeynep|ipek|gamze)(?:$|[\s_)-])/i;
+  const male=/(?:^|[\s_(-])(?:male|man|erkek)(?:$|[\s_)-])/i;
+  const score=v=>(female.test(v.name)?100:0)-(male.test(v.name)?200:0)
+   +(/natural|neural|enhanced/i.test(v.name)?15:0)+(v.localService?4:0);
+  this.voice=tr.find(v=>v.name===this.selectedVoiceName)||
+   tr.sort((a,b)=>score(b)-score(a))[0]||null;
   return this.voice;
+ }
+ chooseVoice(name){
+  const voice=this.getTurkishVoices().find(v=>v.name===name);
+  if(!voice)return false;
+  this.selectedVoiceName=name;
+  try{localStorage.setItem('yakutPreferredVoice',name);}catch(_){}
+  this.voice=voice;
+  return true;
  }
  async unlock(){
   this.unlocked=true;
@@ -90,7 +101,7 @@ class YakutVoiceEngine {
     if(generation!==this.active)return;
     if(index>=chunks.length){finish(true);return;}
     const utterance=new SpeechSynthesisUtterance(chunks[index++]);
-    utterance.lang='tr-TR';utterance.rate=.98;utterance.pitch=1.04;utterance.volume=1;
+    utterance.lang='tr-TR';utterance.rate=.88;utterance.pitch=1;utterance.volume=1;
     if(voice)utterance.voice=voice;
     let done=false;
     const advance=()=>{if(done||generation!==this.active)return;done=true;clearTimeout(state.timer);next();};
