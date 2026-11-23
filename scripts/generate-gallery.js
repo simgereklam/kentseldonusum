@@ -13,7 +13,7 @@ function walk(dir) {
     const stat = fs.statSync(full);
     if (stat.isDirectory()) {
       if (!skipDirs.has(name)) out = out.concat(walk(full));
-    } else if (exts.has(path.extname(name).toLowerCase())) {
+    } else if (exts.has(path.extname(name).toLowerCase()) && stat.size > 512) {
       out.push(rel);
     }
   }
