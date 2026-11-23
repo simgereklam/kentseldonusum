@@ -236,7 +236,7 @@ export default {
       ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type'
     } });
     const pathname = new URL(request.url).pathname;
-    if (!['/chat','/live','/imar'].includes(pathname) || request.method !== 'POST')
+    if (!['/chat','/live','/live-token','/imar'].includes(pathname) || request.method !== 'POST')
       return new Response(null, { status: 404, headers });
     if (!request.headers.get('Content-Type')?.startsWith('application/json')) return new Response(null, { status: 415, headers });
     // Preserve availability when the optional limiter binding is missing.
@@ -260,6 +260,36 @@ export default {
     }
     if (limited) return Response.json({error:'RATE_LIMIT',answer:'Çok fazla istek gönderildi. Lütfen kısa süre sonra yeniden deneyin.'},
       {status:429,headers:{...headers,'Retry-After':'60'}});
+    if (pathname === '/live-token') {
+      // Never expose the paid Gemini API key to browsers. Create a single-use,
+      // short-lived token scoped to one Gemini Live model.
+      if (!env.GEMINI_API_KEY) return Response.json({error:'GEMINI_NOT_CONFIGURED'}, {status:503,headers});
+      try {
+        const liveModel=String(env.GEMINI_LIVE_MODEL || 'gemini-2.5-flash-native-audio-preview-12-2025').trim();
+        const now=Date.now();
+        const upstream=await fetch('https://generativelanguage.googleapis.com/v1beta/auth_tokens',{
+          method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+          body:JSON.stringify({
+            uses:1,
+            expireTime:new Date(now+20*60*1000).toISOString(),
+            newSessionExpireTime:new Date(now+60*1000).toISOString(),
+            liveConnectConstraints:{model:liveModel.startsWith('models/')?liveModel:'models/'+liveModel}
+          }),
+          signal:AbortSignal.timeout(12000)
+        });
+        if(!upstream.ok) {
+          console.warn('Gemini Live token HTTP',upstream.status);
+          return Response.json({error:'LIVE_TOKEN_UNAVAILABLE',upstream_status:upstream.status},{status:502,headers});
+        }
+        const token=await upstream.json();
+        if(typeof token?.name!=='string'||!token.name)
+          return Response.json({error:'LIVE_TOKEN_EMPTY'},{status:502,headers});
+        return Response.json({token:token.name,model:liveModel},{headers});
+      }catch(error){
+        console.warn('Gemini Live token exception',error?.name||'ERROR');
+        return Response.json({error:'LIVE_TOKEN_FAILED'},{status:502,headers});
+      }
+    }
     if (pathname === '/live') return geminiAoedeSpeech(request, env, headers);
 
     // Compatibility endpoint for the existing e-imar page. No official parcel
