@@ -9,9 +9,11 @@ if(location.protocol==='http:'&&/^(?:www\.)?xn--kentseldnm-lcb7ea99k\.com\.tr$/i
 if(window.__yakutV9)return;window.__yakutV9=true;
 const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
-const yakutAvailableRecordings=new Set(["adres","avcilar-kentsel-donusum","bagcilar-kentsel-donusum","bahcelievler-kentsel-donusum","bakirkoy-kentsel-donusum","basvuru","bolgeler","bolgelerimiz","dinliyorum","e-posta","esenler-kentsel-donusum","gungoren-kentsel-donusum","hizmetlerimiz","iletisim","index","kentsel-donusum","kucukcekmece-kentsel-donusum","kurumsal","malik-haklari","ofis","projelerimiz","riskli-yapi","sss","welcome","whatsapp","yakut-eimar","yenibosna-kentsel-donusum","zeytinburnu-kentsel-donusum"]);
-const recordingBase=new URL('yakut-recordings/',url);
-if(/\/(?:index\.html)?$/.test(location.pathname))void fetch(new URL('welcome.mp3',recordingBase)).catch(()=>{});
+// Start downloading the model while Three.js loads.
+const yakutModelData=fetch(url,{priority:'high'}).then(response=>{
+ if(!response.ok)throw new Error('YAKUT_MODEL_HTTP_'+response.status);
+ return response.arrayBuffer();
+}).catch(error=>error);
 const chestLogoUrl=new URL('yakut-mavi-amblem.jpg',url).href;
 const welcome='Merhaba, hoş geldiniz. Ben Kumtaş İnşaat dijital asistanınız Yakut. Sizin için ne yapabilirim?';
 // Discard the old assistant's stale greeting flag once after migrating to Gemini-only audio.
@@ -24,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=recordings-20261124',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=gemini-20261124',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -119,7 +121,7 @@ function onYakutSoundReady(){
   yakutGreetingRequested=true;
   if(model)moveTo(leftGreetingX());
   pendingSpeechGesture=findYakutGesture('wait');
-  speak(welcome,['welcome']);return;
+  speak(welcome);return;
  }
  if(yakutPendingPageSpeech&&!speaking){offerYakutPage();return;}
  if(!speaking&&!processingSpeech&&!yakutIsGreetingWalking)queueListen(0);
@@ -163,7 +165,7 @@ function finishYakutSpeech(){
  // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden)queueListen(50);
 }
-async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
+async function speak(text,deferPlayback=true,isHoldNotice=false){
  const prompt=prepareYakutSpokenText(String(text||'').trim());
  if(!prompt)return;
  if(!isHoldNotice)stopYakutAudioOutput();
@@ -175,15 +177,13 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
   if(!voice){console.warn('Yakut: Gemini ses motoru yüklenemedi.');return;}
   if(!voice.ready){
    if(deferPlayback){
-    yakutDeferredSpeech=[prompt,_recordings,true,isHoldNotice];
+    yakutDeferredSpeech=[prompt,true,isHoldNotice];
     talk.hidden=false;talk.textContent='🔊 Sesi Aç';
    }
    return;
   }
   queueListen(0);
-  const ok=await (_recordings.length&&_recordings.every(key=>yakutAvailableRecordings.has(key))
-   ?voice.playRecordings(_recordings.map(key=>new URL(key+'.mp3',recordingBase).href))
-   :voice.speak(prompt));
+  const ok=await voice.speak(prompt);
   if(ok&&prompt===prepareYakutSpokenText(welcome)){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
   }else if(!ok&&prompt===prepareYakutSpokenText(welcome)){yakutGreetingRequested=false;}
@@ -218,12 +218,12 @@ function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
  return clips[preferred]?preferred:(clips.agree?'agree':'wait');
 }
-function react(clip,text,placement='left',recordings=[]){
+function react(clip,text,placement='left'){
  if(!ready)return;
  if(model)moveTo(centerAnswerX());
  phaseTime=0;
  pendingSpeechGesture=findYakutGesture(clip);
- speak(text,recordings);
+ speak(text);
 }
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 const yakutPages={
@@ -375,7 +375,7 @@ function handleYakutOfferAnswer(t){
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage().replace(/\.html$/,'');
  const localText=window.yakutSiteVoice?.[page];
- if(localText){react('agree',localText,'left',[page]);return}
+ if(localText){react('agree',localText,'left');return}
  const summary=collectYakutPageSpeech();
  if(summary)react('agree',summary,'center');
 }
@@ -468,7 +468,7 @@ function yakutExplainMalik(){
   yakutChatHistory=[{role:'user',text:'Kentsel dönüşümde malik hakları'},{role:'assistant',text:yakutMalikIntro}];
   sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory));
  }catch(_){}
- react('agree',yakutMalikIntro,'center',['malik-haklari']);
+ react('agree',yakutMalikIntro,'center');
 }
 function openYakutPage(path,narrate=false){
  const current=getYakutCurrentPage();
@@ -674,16 +674,13 @@ if(yakutParcelStep==='ilçe'&&handleYakutParcel(command))return;
 if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command)){react('agree',yakutScenarioAnswer(q));return;}
 if(yakutWantsCompanyInfo(command)){
  const about=window.yakutSiteVoice?.kurumsal||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
- react('agree',about,'center',['kurumsal']);return;
+ react('agree',about,'center');return;
 }
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
 const phoneAnswer=yakutPhoneAnswer(command);
 if(phoneAnswer){
- const recordings=[];
- if(phoneAnswer.includes(yakutPhoneNumbers.office))recordings.push('ofis');
- if(phoneAnswer.includes(yakutPhoneNumbers.whatsapp))recordings.push('whatsapp');
- rememberYakutTurn(q,phoneAnswer);react('agree',phoneAnswer,'center',recordings);return;
+ rememberYakutTurn(q,phoneAnswer);react('agree',phoneAnswer,'center');return;
 }
 if(getYakutCurrentPage()==='yakut-eimar.html'){
  if(handleYakutParcel(command))return;
@@ -700,16 +697,11 @@ if(handleYakutOfferAnswer(command))return;
 const localPage=yakutPageCommand(spokenCommand.replace(/(?: sayfası(?:nı)?)? (?:hakkında bilgi ver|hakkında bilgi|anlat|özetle)$/, ''));
 const recording=localPage?.replace(/\.html$/,'');
 if(recording&&window.yakutSiteVoice?.[recording]){
- react('agree',window.yakutSiteVoice[recording],'center',[recording]);return;
+ react('agree',window.yakutSiteVoice[recording],'center');return;
 }
 const localContact=yakutContactRequest(command);
 if(localContact){
- const recordings=[];
- if(localContact.includes(yakutContact.address))recordings.push('adres');
- if(localContact.includes(yakutContact.landline))recordings.push('ofis');
- if(localContact.includes(yakutContact.mobile))recordings.push('whatsapp');
- if(localContact.includes(yakutContact.email))recordings.push('e-posta');
- react('agree',localContact,'center',recordings);return;
+ react('agree',localContact,'center');return;
 }
 if(/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat|özetle|bilgi ver(?:ir misin|ebilir misin)?)(?: lütfen)?$/.test(command)){
  yakutPageOfferPending=false;yakutSpeakCurrentPage();return;
@@ -720,7 +712,7 @@ const officialResearch=/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.t
 if(/^(?:riskli yapı nedir|riskli yapı hakkında bilgi ver|malik hakları nelerdir|malik hakları hakkında bilgi ver)$/.test(spokenCommand)){
  const key=spokenCommand.startsWith('riskli')?'riskli-yapi':'malik-haklari';
  const text=window.yakutSiteVoice?.[key];
- if(text){react('agree',text,'center',[key]);return;}
+ if(text){react('agree',text,'center');return;}
 }
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutTurnInFlight)return;
@@ -1050,7 +1042,9 @@ camera.position.set(0,0,3.3);camera.lookAt(0,0,0);
 scene.add(new THREE.HemisphereLight(0xe7f8ff,0x273c57,2.6));
 const light=new THREE.DirectionalLight(0xffffff,3);light.position.set(-4,5,6);scene.add(light);
 const fill=new THREE.DirectionalLight(0x46bbff,1.6);fill.position.set(4,4,-2);scene.add(fill);
-const gltf=await new GLTFLoader().loadAsync(url);model=gltf.scene;
+const modelData=await yakutModelData;
+if(modelData instanceof Error)throw modelData;
+const gltf=await new GLTFLoader().parseAsync(modelData,new URL('.',url).href);model=gltf.scene;
 const bbox=new THREE.Box3().setFromObject(model);
 addYakutChestLogo();
 const size=bbox.getSize(new THREE.Vector3()),center=bbox.getCenter(new THREE.Vector3());
