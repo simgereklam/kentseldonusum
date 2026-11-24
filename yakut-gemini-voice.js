@@ -48,7 +48,7 @@ class YakutGeminiVoice{
  }
  async speak(text){
   this.stop();
-  const token=this.generation,parts=this.split(text);
+  const token=this.generation,parts=this.split(text,180);
   if(!parts.length)return false;
   if(!this.ready){this.onError(new Error('AUDIO_LOCKED'));return false;}
   const controller=new AbortController();this.controller=controller;
