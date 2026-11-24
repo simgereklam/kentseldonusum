@@ -93,7 +93,9 @@ async function speak(text){
  const sentences=spoken.split(/(?<=[.!?])\s+(?=[^\s])/u).filter(Boolean);
  const sampleRate=configuration.audio?.sample_rate||22050;
  const inf=configuration.inference||{};
- for(const sentence of sentences.map(x=>x.trim()).filter(Boolean)){
+ for(let sentenceIndex=0;sentenceIndex<sentences.length;sentenceIndex++){
+  const sentence=sentences[sentenceIndex].trim();
+  if(!sentence)continue;
   if(myJob!==job)return;
   message('Yakut konuşuyor…');
   const ids=phonemesToSpeech(sentence,rows,voice);
@@ -120,7 +122,7 @@ async function speak(text){
    src.start();
   });
   // Short, deliberate breathing pause prevents abrupt glued-together phrases.
-  if(myJob===job&&sentences.indexOf(sentence)<sentences.length-1){
+  if(myJob===job&&sentenceIndex<sentences.length-1){
    await new Promise(resolve=>setTimeout(resolve,160));
   }
  }
