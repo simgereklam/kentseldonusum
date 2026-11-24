@@ -429,13 +429,13 @@ async function googleSearchAnswer(question, searchQuery, env) {
 }
 
 async function emelSpeech(request, env, headers) {
-  if (!env.YAKUT_TTS_TOKEN) return Response.json({error:'EMEL_NOT_CONFIGURED'},{status:503,headers});
+  if (!env.YAKUT_TTS_TOKEN || !env.EMEL_TTS) return Response.json({error:'EMEL_NOT_CONFIGURED'},{status:503,headers});
   let body;
   try { body=await request.json(); } catch { return Response.json({error:'INVALID_JSON'},{status:400,headers}); }
   const speech=body?.readAloud;
   if(typeof speech!=='string'||!speech.trim()||speech.length>2000) return Response.json({error:'INVALID_TEXT'},{status:400,headers});
   try {
-    const upstream=await fetch('https://yakut-emel-test.simgereklam.workers.dev/tts',{
+    const upstream=await env.EMEL_TTS.fetch('https://yakut-emel-test.simgereklam.workers.dev/tts',{
       method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.YAKUT_TTS_TOKEN},
       body:JSON.stringify({text:speech,voice:'tr-TR-EmelNeural'}),signal:AbortSignal.timeout(45000)
     });
@@ -455,7 +455,7 @@ export default {
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
         tinyfish_configured: Boolean(env.TINYFISH_API_KEY),
-        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Emel', tts_provider: 'edge-tts', tts_model: 'tr-TR-EmelNeural', emel_configured: Boolean(env.YAKUT_TTS_TOKEN)
+        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Emel', tts_provider: 'edge-tts', tts_model: 'tr-TR-EmelNeural', emel_configured: Boolean(env.YAKUT_TTS_TOKEN), emel_binding: Boolean(env.EMEL_TTS)
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());
