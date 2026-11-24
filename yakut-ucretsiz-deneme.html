@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yakut — Ücretsiz Tarayıcı Ses Denemesi | Kumtaş İnşaat</title>
+<style>
+:root{color-scheme:light;font-family:system-ui,Arial,sans-serif;color:#12314c;background:#f5f8fc}
+*{box-sizing:border-box}body{margin:0;padding:24px 14px;min-height:100vh}
+main{max-width:710px;margin:30px auto;background:white;border:1px solid #dbe5ef;padding:26px;border-radius:22px;box-shadow:0 18px 40px #153d6012}
+h1{font-size:27px;margin:0 0 10px}.lead{line-height:1.6;color:#465e72}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}button{background:#075d98;color:white;border:0;border-radius:12px;padding:13px 18px;font:600 15px system-ui;cursor:pointer}
+button.secondary{background:#e6eef5;color:#12426d}
+input{width:100%;font:16px system-ui;border:1px solid #a8bdcf;border-radius:12px;padding:15px}
+#status{font-size:14px;color:#536a7c;margin:12px 0;min-height:22px}
+#answer{padding:16px;border:1px solid #d8e5ef;border-radius:12px;background:#f7fafc;line-height:1.65;min-height:72px}
+small{color:#637b90;line-height:1.6;display:block;margin-top:15px}
+a{color:#06578a}#source{display:inline-block;margin-top:12px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Yakut — Tamamen ücretsiz ses denemesi</h1>
+  <p class="lead">Bu deneme Gemini, ücretli ses API'si ya da özel bir sunucu kullanmaz. Türkçe kadın sesi bir kez yüklenir; konuşma kendi telefonunuzda veya bilgisayarınızda oluşturulur.</p>
+  <div class="controls">
+    <button id="start">🔊 Kadın sesini hazırla ve dene</button>
+    <button id="stop" class="secondary">■ Sus</button>
+  </div>
+  <label for="question"><strong>Yakut'a bir soru yazın</strong></label>
+  <input id="question" placeholder="Örnek: Kentsel dönüşüm nedir?" autocomplete="off">
+  <div class="controls"><button id="ask">Sor ve aynı sesle dinle</button></div>
+  <div id="status" role="status" aria-live="polite">Hazır. Başlamak için ses düğmesine basın.</div>
+  <div id="answer" aria-live="polite">Site içi örnek cevaplar ücretsiz çalışır. Site dışı konularda Wikipedia'dan bilgi alınır.</div>
+  <a id="source" hidden target="_blank" rel="noopener noreferrer">Kaynağı aç</a>
+  <small>Deneme sınırları: İlk yüklemede yaklaşık 64 MB ses modeli indirilir. Ses üretimi cihazın hızına bağlıdır. Web araması yalnızca Wikipedia ile sınırlıdır; canlı hava, spor, bütün internet ve mikrofonla konuşma bu prototipte yoktur. Normal site ve 3D Yakut değiştirilmemiştir.</small>
+  <small>Ses modeli: <a href="https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium">İlkiz Türkçe kadın Piper TTS</a> (MIT). Tarayıcı WASM yaklaşımı: <a href="https://github.com/piper-tts/piper-tts.github.io">Piper browser demo</a>. Haricî dosyalar ilk yüklemede ücretsiz statik dağıtım adreslerinden alınır; ücretli API çağrısı yapılmaz.</small>
+</main>
+<script defer src="yakut-ucretsiz-tarayici.js?v=1"></script>
+</body>
+</html>
