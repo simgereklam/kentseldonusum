@@ -40,5 +40,9 @@ jobs:
             echo 'Voice assets already committed.'
           else
             git commit -m 'vendor(yakut): host browser-only Turkish voice assets in this repo'
+            # Another site update may land during the large static model download.
+            # Integrate it safely instead of rejecting the push or force-overwriting main.
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:main
           fi
