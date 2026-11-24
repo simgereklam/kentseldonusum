@@ -50,7 +50,7 @@ async function speak(text) {
   const feeds={
    input:new ort.Tensor('int64',BigInt64Array.from(sentence,BigInt),[1,sentence.length]),
    input_lengths:new ort.Tensor('int64',BigInt64Array.of(BigInt(sentence.length)),[1]),
-   scales:new ort.Tensor('float32',Float32Array.of(scales.noise_scale,scales.length_scale,scales.noise_w),[3])
+   scales:new ort.Tensor('float32',Float32Array.of(scales.noise_scale*.85,scales.length_scale*.95,scales.noise_w),[3])
   };
   const {output}=await session.run(feeds);
   const samples=Float32Array.from(output.data);
