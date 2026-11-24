@@ -23,10 +23,11 @@ async function prepare(){
  if(loading)return loading;
  loading=(async()=>{
   setStatus('EMA Lightning modeli kendi GitHub sitemizden hazırlanıyor…');
-  const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||
+  const forcedWasm=new URL(location.href).searchParams.get('emaTestMobile')==='1';
+  const mobile=forcedWasm||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||
     (/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
-  const backend=(!ios&&navigator.gpu)?'webgpu':'wasm';
+  const backend=(!ios&&!forcedWasm&&navigator.gpu)?'webgpu':'wasm';
   // Mobile: smaller fp16 sound graph; WASM is strictly one-threaded.
   const precision=mobile?'fp16':'fp32';
   try{
