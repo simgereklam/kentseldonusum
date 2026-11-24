@@ -692,7 +692,7 @@ if(command===lastUserUtterance &&
 lastUserUtterance=command;lastUserUtteranceAt=now;
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
-if(/^(?:yakut|yakut dinle|merhaba|merhaba yakut|selam|selam yakut|alo|alo yakut)$/.test(command))return;
+if(/^(?:yakut|yakut dinle)$/.test(command)) {react('agree','Dinliyorum, size nasıl yardımcı olabilirim?');return;}
 if(isYakutHomeCommand(command)||isYakutHomeCommand(spokenCommand))return openYakutPage('index.html');
 if(/(?:hangi sayfadayız|hangi sayfadasın|hangi sayfadayım|bu sayfanın adı|şu an neredeyiz)/.test(command)){
  yakutSpeakCurrentPage();return;
@@ -748,8 +748,6 @@ if(/^(?:riskli yapı nedir|riskli yapı hakkında bilgi ver|malik hakları neler
 }
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutTurnInFlight)return;
-if(!weather&&!webRequest&&!officialResearch&&!/^yakut +/.test(command)&&!q.includes('?')&&
- !/(?:^| )(?:ne|nedir|nasıl|neden|niçin|nereye|nerede|nereden|nereyi|hangi|kim|kaç|mı|mi|mu|mü|anlat|açıkla|özetle|karşılaştır|hesapla|göster(?:ir|ebilir)?|söyle(?:r|yebilir)?|bul(?:ur|abilir)?|öğren(?:mek)?|yaz(?:ar|abilir)?|çevir(?:ir|ebilir)?|ver(?:ir|ebilir)?|yardım|istiyorum|anlatır|anlatabilir|yapabilir|yapar|sorar|sorabilir|nelerdir)(?: |$)/.test(command))return;
 yakutTurnInFlight=true;
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
