@@ -69,7 +69,6 @@ let micFailureCount=0,micLastError='',micRestartAt=0;
 let emptyRecognitionCount=0;
 let processingSpeech=false;
 let micStartTimer;
-let lastWakeAt=0;
 let lastUserUtterance='',lastUserUtteranceAt=0;
 let yakutTurnInFlight=false;
 let yakutGreetingRequested=false;
@@ -112,10 +111,6 @@ function onYakutSoundReady(){
   const answer=yakutDeferredSpeech;yakutDeferredSpeech=null;
   speaking=false;yakutIsGreetingWalking=false;
   speak(...answer);return;
- }
- if(getYakutCurrentPage()==='index.html'&&!yakutGreetingRequested){
-  greetYakutOnHome();
-  if(speaking)return;
  }
  if(!speaking&&!processingSpeech&&!yakutIsGreetingWalking)queueListen(0);
 }
@@ -174,7 +169,7 @@ async function speak(text,_recordings=[],deferPlayback=true,isHoldNotice=false){
    }
    return;
   }
-  queueListen(100);
+  queueListen(0);
   const ok=await voice.speak(prompt);
   if(ok&&prompt===prepareYakutSpokenText(welcome)){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
@@ -373,9 +368,17 @@ function yakutSpeakCurrentPage(){
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
 function speakYakutPhone(number){
- return [number.slice(0,1),number.slice(1,4),number.slice(4,7),number.slice(7,9),number.slice(9)]
-  .map(group=>Array.from(group,digit=>yakutSpokenDigits[Number(digit)]).join(', '))
-  .join('. ');
+ const tens=['','on','yirmi','otuz','kırk','elli','altmış','yetmiş','seksen','doksan'];
+ return ['sıfır '+number.slice(1,4),number.slice(4,7),number.slice(7,9),number.slice(9)]
+  .map(group=>{
+   const value=Number(group.replace('sıfır ',''));
+   const hundreds=Math.floor(value/100);
+   const remainder=value%100;
+   const words=[group.startsWith('sıfır ')||group.startsWith('0')?'sıfır':'',
+    hundreds===1?'yüz':hundreds>1?yakutSpokenDigits[hundreds]+' yüz':'',
+    tens[Math.floor(remainder/10)],remainder%10?yakutSpokenDigits[remainder%10]:''];
+   return words.filter(Boolean).join(' ')||'sıfır';
+  }).join(', ');
 }
 function prepareYakutSpokenText(text){
  for(const number of Object.values(yakutPhoneNumbers)){
@@ -457,10 +460,10 @@ function openYakutPage(path,narrate=false){
  const current=getYakutCurrentPage();
  yakutPageOfferPending=false;
  cancelYakutSpeech();
- if(current===path){yakutPendingPageSpeech=narrate;prepareYakutPageOffer();queueListen(250);return true}
+ if(current===path){if(narrate)yakutSpeakCurrentPage();queueListen(0);return true}
  try{
   sessionStorage.setItem('yakutVisited','1');
-  if(path!=='index.html')sessionStorage.setItem('yakutPageOffer',narrate?'anlat:'+path:path);
+  if(narrate&&path!=='index.html')sessionStorage.setItem('yakutPageOffer','anlat:'+path);
   else sessionStorage.removeItem('yakutPageOffer');
  }catch(e){console.warn('YAKUT sayfa geçişi:',e)}
  location.assign(new URL(path,location.origin+'/').href);
@@ -648,16 +651,7 @@ if(command===lastUserUtterance && now-lastUserUtteranceAt<7000)return;
 lastUserUtterance=command;lastUserUtteranceAt=now;
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
-if(/^(?:yakut|yakut dinle|merhaba|merhaba yakut|selam|selam yakut|alo|alo yakut)$/.test(command)){
- if(Date.now()-lastWakeAt<1250)return;
- lastWakeAt=Date.now();
- yakutPageOfferPending=false;
- cancelYakutSpeech();
- react('greet_02',!openingGreeted?welcome:'Buyurun, dinliyorum.','left');
- openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
- try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
- return;
-}
+if(/^(?:yakut|yakut dinle|merhaba|merhaba yakut|selam|selam yakut|alo|alo yakut)$/.test(command))return;
 if(isYakutHomeCommand(command)||isYakutHomeCommand(spokenCommand))return openYakutPage('index.html');
 if(/(?:hangi sayfadayız|hangi sayfadasın|hangi sayfadayım|bu sayfanın adı|şu an neredeyiz)/.test(command)){
  react('agree',yakutPageIntro(getYakutCurrentPage()),'left');return;
@@ -694,6 +688,8 @@ const webRequest=/(?:araştır|internet|kaynak|webde ara|güncel|bugün|yarın|s
 const officialResearch=/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.test(command);
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutTurnInFlight)return;
+if(!weather&&!webRequest&&!officialResearch&&!/^yakut +/.test(command)&&!q.includes('?')&&
+ !/(?:^| )(?:ne|nedir|nasıl|neden|niçin|nereye|nerede|nereden|nereyi|hangi|kim|kaç|mı|mi|mu|mü|anlat|açıkla|özetle|karşılaştır|hesapla|göster|söyle|bul|öğren|yaz|çevir|ver|yardım)(?: |$)/.test(command))return;
 yakutTurnInFlight=true;
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
@@ -829,7 +825,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,230);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,150);
  };
  rec.onspeechstart=()=>clearTimeout(timer);
  rec.onspeechend=waitForSentenceEnd;
@@ -969,38 +965,24 @@ function addYakutChestLogo() {
  };
  source.src = chestLogoUrl;
 }
-function greetYakutOnHome(){
- if(yakutGreetingRequested||hidden||getYakutCurrentPage()!=='index.html')return;
- let greeted=false;
- try{greeted=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
- if(greeted)return;
- // Wait for the browser to unlock Web Audio on a trusted click.
- if(!audioUnlocked||!yakutVoice?.ready)return;
- yakutGreetingRequested=true;
- openingGreeted=true;openingSpoken=true;yakutFirstGreetingDone=true;
- // Only mark the greeting delivered after audible speech completes.
- // Exactly one opening greeting per browser tab. The browser may require
- // a real click to unlock Aoede audio; do not create a second greeting.
- speak(welcome);
-}
+
 function startYakutSession(){
  if(ready)return;
  clearTimeout(yakutStartTimer);
  ready=true;
  listenEnabled=true;
- const page=getYakutCurrentPage();
- yakutPageOfferPending=page!=='index.html'&&Object.hasOwn(yakutPages,page);
+ yakutPageOfferPending=false;
  try{
   if(!yakutFreshReload&&sessionStorage.getItem('yakutGreeted')==='1'){
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   const pageOffer=sessionStorage.getItem('yakutPageOffer');
   sessionStorage.removeItem('yakutPageOffer');
-  yakutPendingPageSpeech=yakutPageOfferPending&&pageOffer==='anlat:'+page;
+  yakutPendingPageSpeech=pageOffer==='anlat:'+page;
+  yakutPageOfferPending=yakutPendingPageSpeech;
  }catch(e){}
  // Start Aoede as early as the browser allows, without pausing recognition.
  resumeYakutSound();
- greetYakutOnHome();
  if(audioUnlocked)queueListen(0);
 }
 window.addEventListener('pagehide',()=>{
@@ -1014,7 +996,6 @@ window.addEventListener('pageshow',event=>{
  if(yakutGreetingInProgress){
   yakutGreetingInProgress=false;yakutOpeningBow=false;moveTo(yakutRightX());
  }
- if(getYakutCurrentPage()!=='index.html'||yakutFirstGreetingDone)prepareYakutPageOffer();
  resumeYakutSound();
  queueListen(120);
 });
