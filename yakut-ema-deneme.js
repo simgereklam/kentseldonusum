@@ -44,30 +44,28 @@ async function speak(text){
  if(token!==playId)return;
  const speed=Number($('speed').value)||1;
  const chunks=[];
- let next=context.currentTime+.06,first=false;
  try{
-  setStatus('EMA sesi oluşturuyor ve konuşuyor…');
+  setStatus('EMA metni sese dönüştürüyor…');
   for await(const samples of model.stream(text,{speed,seed:32})){
-   if(token!==playId)break;
-   if(!samples.length)continue;
-   const part=new Float32Array(samples);chunks.push(part);
-   const buffer=context.createBuffer(1,part.length,RATE);
-   buffer.copyToChannel(part,0);
-   const src=context.createBufferSource();
-   src.buffer=buffer;src.connect(context.destination);
-   src.onended=()=>activeSources.delete(src);
-   activeSources.add(src);
-   next=Math.max(next,context.currentTime+.025);
-   src.start(next);
-   next+=buffer.duration;
-   first=true;
+   if(token!==playId)return;
+   if(samples.length)chunks.push(new Float32Array(samples));
   }
   if(token!==playId)return;
-  if(!first)throw Error('EMA ses verisi oluşturamadı.');
+  const total=chunks.reduce((n,p)=>n+p.length,0);
+  if(!total)throw Error('EMA ses verisi oluşturamadı.');
+  // Pre-render all chunks; one playback source avoids mid-sentence generation gaps.
+  const buffer=context.createBuffer(1,total,RATE);
+  const output=buffer.getChannelData(0);
+  let offset=0;for(const part of chunks){output.set(part,offset);offset+=part.length;}
   if(lastObjectUrl)URL.revokeObjectURL(lastObjectUrl);
   lastObjectUrl=URL.createObjectURL(wavBlob(chunks));
   player.src=lastObjectUrl;player.hidden=false;player.load();
-  setStatus('Ses oluşturuldu. Otomatik ses duyulmazsa aşağıdaki ▶ Oynat düğmesini kullan.');
+  const src=context.createBufferSource();
+  src.buffer=buffer;src.connect(context.destination);
+  src.onended=()=>{activeSources.delete(src);if(token===playId)setStatus('Konuşma tamamlandı. Yeniden dinlemek için ▶ Oynat düğmesine bas.');};
+  activeSources.add(src);
+  setStatus('EMA konuşuyor…');
+  src.start();
  }catch(e){
   if(token===playId)throw e;
  }
