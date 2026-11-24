@@ -59,6 +59,68 @@ function geminiVoiceLimited(headers, retryAt) {
   });
 }
 
+// Convert Gemini SSE audio to the site's existing PCM NDJSON format.
+async function* geminiAudioFrames(body) {
+  const reader = body.pipeThrough(new TextDecoderStream()).getReader();
+  let pending = '', event = [];
+  try {
+    for (;;) {
+      const {value,done} = await reader.read();
+      pending += value || '';
+      if (done) pending += '\n\n';
+      let newline;
+      while ((newline = pending.indexOf('\n')) !== -1) {
+        const line = pending.slice(0,newline).replace(/\r$/, '');
+        pending = pending.slice(newline+1);
+        if (line.startsWith('data:')) event.push(line.slice(5).trimStart());
+        if (line || !event.length) continue;
+        const payload = event.join('\n');
+        event = [];
+        if (payload === '[DONE]') return;
+        const data = JSON.parse(payload);
+        if (data.error) throw new Error('GEMINI_STREAM_ERROR');
+        const candidate = data.candidates?.[0];
+        for (const {inlineData} of candidate?.content?.parts || []) {
+          if (!inlineData?.data) continue;
+          if (!/^audio\/(?:l16|pcm)(?:;|$)/i.test(inlineData.mimeType || ''))
+            throw new Error('GEMINI_STREAM_AUDIO_FORMAT');
+          const pcm = atob(inlineData.data);
+          if (pcm.length % 2 || pcm.startsWith('RIFF')) throw new Error('GEMINI_STREAM_PCM');
+          for (let offset=0;offset<pcm.length;offset+=48000)
+            yield JSON.stringify({audio:btoa(pcm.slice(offset,offset+48000))})+'\n';
+        }
+        if (candidate?.finishReason && candidate.finishReason !== 'STOP')
+          throw new Error('GEMINI_STREAM_INCOMPLETE');
+      }
+      if (done) return;
+    }
+  } finally {
+    try { await reader.cancel(); } catch {}
+    reader.releaseLock();
+  }
+}
+
+function streamedGeminiResponse(frames, first, headers) {
+  const encoder = new TextEncoder();
+  let pending = first;
+  return new Response(new ReadableStream({
+    async pull(controller) {
+      try {
+        const frame = pending || await frames.next();
+        pending = null;
+        if (frame.done) {
+          controller.enqueue(encoder.encode('{"done":true}\n'));
+          controller.close();
+        } else controller.enqueue(encoder.encode(frame.value));
+      } catch {
+        controller.enqueue(encoder.encode('{"error":"GEMINI_STREAM_INCOMPLETE"}\n'));
+        controller.close();
+      }
+    },
+    cancel() { return frames.return(); }
+  }),{headers:{...headers,'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store'}});
+}
+
 // Gemini Aoede speech for the existing browser's /live PCM-NDJSON player.
 // Google Search is never used. This route requires a privately configured
 // GEMINI_API_KEY; the key is never sent to the browser.
@@ -83,15 +145,27 @@ async function geminiAoedeSpeech(request, env, headers) {
       voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}
     }}
   };
+  const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model);
+  const options = {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+    body:JSON.stringify(payload),
+    signal:AbortSignal.any([request.signal,AbortSignal.timeout(45000)])
+  };
   let upstream;
   try {
-    upstream = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'
-      + encodeURIComponent(model) + ':generateContent', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
-      body:JSON.stringify(payload),
-      signal:AbortSignal.timeout(45000)
-    });
+    upstream = await fetch(endpoint + ':streamGenerateContent?alt=sse', options);
+    if (upstream.ok && upstream.body && upstream.headers.get('Content-Type')?.includes('text/event-stream')) {
+      const frames = geminiAudioFrames(upstream.body);
+      try {
+        const first = await frames.next();
+        if (!first.done) return streamedGeminiResponse(frames, first, headers);
+      } catch {/* Use the buffered endpoint if streaming produced no playable audio. */}
+      upstream = await fetch(endpoint + ':generateContent', options);
+    } else if ([400,404,405,501].includes(upstream.status)) {
+      await upstream.body?.cancel();
+      upstream = await fetch(endpoint + ':generateContent', options);
+    }
   } catch {return Response.json({error:'Gemini ses sunucusuna erişilemedi'}, {status:502,headers});}
   if (upstream.status === 429) {
     const nextAttempt = Date.now() + retryDelay(upstream.headers.get('Retry-After'));
