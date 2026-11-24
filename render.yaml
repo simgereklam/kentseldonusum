@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: kumtas-yakut-speech
+    runtime: docker
+    plan: free
+    dockerfilePath: ./yakut-speech/Dockerfile
+    dockerContext: ./yakut-speech
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: YAKUT_SPEECH_TOKEN
+        generateValue: true
