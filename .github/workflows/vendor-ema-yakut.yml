@@ -51,7 +51,10 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           cp /tmp/ema-npm/package/dist/ort.wasm.min.mjs assets/yakut/ema/runtime/
           cp /tmp/ema-npm/package/dist/ort.webgpu.min.mjs assets/yakut/ema/runtime/
+          # The main ORT bundle dynamically imports these per-backend JS companions.
+          find /tmp/ema-npm/package/dist -maxdepth 1 -name 'ort-wasm*.mjs' -exec cp {} assets/yakut/ema/runtime/ \;
           find /tmp/ema-npm/package/dist -maxdepth 1 -name 'ort*.wasm' -exec cp {} assets/yakut/ema/runtime/ \;
+          test -s assets/yakut/ema/runtime/ort-wasm-simd-threaded.mjs
           test "$(stat -c %s assets/yakut/ema/models/text.onnx)" -gt 1000000
           test "$(stat -c %s assets/yakut/ema/models/sound.onnx)" -gt 1000000
           test "$(stat -c %s assets/yakut/ema/models/decoder.onnx)" -gt 1000000
