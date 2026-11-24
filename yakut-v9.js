@@ -270,7 +270,7 @@ function isYakutOwnVoice(text){
  return words.filter(word=>ownWords.has(word)).length/words.length>=0.75;
 }
 function isYakutStopCommand(command){
- return /(?:^| )(?:dur|durun|sus|susun|konuşma|kes|yeter|tamam|bekle|bi saniye|bir saniye|kapat)(?: |$)/.test(command) && command.split(' ').length <= 5;
+ return /^(?:(?:yakut|asistan|lütfen) )*(?:dur(?:un)?|sus(?:un)?|konuşma|kes|yeter|bekle|bir saniye|bi saniye)(?: (?:lütfen|yakut|artık))*$/.test(command);
 }
 function getYakutCurrentPage(){
  const path=location.pathname.split('/').filter(Boolean).pop()||'index.html';
@@ -640,13 +640,13 @@ function beginYakutAudioPlayback(){
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
+if(isYakutStopCommand(command)){stopYakutAnswer();return}
 // Browser speech recognition may resend the same phrase when restarted.
 // Do not generate a second reply for a single utterance.
 const now=Date.now();
 if(command===lastUserUtterance && now-lastUserUtteranceAt<7000)return;
 lastUserUtterance=command;lastUserUtteranceAt=now;
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
-if(isYakutStopCommand(command)){stopYakutAnswer();return}
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(/^(?:yakut|yakut dinle|merhaba|merhaba yakut|selam|selam yakut|alo|alo yakut)$/.test(command)){
  if(Date.now()-lastWakeAt<1250)return;
@@ -781,7 +781,7 @@ function speechProblem(err){
   if(err==='no-speech'){
    emptyRecognitionCount++;
    if(emptyRecognitionCount>=4){stopListening();talk.textContent='🎤 Konuşmak için dokun';return;}
-   micRestartAt=Date.now()+Math.min(6000,1500*emptyRecognitionCount);
+   micRestartAt=Date.now()+Math.min(2500,400*emptyRecognitionCount);
    return;
   }
  micFailureCount++;
@@ -800,12 +800,13 @@ function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=false;rec.maxAlternatives=1;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
  let hasInterim=false;
-  let hadRecognitionError=false;
+ let ignoredResults=0;
+ let acceptedInput=false;
   let timer;
  const submit=()=>{
   clearTimeout(timer);
@@ -815,6 +816,8 @@ function startSpeech(){
   interimText='';
   hasInterim=false;
   if(recognition!==rec||!candidate||!listenEnabled||hidden||speaking||processingSpeech)return false;
+  if(Date.now()-yakutSpeechEndedAt<900&&isYakutOwnVoice(candidate))return false;
+  acceptedInput=true;
   releaseYakutMic();
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
@@ -826,7 +829,7 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,430);
+  if(finalText&&!hasInterim)timer=setTimeout(submit,230);
  };
  rec.onspeechstart=()=>clearTimeout(timer);
  rec.onspeechend=waitForSentenceEnd;
@@ -840,13 +843,12 @@ function startSpeech(){
    // Accept real interruptions while speaking; ignore text recognized from
    // Yakut's own Aoede speaker output to avoid a voice feedback loop.
    for(const result of results.slice(e.resultIndex)){
-    if(!result.isFinal)continue;
     const raw=result[0]?.transcript||'';
     const heard=normalizeYakutCommand(raw);
-    if(!heard||isYakutOwnVoice(raw))continue;
     if(isYakutStopCommand(heard)){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
+    if(!result.isFinal||!heard||isYakutOwnVoice(raw))continue;
     const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
     const destination=isYakutHomeCommand(wakeCommand)
      ? 'index.html' : yakutPageCommand(wakeCommand);
@@ -854,40 +856,41 @@ function startSpeech(){
      releaseYakutMic();openYakutPage(destination);return;
     }
    }
+   ignoredResults=results.filter(result=>result.isFinal).length;
    return;
   }
-  const latestTranscript=results.slice(e.resultIndex).map(r=>r[0]?.transcript||'').join(' ').trim();
+  const latestTranscript=results.slice(Math.max(e.resultIndex,ignoredResults)).map(r=>r[0]?.transcript||'').join(' ').trim();
   const instant=normalizeYakutCommand(latestTranscript);
   const wakeCommand=instant.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||instant;
   // Never cut a spoken question off at its first 'Yakut' wake word.
-  if(results.slice(e.resultIndex).some(r=>r.isFinal)&&
+  if(results.slice(Math.max(e.resultIndex,ignoredResults)).some(r=>r.isFinal)&&
     (yakutPageCommand(instant)||yakutPageCommand(wakeCommand)||
      isYakutHomeCommand(instant)||isYakutHomeCommand(wakeCommand))){
    finalText=latestTranscript;submit();return;
   }
-  finalText=results.filter(result=>result.isFinal)
+  finalText=results.slice(ignoredResults).filter(result=>result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ').trim();
-  interimText=results.filter(result=>!result.isFinal)
+  interimText=results.slice(ignoredResults).filter(result=>!result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ').trim();
   hasInterim=Boolean(interimText);
   // Some browsers end recognition with only an interim result.
   // Preserve the heard question instead of silently discarding it.
   waitForSentenceEnd();
  };
- rec.onerror=e=>{if(recognition!==rec)return;hadRecognitionError=true;clearTimeout(timer);releaseYakutMic();micLastError=e.error||'unknown';speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(1500)};
+ rec.onerror=e=>{if(recognition!==rec)return;clearTimeout(timer);releaseYakutMic();micLastError=e.error||'unknown';if((speaking||processingSpeech)&&micLastError==='no-speech'){queueListen(80);return;}speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180)};
  rec.onend=()=>{
   if(recognition!==rec)return;
   clearTimeout(timer);
   if((finalText.trim()||interimText.trim())&&submit())return;
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
-    if(speaking||processingSpeech){queueListen(250);return;}
-    if(!hadRecognitionError){
+    if(speaking||processingSpeech){queueListen(80);return;}
+    if(!acceptedInput){
      emptyRecognitionCount++;
      if(emptyRecognitionCount>=4){stopListening();talk.textContent='🎤 Konuşmak için dokun';return;}
      micRestartAt=Date.now()+Math.min(6000,1500*emptyRecognitionCount);
     }
-    talk.textContent='🎤 Dinleme beklemede';queueListen(1500);
+    talk.textContent='🎤 Dinleme beklemede';queueListen(180);
    }
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
@@ -1054,6 +1057,13 @@ if(audioUnlocked)queueListen(0);
 const clock=new THREE.Clock();
 let lastCanvasWidth=0,lastCanvasHeight=0;
 let blinkTime=0,blinkAt=2.5,blinkPhase=0;
+const speakingArms=[];
+model.traverse(bone=>{
+ if(bone.isBone&&/(?:Left|Right)(?:ForeArm|Hand)$/.test(bone.name))
+  speakingArms.push({bone,pose:bone.quaternion.clone(),side:bone.name.includes('Left')?1:-1});
+});
+const gestureAxis=new THREE.Vector3(0,0,1),gestureTurn=new THREE.Quaternion();
+let gestureTime=0,gestureLevel=0;
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
 const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
@@ -1065,6 +1075,13 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 }
 if(!hidden){
 mixer.update(dt);
+gestureTime+=dt;
+gestureLevel=THREE.MathUtils.damp(gestureLevel,yakutAudioPlaying&&!reduced&&phase==='idle'?1:0,8,dt);
+for(const {bone,pose,side} of speakingArms){
+ pose.copy(bone.quaternion);
+ const angle=side*gestureLevel*.11*Math.sin(gestureTime*3+side);
+ bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
+}
 if(yakutAudioPlaying && phase==='idle'){
  yakutGestureClock+=dt;
  if(yakutGestureClock>3.5){
@@ -1098,6 +1115,7 @@ face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i]
 }
 }
 renderer.render(scene,camera);
+if(!hidden)for(const {bone,pose} of speakingArms)bone.quaternion.copy(pose);
 }frame();
 }catch(err){
 console.error('YAKUT V9 modeli yüklenemedi:',err);stage.remove();
