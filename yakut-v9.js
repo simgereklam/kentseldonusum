@@ -75,6 +75,7 @@ let emptyRecognitionCount=0;
 let processingSpeech=false;
 let micStartTimer;
 let lastUserUtterance='',lastUserUtteranceAt=0;
+let yakutLastLocalContact='',yakutLastLocalContactAt=0;
 let yakutTurnInFlight=false;
 let yakutGreetingRequested=false;
 let yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
@@ -296,7 +297,7 @@ function isYakutOwnVoice(text){
  return words.filter(word=>ownWords.has(word)).length/words.length>=0.75;
 }
 function isYakutStopCommand(command){
- return /^(?:(?:yakut|asistan|lütfen) )*(?:dur(?:un)?|sus(?:un)?|konuşma|kes|yeter|bekle|bir saniye|bi saniye)(?: (?:lütfen|yakut|artık))*$/.test(command);
+ return /^(?:(?:yakut|asistan|lütfen) )*(?:dur(?:un|sana)?|sus(?:un|sana)?|konuşma|(?:konuşmayı|sesi) (?:kes|durdur)|kes|yeter|bekle|bir saniye|bi saniye)(?: (?:lütfen|yakut|artık|bi saniye|bir saniye))*$/.test(command);
 }
 function getYakutCurrentPage(){
  const path=location.pathname.split('/').filter(Boolean).pop()||'index.html';
@@ -321,6 +322,7 @@ function cancelYakutSpeech(){
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
 function stopYakutAnswer(){
+ yakutPendingPageSpeech=false;
  if(!speaking&&!processingSpeech){
   yakutScenario=null;yakutParcelStep='';yakutWeatherPending='';
  }
@@ -720,6 +722,9 @@ if(recording&&window.yakutSiteVoice?.[recording]){
 }
 const localContact=yakutContactRequest(command);
 if(localContact){
+ if(localContact===yakutLastLocalContact&&
+    (now-yakutLastLocalContactAt<4500||now-yakutSpeechEndedAt<4000))return;
+ yakutLastLocalContact=localContact;yakutLastLocalContactAt=now;
  react('agree',localContact,'center');return;
 }
 if(/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat|özetle|bilgi ver(?:ir misin|ebilir misin)?)(?: lütfen)?$/.test(command)){
@@ -861,7 +866,7 @@ function startSpeech(){
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
   if(!isYakutOwnVoice(candidate)&&navigateFromRecognition(candidate))return true;
   if(speaking||processingSpeech)return false;
-  if(Date.now()-yakutSpeechEndedAt<2500&&isYakutOwnVoice(candidate))return false;
+  if(!isYakutStopCommand(normalizeYakutCommand(candidate))&&Date.now()-yakutSpeechEndedAt<4000&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
   releaseYakutMic();
   Promise.resolve(handle(candidate)).catch(error=>{
