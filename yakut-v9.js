@@ -264,6 +264,14 @@ function yakutPageCommand(command){
  }
  return null;
 }
+function navigateFromRecognition(transcript){
+ const command=normalizeYakutCommand(transcript);
+ const destination=isYakutHomeCommand(command)?'index.html':yakutPageCommand(command);
+ if(!destination)return false;
+ releaseYakutMic();
+ openYakutPage(destination);
+ return true;
+}
 function normalizeYakutCommand(message){
  return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim();
 }
@@ -804,8 +812,7 @@ function speechProblem(err){
  if(err==='aborted')return;
   if(err==='no-speech'){
    emptyRecognitionCount++;
-   if(emptyRecognitionCount>=4){stopListening();talk.textContent='🎤 Konuşmak için dokun';return;}
-   micRestartAt=Date.now()+Math.min(2500,400*emptyRecognitionCount);
+   micRestartAt=Date.now()+Math.min(850,180*emptyRecognitionCount);
    return;
   }
  micFailureCount++;
@@ -839,7 +846,9 @@ function startSpeech(){
   finalText='';
   interimText='';
   hasInterim=false;
-  if(recognition!==rec||!candidate||!listenEnabled||hidden||speaking||processingSpeech)return false;
+  if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
+  if(!isYakutOwnVoice(candidate)&&navigateFromRecognition(candidate))return true;
+  if(speaking||processingSpeech)return false;
   if(Date.now()-yakutSpeechEndedAt<900&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
   releaseYakutMic();
@@ -873,25 +882,15 @@ function startSpeech(){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
     if(!result.isFinal||!heard||isYakutOwnVoice(raw))continue;
-    const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
-    const destination=isYakutHomeCommand(wakeCommand)
-     ? 'index.html' : yakutPageCommand(wakeCommand);
-    if(destination){
-     releaseYakutMic();openYakutPage(destination);return;
-    }
+    if(navigateFromRecognition(raw))return;
    }
    ignoredResults=results.filter(result=>result.isFinal).length;
    return;
   }
-  const latestTranscript=results.slice(Math.max(e.resultIndex,ignoredResults)).map(r=>r[0]?.transcript||'').join(' ').trim();
-  const instant=normalizeYakutCommand(latestTranscript);
-  const wakeCommand=instant.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||instant;
-  // Never cut a spoken question off at its first 'Yakut' wake word.
-  if(results.slice(Math.max(e.resultIndex,ignoredResults)).some(r=>r.isFinal)&&
-    (yakutPageCommand(instant)||yakutPageCommand(wakeCommand)||
-     isYakutHomeCommand(instant)||isYakutHomeCommand(wakeCommand))){
-   finalText=latestTranscript;submit();return;
-  }
+  const freshResults=results.slice(Math.max(e.resultIndex,ignoredResults));
+  const latestFinal=freshResults.filter(result=>result.isFinal)
+   .map(result=>result[0]?.transcript||'').join(' ').trim();
+  if(latestFinal&&navigateFromRecognition(latestFinal))return;
   finalText=results.slice(ignoredResults).filter(result=>result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ').trim();
   interimText=results.slice(ignoredResults).filter(result=>!result.isFinal)
@@ -911,10 +910,9 @@ function startSpeech(){
     if(speaking||processingSpeech){queueListen(80);return;}
     if(!acceptedInput){
      emptyRecognitionCount++;
-     if(emptyRecognitionCount>=4){stopListening();talk.textContent='🎤 Konuşmak için dokun';return;}
-     micRestartAt=Date.now()+Math.min(6000,1500*emptyRecognitionCount);
+     micRestartAt=Date.now()+Math.min(850,180*emptyRecognitionCount);
     }
-    talk.textContent='🎤 Dinleme beklemede';queueListen(180);
+    talk.textContent='🎤 Yeniden dinliyorum';queueListen(180);
    }
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
