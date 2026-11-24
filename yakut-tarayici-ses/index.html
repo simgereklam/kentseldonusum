@@ -12,22 +12,84 @@ button{padding:.6rem 1rem;font:inherit}
 <label for="text">Türkçe metin</label>
 <textarea id="text" rows="4" maxlength="2000">Merhaba, hoş geldiniz. Ben Kumtaş İnşaat dijital asistanınız Yakut. Size nasıl yardımcı olabilirim?</textarea>
 <button id="play">Sesi dene</button>
+<button id="listen">Mikrofonu aç</button>
 <button id="stop" disabled>Durdur</button>
 <p id="status" role="status"></p>
 <script type="module">
 const text=document.querySelector('#text'),play=document.querySelector('#play'),stop=document.querySelector('#stop'),status=document.querySelector('#status');
+const listen=document.querySelector('#listen');
 const sources=new Set();
+const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+let recognition, listening=false, micEnabled=false, questionPending=false;
+let speakingText='', lastCommand='', lastAt=0, lastAudioAt=0;
+const pages={
+ 'ana sayfa':'index.html','kurumsal':'kurumsal.html','kentsel dönüşüm':'kentsel-donusum.html',
+ 'projelerimiz':'projelerimiz.html','projeler':'projelerimiz.html','hizmetlerimiz':'hizmetlerimiz.html',
+ 'bölgeler':'bolgeler.html','iletişim':'iletisim.html','sık sorulan sorular':'sss.html','sss':'sss.html',
+ 'e imar':'yakut-eimar.html','başvuru':'basvuru.html'
+};
+const normalize=value=>value.toLocaleLowerCase('tr-TR').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
+const stopCommand=value=>/^(?:yakut )?(?:sus|dur|bekle|konuşmayı kes)(?: lütfen)?$/.test(value);
+function localAnswer(command){
+ if(/(?:telefon|numaranız|whatsapp)/.test(command))return 'Ofis numaramız sıfır iki yüz on iki, dokuz yüz elli beş, elli beş, doksan dokuz. WhatsApp numaramız sıfır beş yüz kırk üç, yüz seksen bir, otuz dört, seksen beş.';
+ if(/(?:e posta|mail)/.test(command))return 'E-posta adresimiz info, et işareti, kumtaş nokta com nokta te re.';
+ if(/(?:adres|neredesiniz)/.test(command))return 'Ofisimiz Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, iki yüz kırk beş A, Bahçelievler, İstanbul.';
+ if(/^(?:merhaba|selam|yakut|sen kimsin|adın ne)$/.test(command))return 'Merhaba. Ben Kumtaş İnşaat dijital asistanınız Yakut. Size nasıl yardımcı olabilirim?';
+ if(/(?:kumtaş|şirket|firma)/.test(command))return 'Kumtaş İnşaat iki bin dört yılında kuruldu. İnşaat, taahhüt, madencilik ve konut üretimi alanlarında çalışıyoruz.';
+ if(/(?:kentsel dönüşüm|riskli bina|riskli yapı)/.test(command))return 'Binanız için önce ön değerlendirme ve imar incelemesi yapılır. Maliklerle görüşüldükten sonra proje, sözleşme ve teslim şartları değerlendirilir.';
+ return 'Bu denemede Kumtaş İnşaat, iletişim ve kentsel dönüşüm hakkında cevap verebilirim. İsterseniz bir sayfayı açabilirim.';
+}
+function startRecognition(){
+ if(!micEnabled||listening||!recognition)return;
+ try{recognition.start();listening=true;}catch{micEnabled=false;listen.textContent='Mikrofonu aç';}
+}
+if(Recognition){
+ recognition=new Recognition();
+ recognition.lang='tr-TR';recognition.continuous=false;recognition.interimResults=true;
+ recognition.onstart=()=>{if(!questionPending&&!sources.size)status.textContent='Dinliyorum.';};
+ recognition.onend=()=>{listening=false;if(micEnabled)setTimeout(startRecognition,200);};
+ recognition.onerror=({error})=>{
+  if(error==='no-speech'||error==='aborted')return;
+  micEnabled=false;listen.textContent='Mikrofonu aç';
+  status.textContent=error==='not-allowed'?'Mikrofona izin verin.':'Mikrofon açılamadı: '+error;
+ };
+ recognition.onresult=event=>{
+  for(const result of Array.from(event.results).slice(event.resultIndex)){
+   const command=normalize(result[0].transcript);
+   if(stopCommand(command)){stop.click();return;}
+   if(!result.isFinal||!command||questionPending||sources.size)continue;
+   const now=Date.now();
+   if((now-lastAudioAt<2000&&normalize(speakingText).includes(command))||
+      (command===lastCommand&&now-lastAt<3000))continue;
+   lastCommand=command;lastAt=now;
+   const name=command.replace(/^(?:yakut |lütfen )+/,'').replace(/(?: sayfasını| sayfasına| sayfayı)? (?:aç|git|geç|göster)(?: lütfen)?$/,'');
+   if(Object.hasOwn(pages,name)){
+    micEnabled=false;
+    location.assign(new URL('../'+pages[name],location.href));
+    return;
+   }
+   void say(localAnswer(command.replace(/^yakut /,'')));return;
+  }
+ };
+}else{listen.disabled=true;status.textContent='Bu tarayıcı sesli komutu desteklemiyor.';}
+listen.onclick=()=>{
+ if(!recognition)return;
+ if(micEnabled){micEnabled=false;recognition.abort();listen.textContent='Mikrofonu aç';return;}
+ context ||= new AudioContext();
+ void context.resume().catch(()=>{});
+ micEnabled=true;listen.textContent='Mikrofonu kapat';startRecognition();
+};
 let context,worker,nextAt,first,started;
 const ready=()=>{play.disabled=false;stop.disabled=true;};
-function finish(message){status.textContent=message;ready();}
-play.onclick=async ()=>{
- const phrase=text.value.trim();
- if(!phrase)return;
- play.disabled=true;stop.disabled=false;
+function finish(message){questionPending=false;status.textContent=message;ready();}
+play.onclick=()=>{void say(text.value.trim());};
+async function say(phrase){
+ if(!phrase||questionPending||sources.size)return;
+ questionPending=true;speakingText=phrase;play.disabled=true;stop.disabled=false;
  try{
   context ||= new AudioContext();
   await context.resume();
-  if(!worker)worker=new Worker('./engine.js');
+  if(!worker)worker=new Worker('./engine.js?v=voice-commands-2');
   first=true;nextAt=context.currentTime;started=performance.now();
   status.textContent='Ses motoru hazırlanıyor…';
   worker.onerror=()=>{worker.terminate();worker=null;finish('Ses motoru yüklenemedi.');};
@@ -39,18 +101,18 @@ play.onclick=async ()=>{
    const source=context.createBufferSource();
    source.buffer=buffer;source.connect(context.destination);
    sources.add(source);
-   source.onended=()=>{sources.delete(source);if(!sources.size&&!play.disabled)stop.disabled=true;};
+   source.onended=()=>{sources.delete(source);if(!sources.size){lastAudioAt=Date.now();if(!play.disabled){stop.disabled=true;if(micEnabled)status.textContent='Dinliyorum.';}}};
    nextAt=Math.max(nextAt,context.currentTime+.02);
-   source.start(nextAt);nextAt+=buffer.duration+.12;
+   source.start(nextAt);nextAt+=buffer.duration;
    if(first){first=false;status.textContent='İlk ses: '+((performance.now()-started)/1000).toFixed(2)+' sn.';}
   };
   worker.postMessage({text:phrase});
  }catch(error){finish(error.message);}
-};
+}
 stop.onclick=()=>{
- if(play.disabled&&worker){worker.terminate();worker=null;}
+ if(questionPending&&worker){worker.terminate();worker=null;}
  for(const source of sources){try{source.stop();}catch{}}
- sources.clear();finish('Durduruldu.');
+ sources.clear();lastAudioAt=Date.now();finish('Durduruldu.');
 };
 </script>
 </html>
