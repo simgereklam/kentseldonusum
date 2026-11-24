@@ -124,13 +124,39 @@ function streamedGeminiResponse(frames, first, headers) {
 // Gemini Aoede speech for the existing browser's /live PCM-NDJSON player.
 // Google Search is never used. This route requires a privately configured
 // GEMINI_API_KEY; the key is never sent to the browser.
+async function selfHostedSpeech(speech, signal, env, headers) {
+  if (!env.YAKUT_SPEECH_TOKEN)
+    return Response.json({error:'YAKUT_SPEECH_NOT_CONFIGURED'},{status:503,headers});
+  try {
+    const endpoint = new URL('/live', env.YAKUT_SPEECH_URL);
+    if (endpoint.protocol !== 'https:') throw new Error('HTTPS required');
+    const upstream = await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.YAKUT_SPEECH_TOKEN},
+      body:JSON.stringify({readAloud:speech}),
+      redirect:'error',
+      signal:AbortSignal.any([signal,AbortSignal.timeout(45000)])
+    });
+    const type = upstream.headers.get('Content-Type') || '';
+    if (upstream.ok && upstream.body && type.startsWith('application/x-ndjson'))
+      return new Response(upstream.body,{headers:{...headers,'Content-Type':type,'Cache-Control':'no-store'}});
+    await upstream.body?.cancel();
+    if (upstream.status === 503)
+      return Response.json({error:'YAKUT_VOICE_BUSY'},{status:503,headers});
+  } catch {
+    // Never expose the speech server URL or its access token to callers.
+  }
+  return Response.json({error:'YAKUT_VOICE_UNAVAILABLE'},{status:502,headers});
+}
+
 async function geminiAoedeSpeech(request, env, headers) {
-  if (!env.GEMINI_API_KEY) return Response.json({error:'Ses API anahtarı sunucuda yok'}, {status:503, headers});
   let body;
   try { body = await request.json(); } catch { return new Response(null, {status:400, headers}); }
   const speech = body?.readAloud;
   if (typeof speech !== 'string' || !speech.trim() || speech.length > 2000)
     return new Response(null, {status:400, headers});
+  if (env.YAKUT_SPEECH_URL) return selfHostedSpeech(speech, request.signal, env, headers);
+  if (!env.GEMINI_API_KEY) return Response.json({error:'Ses API anahtarı sunucuda yok'}, {status:503, headers});
   // Preview TTS models retired on 2026-11-17; keep the Aoede voice but
   // transparently upgrade a stale GEMINI_TTS_MODEL environment override.
   const configuredTts = String(env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts').trim();
@@ -413,8 +439,9 @@ export default {
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
         tinyfish_configured: Boolean(env.TINYFISH_API_KEY),
-        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Aoede',
-        tts_model: ['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview'].includes(String(env.GEMINI_TTS_MODEL||''))
+        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: env.YAKUT_SPEECH_URL && env.YAKUT_SPEECH_TOKEN ? 'İlkiz' : 'Aoede',
+        tts_provider: env.YAKUT_SPEECH_URL && env.YAKUT_SPEECH_TOKEN ? 'self-hosted' : 'gemini',
+        tts_model: env.YAKUT_SPEECH_URL && env.YAKUT_SPEECH_TOKEN ? 'piper-ilkiz' : ['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview'].includes(String(env.GEMINI_TTS_MODEL||''))
           ? 'gemini-3.8-flash-tts' : (env.GEMINI_TTS_MODEL||'gemini-3.8-flash-tts')
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
