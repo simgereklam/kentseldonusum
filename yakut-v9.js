@@ -679,7 +679,8 @@ if(isYakutStopCommand(command)){stopYakutAnswer();return}
 // Browser speech recognition may resend the same phrase when restarted.
 // Do not generate a second reply for a single utterance.
 const now=Date.now();
-if(command===lastUserUtterance && now-lastUserUtteranceAt<7000)return;
+if(command===lastUserUtterance &&
+ (now-lastUserUtteranceAt<7000||now-yakutSpeechEndedAt<2500))return;
 lastUserUtterance=command;lastUserUtteranceAt=now;
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
@@ -692,7 +693,7 @@ if(yakutParcelStep==='ilçe'&&handleYakutParcel(command))return;
 if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command)){react('agree',yakutScenarioAnswer(q));return;}
 if(yakutWantsCompanyInfo(command)){
  const about=window.yakutSiteVoice?.kurumsal||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
- react('agree',about,'center');return;
+ react('agree',about.replace(/^Kurumsal sayfasındayız\.\s*/i,''),'center');return;
 }
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
@@ -860,7 +861,7 @@ function startSpeech(){
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
   if(!isYakutOwnVoice(candidate)&&navigateFromRecognition(candidate))return true;
   if(speaking||processingSpeech)return false;
-  if(Date.now()-yakutSpeechEndedAt<900&&isYakutOwnVoice(candidate))return false;
+  if(Date.now()-yakutSpeechEndedAt<2500&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
   releaseYakutMic();
   Promise.resolve(handle(candidate)).catch(error=>{
