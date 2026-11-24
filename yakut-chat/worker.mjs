@@ -428,6 +428,22 @@ async function googleSearchAnswer(question, searchQuery, env) {
   }
 }
 
+async function emelSpeech(request, env, headers) {
+  if (!env.YAKUT_TTS_TOKEN) return Response.json({error:'EMEL_NOT_CONFIGURED'},{status:503,headers});
+  let body;
+  try { body=await request.json(); } catch { return Response.json({error:'INVALID_JSON'},{status:400,headers}); }
+  const speech=body?.readAloud;
+  if(typeof speech!=='string'||!speech.trim()||speech.length>2000) return Response.json({error:'INVALID_TEXT'},{status:400,headers});
+  try {
+    const upstream=await fetch('https://yakut-emel-test.simgereklam.workers.dev/tts',{
+      method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.YAKUT_TTS_TOKEN},
+      body:JSON.stringify({text:speech,voice:'tr-TR-EmelNeural'}),signal:AbortSignal.timeout(45000)
+    });
+    if(!upstream.ok||!upstream.body||!upstream.headers.get('Content-Type')?.includes('audio/mpeg')) return Response.json({error:'EMEL_UPSTREAM',upstream_status:upstream.status},{status:502,headers});
+    return new Response(upstream.body,{headers:{...headers,'Content-Type':'audio/mpeg'}});
+  } catch { return Response.json({error:'EMEL_UNAVAILABLE'},{status:502,headers}); }
+}
+
 export default {
   async fetch(request, env) {
     // Public health probe works for uptime monitors without an Origin header.
@@ -439,10 +455,7 @@ export default {
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
         tinyfish_configured: Boolean(env.TINYFISH_API_KEY),
-        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: env.YAKUT_SPEECH_URL && env.YAKUT_SPEECH_TOKEN ? 'İlkiz' : 'Aoede',
-        tts_provider: env.YAKUT_SPEECH_URL && env.YAKUT_SPEECH_TOKEN ? 'self-hosted' : 'gemini',
-        tts_model: env.YAKUT_SPEECH_URL && env.YAKUT_SPEECH_TOKEN ? 'piper-ilkiz' : ['gemini-2.5-flash-preview-tts','gemini-2.5-pro-preview-tts','gemini-3.1-flash-tts-preview'].includes(String(env.GEMINI_TTS_MODEL||''))
-          ? 'gemini-3.8-flash-tts' : (env.GEMINI_TTS_MODEL||'gemini-3.8-flash-tts')
+        chat_endpoint: true, speech_endpoint: true, imar_endpoint: true, tts_voice: 'Emel', tts_provider: 'edge-tts', tts_model: 'tr-TR-EmelNeural', emel_configured: Boolean(env.YAKUT_TTS_TOKEN)
       }, {headers:{'Cache-Control':'no-store'}});
     const origin = request.headers.get('Origin');
     const allowed = String(env.SITE_ORIGINS || '').split(',').map(value => value.trim());
@@ -506,7 +519,7 @@ export default {
         return Response.json({error:'LIVE_TOKEN_FAILED'},{status:502,headers});
       }
     }
-    if (pathname === '/live') return geminiAoedeSpeech(request, env, headers);
+    if (pathname === '/live') return emelSpeech(request, env, headers);
 
     // Compatibility endpoint for the existing e-imar page. No official parcel
     // source is connected yet: never claim a zoning coefficient was verified.
