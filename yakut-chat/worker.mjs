@@ -382,7 +382,7 @@ export class GoogleSearchQuota {
     const reserved = await this.storage.transaction(async tx => {
       const previous = await tx.get('monthlyUsage');
       const used = previous?.month === month ? previous.used : 0;
-      if (used >= 4500) return false;
+      if (used >= 1000) return false;
       await tx.put('monthlyUsage', {month, used:used + 1});
       return true;
     });
@@ -489,36 +489,7 @@ export default {
     }
     if (limited) return Response.json({error:'RATE_LIMIT',answer:'Çok fazla istek gönderildi. Lütfen kısa süre sonra yeniden deneyin.'},
       {status:429,headers:{...headers,'Retry-After':'60'}});
-    if (pathname === '/live-token') {
-      // Never expose the paid Gemini API key to browsers. Create a single-use,
-      // short-lived token scoped to one Gemini Live model.
-      if (!env.GEMINI_API_KEY) return Response.json({error:'GEMINI_NOT_CONFIGURED'}, {status:503,headers});
-      try {
-        const liveModel=String(env.GEMINI_LIVE_MODEL || 'gemini-2.5-flash-native-audio-preview-12-2025').trim();
-        const now=Date.now();
-        const upstream=await fetch('https://generativelanguage.googleapis.com/v1beta/auth_tokens',{
-          method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
-          body:JSON.stringify({
-            uses:1,
-            expireTime:new Date(now+20*60*1000).toISOString(),
-            newSessionExpireTime:new Date(now+60*1000).toISOString(),
-            liveConnectConstraints:{model:liveModel.startsWith('models/')?liveModel:'models/'+liveModel}
-          }),
-          signal:AbortSignal.timeout(12000)
-        });
-        if(!upstream.ok) {
-          console.warn('Gemini Live token HTTP',upstream.status);
-          return Response.json({error:'LIVE_TOKEN_UNAVAILABLE',upstream_status:upstream.status},{status:502,headers});
-        }
-        const token=await upstream.json();
-        if(typeof token?.name!=='string'||!token.name)
-          return Response.json({error:'LIVE_TOKEN_EMPTY'},{status:502,headers});
-        return Response.json({token:token.name,model:liveModel},{headers});
-      }catch(error){
-        console.warn('Gemini Live token exception',error?.name||'ERROR');
-        return Response.json({error:'LIVE_TOKEN_FAILED'},{status:502,headers});
-      }
-    }
+    if (pathname === '/live-token') return Response.json({error:'GEMINI_VOICE_DISABLED'},{status:410,headers});
     if (pathname === '/live') return emelSpeech(request, env, headers);
 
     // Compatibility endpoint for the existing e-imar page. No official parcel
@@ -579,23 +550,16 @@ export default {
     }
     if (payload.research === true) {
       const searchQuery = weatherSearchQuery(payload.question, payload.weather);
-      const google = await googleSearchAnswer(payload.question, searchQuery, env);
-      if (google) return Response.json(google, {headers});
-      if ((!env.TAVILY_API_KEY && !env.FIRECRAWL_API_KEY && !env.TINYFISH_API_KEY) || !env.GEMINI_API_KEY)
-        return Response.json({error:'SEARCH_NOT_CONFIGURED',
-          answer:'Güncel internet araması şu anda yapılandırılmamış.'}, {status:503, headers});
       try {
         const sources = await externalResearch(searchQuery, env);
-        if (!sources) return Response.json({error:'SEARCH_UNAVAILABLE',
-          answer:'Güncel bilgiye şu anda erişemedim.'}, {status:503, headers});
-        const answer = await geminiResearchAnswer(payload.question, sources, env, searchQuery);
-        if (!answer) return Response.json({error:'GEMINI_UNAVAILABLE',
-          answer:'Arama tamamlandı fakat cevap oluşturulamadı.'}, {status:503, headers});
-        return Response.json({answer, sources: sources.map(({title,url})=>({title,url}))}, {headers});
-      } catch {
-        return Response.json({error:'RESEARCH_FAILED',
-          answer:'Arama sırasında bağlantı hatası oluştu.'}, {status:502, headers});
-      }
+        if (sources?.length) {
+          const answer = await geminiResearchAnswer(payload.question, sources, env, searchQuery);
+          if (answer && !/doğrulanamad|ulaşamad|kaynaklarda.*(?:yok|bulunma)/i.test(answer)) return Response.json({answer,sources:sources.map(({title,url})=>({title,url}))},{headers});
+        }
+      } catch (_) {}
+      const google = await googleSearchAnswer(payload.question, searchQuery, env);
+      if (google) return Response.json(google,{headers});
+      return Response.json({error:'SEARCH_UNAVAILABLE',answer:'Güncel bilgiye şu anda erişemedim. Arama hizmeti veya kotası kullanılamıyor.'},{status:503,headers});
     }
     // All non-research outside-site questions are answered by Gemini only.
     // No Cloudflare AI, Claude, OpenRouter, Groq, Cerebras or other LLM.
