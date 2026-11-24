@@ -67,7 +67,7 @@ ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Yakut sesini etk
 document.body.append(stage,ui);
 const talk=ui.querySelector('#yakut-talk'),close=ui.querySelector('#yakut-close');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
-let openingGreeted=false,openingSpoken=false;
+let openingGreeted=false,openingSpoken=false,characterRendered=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
 let emptyRecognitionCount=0;
 let processingSpeech=false;
@@ -109,13 +109,13 @@ function resumeYakutSound(){
 function onYakutSoundReady(){
  if(!ready||hidden)return;
  audioUnlocked=true;
- talk.hidden=true;listenEnabled=true;
+ talk.hidden=false;
  if(yakutDeferredSpeech){
   const answer=yakutDeferredSpeech;yakutDeferredSpeech=null;
   speaking=false;yakutIsGreetingWalking=false;
   speak(...answer);return;
  }
- if(getYakutCurrentPage()==='index.html'&&!yakutGreetingRequested&&!speaking&&!processingSpeech){
+ if(characterRendered&&getYakutCurrentPage()==='index.html'&&!yakutGreetingRequested&&!speaking&&!processingSpeech){
   yakutGreetingRequested=true;
   if(model)moveTo(leftGreetingX());
   pendingSpeechGesture=findYakutGesture('wait');
@@ -145,9 +145,10 @@ function beginYakutVisit(){
  if(!speaking&&!processingSpeech)queueListen(50);
 }
 function handleYakutActivation(event){
- if(!event.isTrusted||navigator.userActivation?.isActive===false||hidden)return;
- micFailureCount=0;micRestartAt=0;
+ if(!event.isTrusted||navigator.userActivation?.isActive===false||hidden||talk.contains(event.target))return;
+ micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  listenEnabled=true;
+ startSpeech();
  resumeYakutSound();
 }
 document.addEventListener('click',handleYakutActivation,true);
@@ -831,7 +832,7 @@ function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=!/Android|iPhone|iPad/i.test(navigator.userAgent);rec.maxAlternatives=1;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
@@ -938,8 +939,8 @@ function startSpeech(){
 talk.onclick=()=>{
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
+ startSpeech();
  resumeYakutSound();
- queueListen(0);
 };
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';
@@ -1136,6 +1137,10 @@ face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i]
 }
 }
 renderer.render(scene,camera);
+if(!characterRendered&&!hidden){
+ characterRendered=true;
+ requestAnimationFrame(()=>{if(audioUnlocked)onYakutSoundReady();});
+}
 if(!hidden)for(const {bone,pose} of speakingArms)bone.quaternion.copy(pose);
 }frame();
 }catch(err){
