@@ -19,9 +19,17 @@ async function bytes(url) {
   } catch {} // no Cache Storage outside a secure context: plain fetch
   const hit = await cache?.match(url).catch(() => null);
   if (hit) return hit.arrayBuffer();
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-  try { await cache?.put(url, res.clone()); } catch {} // full storage: still works, just not cached
+  // Pages can briefly return 502/503/504 during a large GitHub Pages deployment.
+  // Retry only transient HTTP failures; never loop infinitely.
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = await fetch(url, { cache: attempt ? "reload" : "default" });
+    if (res.ok) break;
+    if (![502, 503, 504].includes(res.status) || attempt === 2)
+      throw new Error(`${url}: HTTP ${res.status}`);
+    await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  try { await cache?.put(url, res.clone()); } catch {}
   return res.arrayBuffer();
 }
 
