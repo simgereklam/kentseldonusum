@@ -90,6 +90,7 @@ next.clampWhenFinished=!!once;current=next;return true;
 }
 let audioUnlocked=false,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
 let yakutDeferredSpeech=null;
+let yakutAddressPending=false;
 let yakutVoiceRetryAt=0;
 let yakutStartTimer;
 function resumeYakutSound(){
@@ -122,6 +123,10 @@ function onYakutSoundReady(){
   if(model)moveTo(leftGreetingX());
   pendingSpeechGesture=findYakutGesture('wait');
   speak(welcome);return;
+ }
+ if(yakutAddressPending&&!speaking){
+  yakutAddressPending=false;
+  react('agree',yakutContact.address,'center');return;
  }
  if(yakutPendingPageSpeech&&!speaking){offerYakutPage();return;}
  if(!speaking&&!processingSpeech&&!yakutIsGreetingWalking)queueListen(0);
@@ -321,6 +326,7 @@ function cancelYakutSpeech(){
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
 function stopYakutAnswer(){
+ yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
   yakutScenario=null;yakutParcelStep='';yakutWeatherPending='';
  }
@@ -393,9 +399,8 @@ function handleYakutOfferAnswer(t){
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage().replace(/\.html$/,'');
  const localText=window.yakutSiteVoice?.[page];
- if(localText){react('agree',localText,'left');return}
  const summary=collectYakutPageSpeech();
- if(summary)react('agree',summary,'center');
+ if(summary||localText)react('agree',summary||localText,'center');
 }
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
@@ -427,6 +432,9 @@ const yakutContact={
  mobile:'WhatsApp cep telefonu numaramız. '+yakutPhoneNumbers.whatsapp+'.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
 };
+function yakutIsAddressCommand(command){
+ return /^(?:(?:lütfen|bana|bize|ofis|ofisin|şirketin|firma|firmanın|kumtaş|kumtaş inşaat(?: ın)?) )*(?:adres|adresi|adresini|adresiniz|adresinizi|adresinizin|adresimiz|adres bilgisi)(?: (?:ne|nedir|nerede|söyle|söyler misin|söyleyebilir misin|ver|verir misin|verebilir misin|oku|okur musun|istiyorum|lütfen))*$/.test(command);
+}
 function yakutWantsLocation(command){
  return /(?:^| )(?:konum(?:u|unuz|unuzu|unu)?|lokasyon(?:u|unuz|unuzu)?|harita)(?: |$)/.test(command)&&
   /^(?:(?:yakut|lütfen) )*(?:konum(?:u|unuz|unuzu)?|harita)$|(?:^| )(?:nerede|at(?:ar)?|gönder(?:ir)?|paylaş(?:ır)?|ver(?:ir)?|göster(?:ir)?|istiyorum|şirket(?:in|inizin|imizin)?|firma(?:nın|nızın|mızın)?|ofis(?:in|inizin|imizin)?|kumtaş|yol tarifi)(?: |$)/.test(command)&&
@@ -697,6 +705,11 @@ if(yakutWantsCompanyInfo(command)){
 }
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
+if(yakutIsAddressCommand(spokenCommand)){
+ if(getYakutCurrentPage()==='iletisim.html'){react('agree',yakutContact.address,'center');return;}
+ try{sessionStorage.setItem('yakutAddressPending','1');}catch(_){}
+ return openYakutPage('iletisim.html');
+}
 const phoneAnswer=yakutPhoneAnswer(command);
 if(phoneAnswer){
  rememberYakutTurn(q,phoneAnswer);react('agree',phoneAnswer,'center');return;
@@ -1016,6 +1029,8 @@ function startYakutSession(){
    openingSpoken=true;openingGreeted=true;yakutFirstGreetingDone=true;
   }
   const page=getYakutCurrentPage();
+  yakutAddressPending=page==='iletisim.html'&&sessionStorage.getItem('yakutAddressPending')==='1';
+  sessionStorage.removeItem('yakutAddressPending');
   const pageOffer=sessionStorage.getItem('yakutPageOffer');
   sessionStorage.removeItem('yakutPageOffer');
   yakutPendingPageSpeech=pageOffer==='anlat:'+page;
