@@ -11,6 +11,9 @@ const SCRIPT_URLS=[
 const $=s=>document.querySelector(s);
 const status=$('#status'),output=$('#answer'),input=$('#question');
 let context=null,session=null,phonemizer=null,configuration=null,voicePromise=null,activeSource=null,job=0;
+const tempo=$('#tempo'),tempoValue=$('#tempo-value');
+let lengthScale=1.16;
+if(tempo){tempo.value=String(lengthScale);tempoValue.textContent='Daha tane tane';tempo.addEventListener('input',()=>{lengthScale=Number(tempo.value);tempoValue.textContent=lengthScale<1.08?'Normal':lengthScale<1.23?'Daha tane tane':'En yavaş';});}
 function message(text){status.textContent=text;}
 async function unlock(){
  const AC=window.AudioContext||window.webkitAudioContext;
@@ -70,7 +73,9 @@ function phonemesToSpeech(sentence,rows,voice){
  ]);
  if(rc!==0||!rows.length)throw new Error('Türkçe telaffuz dönüştürülemedi.');
  const ids=rows.flatMap(row=>row.phoneme_ids||[]);
- if(!ids.length)throw new Error('Ses için fonem bulunamadı.');
+ if(ids.length<3)throw new Error('Ses için yeterli fonem bulunamadı.');
+ // Never drop an unknown or empty phonemizer sentence silently.
+ if(rows.some(row=>!Array.isArray(row.phoneme_ids)||!row.phoneme_ids.length))throw new Error('Türkçe kelimelerin bir kısmı fonemlere çevrilemedi.');
  return ids;
 }
 async function speak(text){
@@ -79,10 +84,18 @@ async function speak(text){
  await unlock();
  const {rows,voice}=await loadVoice();
  if(myJob!==job)return;
- const sentences=String(text||'').match(/[^.!?]+[.!?]?/g)||[text];
+ const spoken=String(text||'').replace(/\s+/g,' ').trim()
+  .replace(/\bKUMTAŞ\b/g,'Kumtaş')
+  .replace(/\bAI\b/g,'yapay zekâ')
+  .replace(/\bKCal\b/g,'kilokalori');
+ // Preserve periods in numbers and abbreviations; split only at sentence endings
+ // followed by whitespace and a new sentence, never in the middle of a word.
+ const sentences=spoken.split(/(?<=[.!?])\s+(?=[^\s])/u).filter(Boolean);
  const sampleRate=configuration.audio?.sample_rate||22050;
  const inf=configuration.inference||{};
- for(const sentence of sentences.map(x=>x.trim()).filter(Boolean)){
+ for(let sentenceIndex=0;sentenceIndex<sentences.length;sentenceIndex++){
+  const sentence=sentences[sentenceIndex].trim();
+  if(!sentence)continue;
   if(myJob!==job)return;
   message('Yakut konuşuyor…');
   const ids=phonemesToSpeech(sentence,rows,voice);
@@ -90,7 +103,7 @@ async function speak(text){
    input:new ort.Tensor('int64',BigInt64Array.from(ids.map(BigInt)),[1,ids.length]),
    input_lengths:new ort.Tensor('int64',BigInt64Array.from([BigInt(ids.length)]),[1]),
    scales:new ort.Tensor('float32',Float32Array.from([
-    inf.noise_scale??0.667,inf.length_scale??1.04,inf.noise_w??0.8
+    inf.noise_scale??0.667,lengthScale,inf.noise_w??0.8
    ]),[3])
   };
   if(configuration.num_speakers>1)feeds.sid=new ort.Tensor('int64',BigInt64Array.from([0n]),[1]);
@@ -108,6 +121,10 @@ async function speak(text){
    src.onended=()=>{if(activeSource===src)activeSource=null;resolve();};
    src.start();
   });
+  // Short, deliberate breathing pause prevents abrupt glued-together phrases.
+  if(myJob===job&&sentenceIndex<sentences.length-1){
+   await new Promise(resolve=>setTimeout(resolve,160));
+  }
  }
  if(myJob===job)message('Konuşma tamamlandı. Yeni bir soru sorabilirsiniz.');
 }
