@@ -16,5 +16,12 @@ simple = { limit = 30, period = 60 }
 # wrangler secret put FIRECRAWL_API_KEY
 # wrangler secret put TINYFISH_API_KEY
 # Never store API key values in this file or in frontend JavaScript.
-# ONLY Gemini Aoede generates voice. Search providers are Tavily, Firecrawl, TinyFish.
+# ONLY Gemini Aoede generates voice. Fallback search providers are Tavily, Firecrawl, TinyFish.
 # The Gemini API key must belong to a billing-enabled Google project if paid usage is required.
+
+[durable_objects]
+bindings = [{name = "GOOGLE_SEARCH_QUOTA", class_name = "GoogleSearchQuota"}]
+
+[[migrations]]
+tag = "google-search-quota-v1"
+new_sqlite_classes = ["GoogleSearchQuota"]
