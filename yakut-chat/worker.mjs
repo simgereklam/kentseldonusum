@@ -78,7 +78,7 @@ async function geminiAoedeSpeech(request, env, headers) {
   const retryAt = cooldowns.get(cooldownKey) || 0;
   if (retryAt > Date.now()) return geminiVoiceLimited(headers, retryAt);
   const payload = {
-    contents: [{role:'user', parts:[{text: 'Sıcak, güven veren ve doğal Türkçe diksiyonla sadece şu metni oku: ' + speech}]}],
+    contents: [{role:'user', parts:[{text: speech}]}],
     generationConfig: {responseModalities:['AUDIO'], speechConfig:{
       voiceConfig:{prebuiltVoiceConfig:{voiceName:'Aoede'}}
     }}
@@ -309,7 +309,7 @@ async function googleSearchAnswer(question, searchQuery, env) {
         tools:[{google_search:{}}],
         generationConfig:shortAnswerConfig(model,0.3)
       }),
-      signal:AbortSignal.timeout(8500)
+      signal:AbortSignal.timeout(12000)
     });
     if (!response.ok) {
       if ([400,403,404,429].includes(response.status))
