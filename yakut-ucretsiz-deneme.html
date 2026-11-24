@@ -6,7 +6,7 @@
 <title>Yakut — Ücretsiz Tarayıcı Ses Denemesi | Kumtaş İnşaat</title>
 <style>
 :root{color-scheme:light;font-family:system-ui,Arial,sans-serif;color:#12314c;background:#f5f8fc}
-*{box-sizing:border-box}body{margin:0;padding:24px 14px;min-height:100vh}
+*[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;padding:24px 14px;min-height:100vh}
 main{max-width:710px;margin:30px auto;background:white;border:1px solid #dbe5ef;padding:26px;border-radius:22px;box-shadow:0 18px 40px #153d6012}
 h1{font-size:27px;margin:0 0 10px}.lead{line-height:1.6;color:#465e72}
 .controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}button{background:#075d98;color:white;border:0;border-radius:12px;padding:13px 18px;font:600 15px system-ui;cursor:pointer}
@@ -32,11 +32,16 @@ a{color:#06578a}#source{display:inline-block;margin-top:12px}
   <input id="question" placeholder="Örnek: Kentsel dönüşüm nedir?" autocomplete="off">
   <div class="controls"><button id="ask">Sor ve aynı sesle dinle</button></div>
   <div id="status" role="status" aria-live="polite">Hazır. Başlamak için ses düğmesine basın.</div>
+  <div style="margin:14px 0">
+    <strong>Üretilen ses — Android oynatma kontrolü</strong>
+    <audio id="generated-audio" controls playsinline preload="none" hidden style="display:block;width:100%;margin-top:8px"></audio>
+    <small id="audio-hint" hidden>Ses otomatik duyulmadıysa yukarıdaki oynatıcının ▶ düğmesine dokunun. MP3 indirmek gerekmez; kayıt bu sayfada hazırlanır.</small>
+  </div>
   <div id="answer" aria-live="polite">Site içi örnek cevaplar ücretsiz çalışır. Site dışı konularda Wikipedia'dan bilgi alınır.</div>
   <a id="source" hidden target="_blank" rel="noopener noreferrer">Kaynağı aç</a>
   <small>Deneme sınırları: Site ilk açılırken yaklaşık 64 MB model verisini arka planda yükler. Ses üretimi cihazın hızına bağlıdır. Web araması yalnızca Wikipedia ile sınırlıdır; canlı hava, spor, bütün internet ve mikrofonla konuşma bu prototipte yoktur. Normal site ve 3D Yakut değiştirilmemiştir.</small>
   <small>Ses modeli: <a href="https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium">İlkiz Türkçe kadın Piper TTS</a> (MIT). Tarayıcı WASM yaklaşımı: <a href="https://github.com/piper-tts/piper-tts.github.io">Piper browser demo</a>. Ses dosyaları GitHub Pages içinde saklanır; ücretli API çağrısı yapılmaz.</small>
 </main>
-<script defer src="yakut-ucretsiz-tarayici.js?v=diksiyon-2"></script>
+<script defer src="yakut-ucretsiz-tarayici.js?v=android-oynat-3"></script>
 </body>
 </html>

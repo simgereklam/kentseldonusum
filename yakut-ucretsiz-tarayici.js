@@ -11,6 +11,34 @@ const SCRIPT_URLS=[
 const $=s=>document.querySelector(s);
 const status=$('#status'),output=$('#answer'),input=$('#question');
 let context=null,session=null,phonemizer=null,configuration=null,voicePromise=null,activeSource=null,job=0;
+const audioPlayer=$('#generated-audio');
+const audioHint=$('#audio-hint');
+let lastAudioUrl=null;
+function saveReplay(parts,sampleRate){
+ if(!audioPlayer||!parts.length)return;
+ const total=parts.reduce((sum,p)=>sum+p.length,0)+Math.max(0,parts.length-1)*Math.round(sampleRate*.16);
+ if(total>sampleRate*120){message('Ses kaydı çok uzun; oynatıcıya aktarılmadı.');return;}
+ const buf=new ArrayBuffer(44+total*2),view=new DataView(buf);
+ const ascii=(offset,value)=>{for(let i=0;i<value.length;i++)view.setUint8(offset+i,value.charCodeAt(i));};
+ ascii(0,'RIFF');view.setUint32(4,36+total*2,true);ascii(8,'WAVE');ascii(12,'fmt ');
+ view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);
+ view.setUint32(24,sampleRate,true);view.setUint32(28,sampleRate*2,true);
+ view.setUint16(32,2,true);view.setUint16(34,16,true);
+ ascii(36,'data');view.setUint32(40,total*2,true);
+ let pos=44;
+ for(let j=0;j<parts.length;j++){
+  for(const value of parts[j]){
+   const clamped=Math.max(-1,Math.min(1,value));
+   view.setInt16(pos,clamped<0?clamped*32768:clamped*32767,true);pos+=2;
+  }
+  if(j<parts.length-1){for(let k=0;k<Math.round(sampleRate*.16);k++){view.setInt16(pos,0,true);pos+=2;}}
+ }
+ const url=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+ audioPlayer.src=url;audioPlayer.hidden=false;audioPlayer.load();
+ if(audioHint)audioHint.hidden=false;
+ if(lastAudioUrl)URL.revokeObjectURL(lastAudioUrl);
+ lastAudioUrl=url;
+}
 const tempo=$('#tempo'),tempoValue=$('#tempo-value');
 let lengthScale=1.16;
 if(tempo){tempo.value=String(lengthScale);tempoValue.textContent='Daha tane tane';tempo.addEventListener('input',()=>{lengthScale=Number(tempo.value);tempoValue.textContent=lengthScale<1.08?'Normal':lengthScale<1.23?'Daha tane tane':'En yavaş';});}
@@ -92,6 +120,7 @@ async function speak(text){
  // followed by whitespace and a new sentence, never in the middle of a word.
  const sentences=spoken.split(/(?<=[.!?])\s+(?=[^\s])/u).filter(Boolean);
  const sampleRate=configuration.audio?.sample_rate||22050;
+ const audioParts=[];
  const inf=configuration.inference||{};
  for(let sentenceIndex=0;sentenceIndex<sentences.length;sentenceIndex++){
   const sentence=sentences[sentenceIndex].trim();
@@ -111,6 +140,7 @@ async function speak(text){
   if(myJob!==job)return;
   const samples=result.output?.data;
   if(!samples?.length)throw new Error('Ses modeli boş yanıt verdi.');
+  audioParts.push(new Float32Array(samples));
   const buffer=context.createBuffer(1,samples.length,sampleRate);
   buffer.copyToChannel(samples,0);
   await new Promise(resolve=>{
@@ -126,7 +156,10 @@ async function speak(text){
    await new Promise(resolve=>setTimeout(resolve,160));
   }
  }
- if(myJob===job)message('Konuşma tamamlandı. Yeni bir soru sorabilirsiniz.');
+ if(myJob===job){
+  saveReplay(audioParts,sampleRate);
+  message('Ses oluşturuldu. Duyulmuyorsa aşağıdaki ▶ Oynat düğmesine dokunun.');
+ }
 }
 function localAnswer(query){
  const q=query.toLocaleLowerCase('tr-TR');
