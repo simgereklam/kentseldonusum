@@ -1,5 +1,5 @@
 /* Yakut EMA Lightning trial, entirely static/self-hosted speech. MIT license for wrapper; EMA model Apache-2.0. */
-import { EMA, RATE, wavBlob } from './assets/yakut/ema/tts.js';
+import { EMA, RATE, wavBlob } from './assets/yakut/ema/tts.js?v=mobile-fp16-20261124';
 const $=id=>document.getElementById(id);
 const status=$('status'),output=$('answer'),input=$('question'),player=$('replay'),source=$('source');
 let engine=null,loading=null,context=null,playId=0,activeSources=new Set(),lastObjectUrl=null;
