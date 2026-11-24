@@ -2,8 +2,8 @@
    100% local synthesis after static model download, no paid TTS endpoint. */
 (()=>{
 'use strict';
-const BASE='https://piper-tts.github.io/vendor/';
-const MODEL='https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium/resolve/main/';
+const BASE=new URL('./assets/yakut/vendor/',document.currentScript.src).href;
+const MODEL=new URL('./assets/yakut/voice/',document.currentScript.src).href;
 const SCRIPT_URLS=[
  BASE+'ort/ort.wasm.min.js',
  BASE+'phonemize/piper_phonemize.js'
@@ -27,6 +27,7 @@ function loadScript(url){
  });
 }
 async function checked(url,type='arrayBuffer'){
+ if(new URL(url).origin!==location.origin)throw new Error('Site dışı ses yüklemesi yasak.');
  const response=await fetch(url);
  if(!response.ok)throw new Error('Ses modeli indirilemedi: HTTP '+response.status);
  return type==='json'?response.json():response.arrayBuffer();
@@ -34,7 +35,7 @@ async function checked(url,type='arrayBuffer'){
 async function loadVoice(){
  if(voicePromise)return voicePromise;
  voicePromise=(async()=>{
-  message('Türkçe kadın sesi hazırlanıyor. İlk kullanımda yaklaşık 64 MB indirilecek.');
+  message('Türkçe kadın sesi GitHub dosyalarından hazırlanıyor. Başka bir siteye bağlanılmayacak.');
   for(const url of SCRIPT_URLS)await loadScript(url);
   if(!window.ort||!window.createPiperPhonemize)throw new Error('Ses bileşenleri yüklenmedi.');
   ort.env.wasm.wasmPaths=BASE+'ort/';
@@ -52,7 +53,7 @@ async function loadVoice(){
   });
   session=await ort.InferenceSession.create(model,{executionProviders:['wasm']});
   const voice=cfg.espeak?.voice||'tr';
-  message('Hazır: Türkçe kadın sesi cihazınızda çalışacak. ('+voice+')');
+  message('Hazır: Türkçe kadın sesi kendi GitHub sitemizden yüklendi. ('+voice+')');
   return {rows,voice};
  })().catch(e=>{voicePromise=null;throw e;});
  return voicePromise;
