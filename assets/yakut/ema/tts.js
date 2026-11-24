@@ -190,7 +190,9 @@ export class EMA {
   // fp32: on WebGPU their fp16 versions go wrong (see export/to_fp16.py).
   static async load(backend = "webgpu", base = "models/", onProgress = () => {}, precision = "fp32") {
     ort = await import(ORT + (backend === "webgpu" ? "ort.webgpu.min.mjs" : "ort.wasm.min.mjs"));
-    ort.env.wasm.wasmPaths = ORT;\n    ort.env.wasm.numThreads = 1;\n    ort.env.wasm.proxy = false;
+    ort.env.wasm.wasmPaths = ORT;
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.proxy = false;
     const meta = await (await fetch(base + "meta.json")).json();
     const opts = { executionProviders: backend === "webgpu" ? ["webgpu", "wasm"] : ["wasm"],
                    graphOptimizationLevel: "all" };
