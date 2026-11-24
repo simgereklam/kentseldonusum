@@ -1,4 +1,4 @@
-/* Yakut Gemini-only TTS. No browser speechSynthesis, no client API secrets. */
+/* Yakut Aoede audio via local MP3 recordings or the Gemini Worker. */
 (() => {
 'use strict';
 if(window.YakutGeminiVoice)return;
@@ -45,6 +45,42 @@ class YakutGeminiVoice{
   }
   this.sources.clear();
   this.playing=false;this.onEnd(false);
+ }
+ async playRecordings(urls){
+  this.stop();
+  const token=this.generation;
+  const controller=new AbortController();
+  this.controller=controller;
+  try{
+   const buffers=await Promise.all(urls.map(async url=>{
+    const response=await fetch(url,{signal:controller.signal});
+    if(!response.ok)throw new Error('YAKUT_RECORDING_HTTP_'+response.status);
+    return this.context.decodeAudioData(await response.arrayBuffer());
+   }));
+   if(token!==this.generation)return false;
+   if(!this.analyser){
+    this.analyser=this.context.createAnalyser();
+    this.analyser.fftSize=512;
+    this.analyser.connect(this.context.destination);
+   }
+   let at=this.context.currentTime+.02;
+   const played=buffers.map(buffer=>new Promise(finish=>{
+    const source=this.context.createBufferSource();
+    source.buffer=buffer;source.connect(this.analyser);
+    const entry={source,finish};
+    this.sources.add(entry);
+    source.onended=()=>{this.sources.delete(entry);finish();};
+    source.start(at);at+=buffer.duration;
+   }));
+   this.playing=true;this.onStart();
+   await Promise.all(played);
+   return token===this.generation;
+  }catch(error){
+   if(token===this.generation)this.onError(error);
+   return false;
+  }finally{
+   if(token===this.generation){this.controller=null;this.playing=false;}
+  }
  }
  async speak(text){
   this.stop();
