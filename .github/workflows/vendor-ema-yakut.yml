@@ -1,0 +1,76 @@
+name: Bundle EMA Lightning voice into GitHub Pages
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-ema-yakut.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor-ema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Yakut branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Collect upstream free browser files and ONNX models
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/yakut/ema/models assets/yakut/ema/runtime
+          git clone --depth=1 https://github.com/ozcancelik/ema-lightning-web.git /tmp/ema-lightning-web
+          cp /tmp/ema-lightning-web/tts.js assets/yakut/ema/tts.js
+          cp /tmp/ema-lightning-web/normalizer.js assets/yakut/ema/normalizer.js
+          cp /tmp/ema-lightning-web/LICENSE assets/yakut/ema/LICENSE
+          cp /tmp/ema-lightning-web/NOTICE assets/yakut/ema/NOTICE
+          if [ -d /tmp/ema-lightning-web/licenses ]; then cp -a /tmp/ema-lightning-web/licenses assets/yakut/ema/; fi
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('assets/yakut/ema/tts.js')
+          s=p.read_text()
+          old='const ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/";'
+          assert old in s, 'EMA upstream runtime declaration changed'
+          p.write_text(s.replace(old, 'const ORT = new URL("./runtime/", import.meta.url).href;'))
+          PY
+          cp /tmp/ema-lightning-web/models/meta.json assets/yakut/ema/models/meta.json
+          for file in text.onnx sound.onnx decoder.onnx normalizer.wasm; do
+            if [ -f "/tmp/ema-lightning-web/models/$file" ]; then
+              cp "/tmp/ema-lightning-web/models/$file" "assets/yakut/ema/models/$file"
+            fi
+          done
+          for file in text.onnx sound.onnx decoder.onnx normalizer.wasm; do
+            if [ ! -f "assets/yakut/ema/models/$file" ] || [ "$(stat -c %s "assets/yakut/ema/models/$file")" -lt 1000000 ]; then
+              curl --fail --location --retry 3 --output "assets/yakut/ema/models/$file" "https://huggingface.co/ozcancelik/ema-lightning-onnx/resolve/main/$file"
+            fi
+          done
+          mkdir -p /tmp/ema-npm
+          cd /tmp/ema-npm
+          npm pack onnxruntime-web@1.30.0 --silent
+          tar -xzf onnxruntime-web-1.30.0.tgz
+          cd "$GITHUB_WORKSPACE"
+          cp /tmp/ema-npm/package/dist/ort.wasm.min.mjs assets/yakut/ema/runtime/
+          cp /tmp/ema-npm/package/dist/ort.webgpu.min.mjs assets/yakut/ema/runtime/
+          find /tmp/ema-npm/package/dist -maxdepth 1 -name 'ort*.wasm' -exec cp {} assets/yakut/ema/runtime/ \;
+          test "$(stat -c %s assets/yakut/ema/models/text.onnx)" -gt 1000000
+          test "$(stat -c %s assets/yakut/ema/models/sound.onnx)" -gt 1000000
+          test "$(stat -c %s assets/yakut/ema/models/decoder.onnx)" -gt 1000000
+          test "$(stat -c %s assets/yakut/ema/models/normalizer.wasm)" -gt 100000
+          test -s assets/yakut/ema/runtime/ort.wasm.min.mjs
+          test -s assets/yakut/ema/runtime/ort.webgpu.min.mjs
+          find assets/yakut/ema -type f -printf '%p %s bytes\n' | sort
+      - name: Commit self-hosted EMA dependencies to feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/yakut/ema
+          if git diff --cached --quiet; then
+            echo 'EMA browser files already present'
+          else
+            git commit -m 'vendor(yakut): host EMA Lightning models and WASM runtime in GitHub'
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
