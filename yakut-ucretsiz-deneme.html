@@ -21,7 +21,7 @@ a{color:#06578a}#source{display:inline-block;margin-top:12px}
 <body>
 <main>
   <h1>Yakut — Tamamen ücretsiz ses denemesi</h1>
-  <p class="lead">Bu deneme Gemini, ücretli ses API'si ya da özel bir sunucu kullanmaz. Türkçe kadın sesi bir kez yüklenir; konuşma kendi telefonunuzda veya bilgisayarınızda oluşturulur.</p>
+  <p class="lead">Bu deneme Gemini, ücretli ses API'si veya özel sunucu kullanmaz. Ses motoru, model ve JavaScript yalnızca kendi GitHub Pages sitemizden yüklenir. Ziyaretçinin ayrıca uygulama veya dosya indirmesi gerekmez.</p>
   <div class="controls">
     <button id="start">🔊 Kadın sesini hazırla ve dene</button>
     <button id="stop" class="secondary">■ Sus</button>
@@ -32,8 +32,8 @@ a{color:#06578a}#source{display:inline-block;margin-top:12px}
   <div id="status" role="status" aria-live="polite">Hazır. Başlamak için ses düğmesine basın.</div>
   <div id="answer" aria-live="polite">Site içi örnek cevaplar ücretsiz çalışır. Site dışı konularda Wikipedia'dan bilgi alınır.</div>
   <a id="source" hidden target="_blank" rel="noopener noreferrer">Kaynağı aç</a>
-  <small>Deneme sınırları: İlk yüklemede yaklaşık 64 MB ses modeli indirilir. Ses üretimi cihazın hızına bağlıdır. Web araması yalnızca Wikipedia ile sınırlıdır; canlı hava, spor, bütün internet ve mikrofonla konuşma bu prototipte yoktur. Normal site ve 3D Yakut değiştirilmemiştir.</small>
-  <small>Ses modeli: <a href="https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium">İlkiz Türkçe kadın Piper TTS</a> (MIT). Tarayıcı WASM yaklaşımı: <a href="https://github.com/piper-tts/piper-tts.github.io">Piper browser demo</a>. Haricî dosyalar ilk yüklemede ücretsiz statik dağıtım adreslerinden alınır; ücretli API çağrısı yapılmaz.</small>
+  <small>Deneme sınırları: Site ilk açılırken yaklaşık 64 MB model verisini arka planda yükler. Ses üretimi cihazın hızına bağlıdır. Web araması yalnızca Wikipedia ile sınırlıdır; canlı hava, spor, bütün internet ve mikrofonla konuşma bu prototipte yoktur. Normal site ve 3D Yakut değiştirilmemiştir.</small>
+  <small>Ses modeli: <a href="https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium">İlkiz Türkçe kadın Piper TTS</a> (MIT). Tarayıcı WASM yaklaşımı: <a href="https://github.com/piper-tts/piper-tts.github.io">Piper browser demo</a>. Ses dosyaları GitHub Pages içinde saklanır; ücretli API çağrısı yapılmaz.</small>
 </main>
 <script defer src="yakut-ucretsiz-tarayici.js?v=1"></script>
 </body>
