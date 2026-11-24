@@ -1,4 +1,4 @@
-/* Yakut audio is generated exclusively by Gemini Aoede. */
+/* Yakut audio is generated exclusively by Emel via the protected Worker. */
 (() => {
 'use strict';
 if(window.YakutGeminiVoice)return;
@@ -26,7 +26,7 @@ class YakutGeminiVoice{
   let sum=0;for(const sample of this.samples){const n=(sample-128)/128;sum+=n*n;}
   return Math.min(1,Math.sqrt(sum/this.samples.length)*6);
  }
- split(text,max=1400){
+ split(text,max=450){
   const words=String(text||'').trim().split(/\s+/).filter(Boolean);
   const pieces=[];let current='';
   for(const word of words){
@@ -62,67 +62,27 @@ class YakutGeminiVoice{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({readAloud:phrase}),signal:controller.signal
     });
-    if(!response.ok)throw new Error('GEMINI_VOICE_HTTP_'+response.status);
-    if(!response.body||!response.headers.get('Content-Type')?.includes('application/x-ndjson'))
-     throw new Error('GEMINI_AUDIO_FORMAT');
-    const reader=response.body.getReader(),decoder=new TextDecoder();
-    let pending='',doneFlag=false,nextAt=this.context.currentTime;
-    const playbacks=[];
-    const consume=line=>{
-     if(!line)return;
-     const frame=JSON.parse(line);
-     if(frame.error)throw new Error(String(frame.error));
-     if(frame.done){doneFlag=true;return;}
-     if(!frame.audio)return;
-     const raw=atob(frame.audio);
-     if(raw.length%2)throw new Error('GEMINI_PCM_LENGTH');
-     const count=raw.length/2;
-     if(!count)return;
-     const buffer=this.context.createBuffer(1,count,24000);
-     const floats=buffer.getChannelData(0);
-     for(let i=0;i<count;i++){
-      const sample=raw.charCodeAt(i*2)|(raw.charCodeAt(i*2+1)<<8);
-      floats[i]=(sample<<16>>16)/32768;
-     }
-     if(!this.analyser){
+    if(!response.ok)throw new Error('EMEL_VOICE_HTTP_'+response.status);
+    if(!response.headers.get('Content-Type')?.includes('audio/mpeg'))throw new Error('EMEL_AUDIO_FORMAT');
+    const bytes=await response.arrayBuffer();
+    clearTimeout(timeout);timeout=null;
+    if(token!==this.generation)return false;
+    const buffer=await this.context.decodeAudioData(bytes);
+    if(token!==this.generation)return false;
+    if(!this.analyser){
       this.analyser=this.context.createAnalyser();
       this.analyser.fftSize=512;
       this.analyser.connect(this.context.destination);
-     }
-     const source=this.context.createBufferSource();
-     source.buffer=buffer;source.connect(this.analyser);
-     const at=Math.max(nextAt,this.context.currentTime+.02);
-     nextAt=at+buffer.duration;
-     let settled=false,finish;
-     const played=new Promise(resolve=>{finish=()=>{if(settled)return;settled=true;resolve();};});
-     const entry={source,finish};
-     this.sources.add(entry);
-     source.onended=()=>{this.sources.delete(entry);finish();};
-     source.start(at);
-     playbacks.push(played);
-     if(!started){started=true;this.playing=true;this.onStart();}
-    };
-    try{
-     for(;;){
-      const {value,done}=await reader.read();
-      if(token!==this.generation)return false;
-      if(done)break;
-      pending+=decoder.decode(value,{stream:true});
-      let idx;
-      while((idx=pending.indexOf('\n'))>=0){
-       const line=pending.slice(0,idx).trim();pending=pending.slice(idx+1);
-       consume(line);
-      }
-     }
-     pending+=decoder.decode();
-     if(pending.trim())consume(pending.trim());
-    }finally{
-     try{reader.releaseLock()}catch(_){}
     }
-    clearTimeout(timeout);timeout=null;
-    if(!doneFlag)throw new Error('GEMINI_AUDIO_INCOMPLETE');
-    // Wait for the entire scheduled audio, not just last voice frame or HTTP body.
-    await Promise.all(playbacks);
+    const source=this.context.createBufferSource();
+    source.buffer=buffer;source.connect(this.analyser);
+    let finish;
+    const played=new Promise(resolve=>{finish=resolve;});
+    const entry={source,finish};this.sources.add(entry);
+    source.onended=()=>{this.sources.delete(entry);finish();};
+    source.start();
+    if(!started){started=true;this.playing=true;this.onStart();}
+    await played;
    }
    success=token===this.generation&&started;
    return success;
