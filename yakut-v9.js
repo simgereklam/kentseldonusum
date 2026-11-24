@@ -155,7 +155,7 @@ function handleYakutActivation(event){
 }
 document.addEventListener('click',handleYakutActivation,true);
 document.addEventListener('keydown',handleYakutActivation,true);
-function finishYakutSpeech(){
+function finishYakutSpeech(restartAfterGreeting=false){
  yakutAudioPlaying=false;
  speaking=false;processingSpeech=false;yakutSpeechEndedAt=Date.now();
  if(yakutGreetingInProgress){
@@ -163,7 +163,14 @@ function finishYakutSpeech(){
   moveTo(yakutRightX());
  }
  // Do not automatically offer another narrated answer after finishing one reply.
- if(listenEnabled&&!hidden)queueListen(50);
+ if(listenEnabled&&!hidden){
+  if(restartAfterGreeting){
+   releaseYakutMic();
+   micRestartAt=0;
+   talk.textContent='🎤 Mikrofon açılıyor';
+  }else if(recognition&&!micStarting)talk.textContent='🟢 Dinliyorum';
+  queueListen(0);
+ }
 }
 async function speak(text,deferPlayback=true,isHoldNotice=false){
  const prompt=prepareYakutSpokenText(String(text||'').trim());
@@ -171,6 +178,8 @@ async function speak(text,deferPlayback=true,isHoldNotice=false){
  if(!isHoldNotice)stopYakutAudioOutput();
  yakutCurrentPrompt=prompt;speaking=true;yakutAudioPlaying=false;
  const turn=++yakutVoiceGeneration;
+ const greeting=prompt===prepareYakutSpokenText(welcome);
+ let playbackAttempted=false;
  try{
   const voice=await yakutVoiceReady;
   if(turn!==yakutVoiceGeneration||hidden)return;
@@ -183,12 +192,13 @@ async function speak(text,deferPlayback=true,isHoldNotice=false){
    return;
   }
   queueListen(0);
+  playbackAttempted=true;
   const ok=await voice.speak(prompt);
-  if(ok&&prompt===prepareYakutSpokenText(welcome)){
+  if(ok&&greeting){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
-  }else if(!ok&&prompt===prepareYakutSpokenText(welcome)){yakutGreetingRequested=false;}
+  }else if(!ok&&greeting){yakutGreetingRequested=false;}
  }catch(error){console.warn('Yakut Gemini Aoede:',error);}
- finally{if(turn===yakutVoiceGeneration)finishYakutSpeech();}
+ finally{if(turn===yakutVoiceGeneration)finishYakutSpeech(greeting&&playbackAttempted);}
 }
 
 function yakutChatEndpoint(){
@@ -725,7 +735,7 @@ if(/^(?:riskli yapı nedir|riskli yapı hakkında bilgi ver|malik hakları neler
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutTurnInFlight)return;
 if(!weather&&!webRequest&&!officialResearch&&!/^yakut +/.test(command)&&!q.includes('?')&&
- !/(?:^| )(?:ne|nedir|nasıl|neden|niçin|nereye|nerede|nereden|nereyi|hangi|kim|kaç|mı|mi|mu|mü|anlat|açıkla|özetle|karşılaştır|hesapla|göster|söyle|bul|öğren|yaz|çevir|ver|yardım)(?: |$)/.test(command))return;
+ !/(?:^| )(?:ne|nedir|nasıl|neden|niçin|nereye|nerede|nereden|nereyi|hangi|kim|kaç|mı|mi|mu|mü|anlat|açıkla|özetle|karşılaştır|hesapla|göster(?:ir|ebilir)?|söyle(?:r|yebilir)?|bul(?:ur|abilir)?|öğren(?:mek)?|yaz(?:ar|abilir)?|çevir(?:ir|ebilir)?|ver(?:ir|ebilir)?|yardım|istiyorum|anlatır|anlatabilir|yapabilir|yapar|sorar|sorabilir|nelerdir)(?: |$)/.test(command))return;
 yakutTurnInFlight=true;
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
@@ -838,7 +848,8 @@ function startSpeech(){
  let hasInterim=false;
  let ignoredResults=0;
  let acceptedInput=false;
-  let timer;
+ let utteranceEnded=false;
+ let timer;
  const submit=()=>{
   clearTimeout(timer);
   // Web Speech may finalize only part of a sentence; keep the interim tail.
@@ -862,10 +873,11 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(finalText&&!hasInterim)timer=setTimeout(submit,150);
+  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,250);
+  else if(finalText&&!hasInterim)timer=setTimeout(submit,150);
  };
- rec.onspeechstart=()=>clearTimeout(timer);
- rec.onspeechend=waitForSentenceEnd;
+ rec.onspeechstart=()=>{utteranceEnded=false;clearTimeout(timer);};
+ rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
  rec.onresult=e=>{
   if(recognition!==rec||!listenEnabled||hidden)return;
   micFailureCount=0;emptyRecognitionCount=0;
