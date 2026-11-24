@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yakut — EMA Lightning Ücretsiz Kadın Sesi | Kumtaş İnşaat</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#18364d;background:#f3f7fb}*{box-sizing:border-box}*[hidden]{display:none!important}
+body{margin:0;padding:25px 14px}main{max-width:720px;margin:24px auto;background:#fff;border:1px solid #d7e2ec;border-radius:22px;padding:26px;box-shadow:0 12px 38px #12344a12}
+h1{font-size:26px;line-height:1.2;margin:0 0 10px}p{line-height:1.6;color:#50697b}button{border:0;border-radius:13px;padding:13px 17px;font-weight:700;cursor:pointer;color:white;background:#075e93;font-size:15px}
+button.secondary{background:#e5edf4;color:#18486d}.buttons{display:flex;gap:9px;flex-wrap:wrap;margin:18px 0}
+input[type=text]{width:100%;padding:14px;border:1px solid #a8bcd1;border-radius:12px;font-size:16px}
+input[type=range]{width:100%;accent-color:#08689e}#status{min-height:45px;margin:12px 0;color:#0b5378;font-weight:600;font-size:14px}
+#answer{border:1px solid #d9e6f0;background:#f7fafc;padding:16px;border-radius:14px;line-height:1.6;min-height:66px}
+audio{display:block;width:100%;margin:12px 0}small{color:#577185;display:block;line-height:1.65;margin-top:15px}
+a{color:#075e93}
+</style>
+</head>
+<body>
+<main>
+<h1>Yakut — EMA Lightning kadın sesi</h1>
+<p>Ücretsiz deneme: Ses modeli ve çalıştırma kodu yalnızca kendi GitHub sitemizden yüklenir. Ücretli ses API'si veya özel sunucu kullanılmaz. Ses telefonda ya da bilgisayarda üretilir.</p>
+<label for="speed"><strong>Konuşma hızı</strong> (0,85 daha yavaş; 1,15 daha hızlı)</label>
+<input id="speed" type="range" min="0.85" max="1.15" step="0.05" value="1">
+<div class="buttons">
+<button id="start">🔊 EMA kadın sesini dene</button>
+<button id="stop" class="secondary">■ Sus</button>
+</div>
+<label for="question"><strong>Yakut'a bir soru yaz</strong></label>
+<input id="question" type="text" placeholder="Örnek: Kentsel dönüşüm nedir?" autocomplete="off">
+<div class="buttons"><button id="ask">Sor ve aynı sesle dinle</button></div>
+<div id="status" role="status" aria-live="polite">Hazır. Kadın sesini denemek için düğmeye dokun.</div>
+<div id="answer" aria-live="polite">Bu sayfa, yeni EMA sesini test etmek içindir.</div>
+<strong>Üretilen ses</strong>
+<audio id="replay" controls playsinline preload="none" hidden></audio>
+<a id="source" href="#" target="_blank" rel="noopener noreferrer" hidden>Wikipedia kaynağını aç</a>
+<small>Test sınırları: İlk kullanımda model dosyaları yaklaşık 36–50 MB yüklenir; bu normal web sayfası trafiğidir, elle dosya indirmek gerekmez. Performans cihazdan cihaza değişir. Site dışı arama bu denemede sadece Wikipedia'dır. Mikrofon, canlı spor/hava durumu ve sınırsız sohbet henüz eklenmedi. Ana sitedeki 3D Yakut değiştirilmedi.</small>
+<small>Kaynak ve lisans: <a href="https://github.com/ozcancelik/ema-lightning-web">EMA Lightning browser sürümü</a>, <a href="https://huggingface.co/ozcancelik/ema-lightning-onnx">EMA ONNX modeli</a>. Apache-2.0 lisans ve telif bildirimleri model dosyalarının yanında saklanır.</small>
+</main>
+<script type="module" src="yakut-ema-deneme.js?v=ema-1"></script>
+</body>
+</html>
