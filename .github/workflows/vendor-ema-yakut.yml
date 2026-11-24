@@ -31,7 +31,10 @@ jobs:
           s=p.read_text()
           old='const ORT = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/";'
           assert old in s, 'EMA upstream runtime declaration changed'
-          p.write_text(s.replace(old, 'const ORT = new URL("./runtime/", import.meta.url).href;'))
+          updated=s.replace(old, 'const ORT = new URL("./runtime/", import.meta.url).href;')
+          updated=updated.replace('    ort.env.wasm.wasmPaths = ORT;', '    ort.env.wasm.wasmPaths = ORT;' + chr(10) + '    ort.env.wasm.numThreads = 1;' + chr(10) + '    ort.env.wasm.proxy = false;')
+          updated=updated.replace('const CACHE = "ema-models-v1";','const CACHE = "ema-models-mobile-v2";')
+          p.write_text(updated)
           PY
           cp /tmp/ema-lightning-web/models/meta.json assets/yakut/ema/models/meta.json
           for file in text.onnx sound.onnx decoder.onnx normalizer.wasm; do
@@ -44,6 +47,10 @@ jobs:
               curl --fail --location --retry 3 --output "assets/yakut/ema/models/$file" "https://huggingface.co/ozcancelik/ema-lightning-onnx/resolve/main/$file"
             fi
           done
+          mkdir -p assets/yakut/ema/models/fp16
+          curl --fail --location --retry 3 --output assets/yakut/ema/models/fp16/sound.onnx \
+            https://huggingface.co/ozcancelik/ema-lightning-onnx/resolve/main/fp16/sound.onnx
+          test "$(stat -c %s assets/yakut/ema/models/fp16/sound.onnx)" -gt 1000000
           mkdir -p /tmp/ema-npm
           cd /tmp/ema-npm
           npm pack onnxruntime-web@1.30.0 --silent

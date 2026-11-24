@@ -9,7 +9,7 @@ let ort = null;
 
 // Model files are kept in Cache Storage, so they download once instead of on every visit or settings change.
 // Bump the version when anything in models/ changes; older caches are deleted on the next load.
-const CACHE = "ema-models-v1";
+const CACHE = "ema-models-mobile-v2";
 
 async function bytes(url) {
   let cache = null;
@@ -191,6 +191,8 @@ export class EMA {
   static async load(backend = "webgpu", base = "models/", onProgress = () => {}, precision = "fp32") {
     ort = await import(ORT + (backend === "webgpu" ? "ort.webgpu.min.mjs" : "ort.wasm.min.mjs"));
     ort.env.wasm.wasmPaths = ORT;
+    ort.env.wasm.numThreads = 1;
+    ort.env.wasm.proxy = false;
     const meta = await (await fetch(base + "meta.json")).json();
     const opts = { executionProviders: backend === "webgpu" ? ["webgpu", "wasm"] : ["wasm"],
                    graphOptimizationLevel: "all" };

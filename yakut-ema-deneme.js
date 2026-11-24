@@ -23,14 +23,19 @@ async function prepare(){
  if(loading)return loading;
  loading=(async()=>{
   setStatus('EMA Lightning modeli kendi GitHub sitemizden hazırlanıyor…');
+  const forcedWasm=new URL(location.href).searchParams.get('emaTestMobile')==='1';
+  const mobile=forcedWasm||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||
+    (/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
-  const backend=(!ios&&navigator.gpu)?'webgpu':'wasm';
+  const backend=(!ios&&!forcedWasm&&navigator.gpu)?'webgpu':'wasm';
+  // Mobile: smaller fp16 sound graph; WASM is strictly one-threaded.
+  const precision=mobile?'fp16':'fp32';
   try{
-   engine=await EMA.load(backend,modelRoot,(part,progress)=>setStatus('EMA hazırlanıyor: '+part+' '+Math.round(progress*100)+'%'),'fp32');
+   engine=await EMA.load(backend,modelRoot,(part,progress)=>setStatus('EMA '+part+' hazırlanıyor: '+Math.round(progress*100)+'%'),precision);
   }catch(error){
    if(backend==='wasm')throw error;
-   setStatus('Ekran kartı modunda sorun var, işlemci moduna geçiliyor…');
-   engine=await EMA.load('wasm',modelRoot,(part,progress)=>setStatus('EMA hazırlanıyor: '+part+' '+Math.round(progress*100)+'%'),'fp32');
+   setStatus('Ekran kartı modu başarısız. İşlemci modu deneniyor…');
+   engine=await EMA.load('wasm',modelRoot,(part,progress)=>setStatus('EMA '+part+' hazırlanıyor: '+Math.round(progress*100)+'%'),precision);
   }
   setStatus('Kadın sesi hazır. Artık aynı sesle yanıt oluşturabilirim.');
   return engine;
@@ -46,9 +51,31 @@ async function speak(text){
  const chunks=[];
  try{
   setStatus('EMA metni sese dönüştürüyor…');
-  for await(const samples of model.stream(text,{speed,seed:32})){
+  // Keep mobile inference bounded. A whole multi-paragraph answer can request
+  // a large tensor in WASM and crash before the player receives any audio.
+  const phrases=String(text).trim().match(/[^.!?]+[.!?]*/gu)?.map(p=>p.trim()).filter(Boolean)||[];
+  const segments=[];
+  for(const phrase of phrases){
+   const words=phrase.split(/\s+/u);
+   let segment='';
+   for(const word of words){
+    if(segment&&segment.length+word.length+1>85){segments.push(segment);segment='';}
+    segment=segment?segment+' '+word:word;
+   }
+   if(segment)segments.push(segment);
+  }
+  if(!segments.length)throw Error('Konuşacak metin bulunamadı.');
+  for(const [index,segment] of segments.entries()){
    if(token!==playId)return;
-   if(samples.length)chunks.push(new Float32Array(samples));
+   setStatus('EMA sesi hazırlanıyor: '+(index+1)+'/'+segments.length);
+   try{
+    for await(const samples of model.stream(segment,{speed,seed:32+index})){
+     if(token!==playId)return;
+     if(samples.length)chunks.push(new Float32Array(samples));
+    }
+   }catch(error){
+    throw Error('EMA bellek/üretim hatası, cümle '+(index+1)+': '+(error?.message||error));
+   }
   }
   if(token!==playId)return;
   const total=chunks.reduce((n,p)=>n+p.length,0);
