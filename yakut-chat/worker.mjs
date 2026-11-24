@@ -267,6 +267,67 @@ async function geminiResearchAnswer(question, sources, env, searchQuery = questi
   return null;
 }
 
+const googleSearchMonth = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit'
+});
+
+export class GoogleSearchQuota {
+  constructor(ctx) {
+    this.storage = ctx.storage;
+  }
+
+  async fetch(request) {
+    if (request.method !== 'POST') return new Response(null, {status:405});
+    const month = googleSearchMonth.format(new Date());
+    const reserved = await this.storage.transaction(async tx => {
+      const previous = await tx.get('monthlyUsage');
+      const used = previous?.month === month ? previous.used : 0;
+      if (used >= 4500) return false;
+      await tx.put('monthlyUsage', {month, used:used + 1});
+      return true;
+    });
+    return new Response(null, {status:reserved ? 204 : 429});
+  }
+}
+
+async function googleSearchAnswer(question, searchQuery, env) {
+  if (!env.GEMINI_API_KEY || !env.GOOGLE_SEARCH_QUOTA ||
+      (cooldowns.get('google-search') || 0) > Date.now()) return null;
+  try {
+    const quota = env.GOOGLE_SEARCH_QUOTA;
+    const reservation = await quota.get(quota.idFromName('yakut-google-search'))
+      .fetch('https://quota.internal/reserve', {method:'POST'});
+    if (reservation.status !== 204) return null;
+    const model = env.GEMINI_SEARCH_MODEL || 'gemini-3.5-flash-lite';
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/'
+      + encodeURIComponent(model) + ':generateContent', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-goog-api-key':env.GEMINI_API_KEY},
+      body:JSON.stringify({
+        systemInstruction:{parts:[{text:'Sen Yakut, Kumtaş İnşaat asistanısın. Google Search ile güncel kaynakları doğrula. Türkçe en fazla iki kısa cümleyle cevap ver. Tahmini ve anlık ölçümü ayır. Doğrulayamadığın bilgiyi uydurma.'}]},
+        contents:[{role:'user',parts:[{text:JSON.stringify({question,searchQuery})}]}],
+        tools:[{google_search:{}}],
+        generationConfig:shortAnswerConfig(model,0.3)
+      }),
+      signal:AbortSignal.timeout(8500)
+    });
+    if (!response.ok) {
+      if ([400,403,404,429].includes(response.status))
+        cooldowns.set('google-search', Date.now() + retryDelay(response.headers.get('Retry-After')));
+      return null;
+    }
+    const data = await response.json();
+    const answer = completeGeminiAnswer(data);
+    const chunks = data?.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    const sources = (Array.isArray(chunks) ? chunks : [])
+      .map(({web}) => ({title:web?.title || '',url:web?.uri || ''}))
+      .filter(source => /^https:\/\//.test(source.url)).slice(0,5);
+    return answer && sources.length ? {answer,sources} : null;
+  } catch {
+    return null;
+  }
+}
+
 export default {
   async fetch(request, env) {
     // Public health probe works for uptime monitors without an Origin header.
@@ -274,6 +335,7 @@ export default {
       return Response.json({
         ok: true,
         gemini_configured: Boolean(env.GEMINI_API_KEY),
+        google_search_quota_configured: Boolean(env.GOOGLE_SEARCH_QUOTA),
         tavily_configured: Boolean(env.TAVILY_API_KEY),
         firecrawl_configured: Boolean(env.FIRECRAWL_API_KEY),
         tinyfish_configured: Boolean(env.TINYFISH_API_KEY),
@@ -401,14 +463,14 @@ export default {
         typeof payload.reference !== 'string' || !payload.reference.trim() || payload.reference.length > 1500) {
       return new Response(null, { status: 400, headers });
     }
-    // Off-site researched questions: Tavily retrieves, Gemini alone writes the answer.
-    // No Gemini Search tool, and no invented facts if sources are missing.
     if (payload.research === true) {
+      const searchQuery = weatherSearchQuery(payload.question, payload.weather);
+      const google = await googleSearchAnswer(payload.question, searchQuery, env);
+      if (google) return Response.json(google, {headers});
       if ((!env.TAVILY_API_KEY && !env.FIRECRAWL_API_KEY && !env.TINYFISH_API_KEY) || !env.GEMINI_API_KEY)
         return Response.json({error:'SEARCH_NOT_CONFIGURED',
           answer:'Güncel internet araması şu anda yapılandırılmamış.'}, {status:503, headers});
       try {
-        const searchQuery = weatherSearchQuery(payload.question, payload.weather);
         const sources = await externalResearch(searchQuery, env);
         if (!sources) return Response.json({error:'SEARCH_UNAVAILABLE',
           answer:'Güncel bilgiye şu anda erişemedim.'}, {status:503, headers});
