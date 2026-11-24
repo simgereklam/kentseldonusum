@@ -609,7 +609,7 @@ const yakutWeatherCities=['İstanbul','Ankara','İzmir','Bursa','Antalya','Adana
 let yakutWeatherCity='';
 let yakutWeatherPending='';
 function yakutWeatherRequest(command){
- const weather=/hava durumu|hava (?:nasıl|ne durumda|kaç derece)|hava soğuk|hava sıcak|yağmur (?:var mı|yağacak mı|yağar mı)|kar (?:var mı|yağacak mı|yağar mı)|şemsiye (?:alayım|gerek)/.test(command);
+ const weather=/hava durumu|hava (?:(?:şu an|şu anda|bugün|yarın) )?(?:nasıl|ne durumda|kaç derece)|hava soğuk|hava sıcak|yağmur (?:var mı|yağacak mı|yağar mı)|kar (?:var mı|yağacak mı|yağar mı)|şemsiye (?:alayım|gerek)/.test(command);
  const dayFollowup=/^(?:peki )?(?:yarın|bugün)(?: nasıl| ne olacak| nasıl olacak| peki)?$/.test(command);
  const rainFollowup=/^(?:peki )?(?:yarın |bugün )?(?:yağmur|kar) (?:var mı|yağacak mı|yağar mı)$/.test(command);
  const city=yakutWeatherCities.find(name=>{
@@ -848,11 +848,10 @@ function startSpeech(){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
     const wakeCommand=heard.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||heard;
-    if(yakutPageCommand(heard)||yakutPageCommand(wakeCommand)||
-       isYakutHomeCommand(heard)||isYakutHomeCommand(wakeCommand)||
-       /^(?:yakut|merhaba yakut|selam yakut|alo yakut)$/.test(heard)){
-     // Ignore wake words echoed from Yakut's loudspeaker.
-     return;
+    const destination=isYakutHomeCommand(wakeCommand)
+     ? 'index.html' : yakutPageCommand(wakeCommand);
+    if(destination){
+     releaseYakutMic();openYakutPage(destination);return;
     }
    }
    return;
