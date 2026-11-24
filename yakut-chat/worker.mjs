@@ -49,9 +49,6 @@ function shortAnswerConfig(model, temperature) {
   const config = {temperature, maxOutputTokens: 1024};
   if (model.startsWith('gemini-2.5-pro')) config.thinkingConfig = {thinkingBudget: 128};
   else if (model.startsWith('gemini-2.5-')) config.thinkingConfig = {thinkingBudget: 0};
-  else if (model.startsWith('gemini-3') && model.includes('flash')) {
-    config.thinkingConfig = {thinkingLevel: 'MINIMAL'};
-  }
   return config;
 }
 
