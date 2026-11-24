@@ -1,0 +1,44 @@
+name: Vendor free Yakut browser voice files
+on:
+  push:
+    paths:
+      - '.github/workflows/vendor-yakut-voice.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Download open static Piper dependencies into this GitHub repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/yakut/vendor assets/yakut/voice
+          git clone --depth=1 --filter=blob:none --sparse https://github.com/piper-tts/piper-tts.github.io.git /tmp/yakut-piper-static
+          git -C /tmp/yakut-piper-static sparse-checkout set vendor
+          cp -a /tmp/yakut-piper-static/vendor/. assets/yakut/vendor/
+          curl --fail --location --retry 3 --output assets/yakut/voice/ilkiz.onnx.json \
+            https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium/resolve/main/ilkiz.onnx.json
+          curl --fail --location --retry 3 --output assets/yakut/voice/ilkiz.onnx \
+            https://huggingface.co/ilkeraktuna/piper-tts-tr-ilkiz-medium/resolve/main/ilkiz.onnx
+          test -s assets/yakut/vendor/ort/ort.wasm.min.js
+          test -s assets/yakut/vendor/phonemize/piper_phonemize.js
+          test -s assets/yakut/voice/ilkiz.onnx.json
+          test "$(stat -c %s assets/yakut/voice/ilkiz.onnx)" -gt 1000000
+      - name: Commit vendored voice files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/yakut
+          if git diff --cached --quiet; then
+            echo 'Voice assets already committed.'
+          else
+            git commit -m 'vendor(yakut): host browser-only Turkish voice assets in this repo'
+            git push origin HEAD:main
+          fi
