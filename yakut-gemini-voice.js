@@ -55,20 +55,25 @@ class YakutGeminiVoice{
   let started=false,success=false;
   let timeout=null;
   try{
-   for(const phrase of parts){
-    if(token!==this.generation)return false;
-    timeout=setTimeout(()=>controller.abort(),65000);
+   const load=async phrase=>{
     const response=await fetch(new URL('/live',this.endpoint),{
      method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({readAloud:phrase}),signal:controller.signal
+     body:JSON.stringify({readAloud:phrase}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(65000)])
     });
     if(!response.ok)throw new Error('EMEL_VOICE_HTTP_'+response.status);
     if(!response.headers.get('Content-Type')?.includes('audio/mpeg'))throw new Error('EMEL_AUDIO_FORMAT');
     const bytes=await response.arrayBuffer();
-    clearTimeout(timeout);timeout=null;
+    if(token!==this.generation)return null;
+    return this.context.decodeAudioData(bytes);
+   };
+   let next=load(parts[0]).then(buffer=>({buffer}),error=>({error}));
+   for(let i=0;i<parts.length;i++){
     if(token!==this.generation)return false;
-    const buffer=await this.context.decodeAudioData(bytes);
-    if(token!==this.generation)return false;
+    const result=await next;
+    if(result.error)throw result.error;
+    const buffer=result.buffer;
+    if(token!==this.generation||!buffer)return false;
+    if(i+1<parts.length)next=load(parts[i+1]).then(buffer=>({buffer}),error=>({error}));
     if(!this.analyser){
       this.analyser=this.context.createAnalyser();
       this.analyser.fftSize=512;
