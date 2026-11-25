@@ -123,7 +123,7 @@ function onYakutSoundReady(){
   yakutGreetingRequested=true;
   if(model&&Math.abs(posX-leftGreetingX())>12)moveTo(leftGreetingX());
   yakutGreetingInProgress=true;
-  pendingSpeechGesture=phase==='reacting'?null:findYakutGesture('greet_01');
+  pendingSpeechGesture=findYakutGesture('greet_01');
   speak(welcome);return;
  }
  if(yakutAddressPending&&!speaking){
@@ -1092,7 +1092,7 @@ try{greetedBefore=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
 // Every full load starts from the same left-hand position, including refresh.
 // Walk to the center/right only after the initial greeting when requested.
 posX=leftGreetingX();
-targetX=posX;model.rotation.y=0;phase='reacting';play('greet_01',true);
+targetX=posX;model.rotation.y=0;phase='idle';play('wait');
 positionStage();
 startYakutSession();
 if(audioUnlocked)queueListen(0);
@@ -1140,7 +1140,7 @@ if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;pl
 positionStage();
 }else if(phase==='idle'&&!reduced){
 walkTimer+=dt;
-if(walkTimer>=22&&!speaking&&!processingSpeech){
+if(walkTimer>=22&&!speaking&&!processingSpeech&&(getYakutCurrentPage()!=='index.html'||yakutGreetingRequested)){
  walkTimer=0;
  moveTo(posX>centerAnswerX()?leftGreetingX():yakutRightX());
 }
