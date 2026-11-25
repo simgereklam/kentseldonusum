@@ -239,7 +239,7 @@ function react(clip,text,placement='left'){
  if(!ready)return;
  if(model)moveTo(centerAnswerX());
  phaseTime=0;
- pendingSpeechGesture=findYakutGesture(clip);
+ pendingSpeechGesture=null;
  speak(text);
 }
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
@@ -1118,19 +1118,13 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 if(!hidden){
 mixer.update(dt);
 gestureTime+=dt;
-gestureLevel=THREE.MathUtils.damp(gestureLevel,yakutAudioPlaying&&!reduced&&phase==='idle'?1:0,8,dt);
+gestureLevel=0;
 for(const {bone,pose,side} of speakingArms){
  pose.copy(bone.quaternion);
  const angle=side*gestureLevel*.11*Math.sin(gestureTime*3+side);
  bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
 }
-if(yakutAudioPlaying && phase==='idle'){
- yakutGestureClock+=dt;
- if(yakutGestureClock>3.5){
-  yakutGestureClock=0;
-  const gestures=['agree','greet_02'].filter(n=>clips[n]);if(gestures.length){phase='reacting';play(gestures[Math.floor(Math.random()*gestures.length)],true)}
- }
-}
+// Keep the authored wait pose during speech; opening greeting remains explicit.
 if(phase==='walking'){
 const step=(innerWidth<650?65:105)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
