@@ -1,0 +1,58 @@
+name: Deploy Imar API to Cloud Run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  cloud-run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Google Cloud deployment configuration
+        env:
+          PROJECT: ${{ vars.IMAR_GCP_PROJECT_ID }}
+          REGION: ${{ vars.IMAR_GCP_REGION }}
+          WIF: ${{ vars.IMAR_GCP_WIF_PROVIDER }}
+          SA: ${{ vars.IMAR_GCP_SERVICE_ACCOUNT }}
+        run: |
+          for value in "$PROJECT" "$REGION" "$WIF" "$SA"; do
+            if [ -z "$value" ]; then
+              echo "::error::Missing one or more IMAR_GCP_* GitHub repository variables"
+              exit 1
+            fi
+          done
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.IMAR_GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.IMAR_GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Deploy imar container from source
+        env:
+          PROJECT: ${{ vars.IMAR_GCP_PROJECT_ID }}
+          REGION: ${{ vars.IMAR_GCP_REGION }}
+        run: |
+          gcloud run deploy kumtas-imar-backend \
+            --project "$PROJECT" \
+            --region "$REGION" \
+            --source ./imar-api \
+            --memory 4Gi \
+            --cpu 2 \
+            --concurrency 1 \
+            --max-instances 1 \
+            --min-instances 0 \
+            --timeout 180 \
+            --allow-unauthenticated \
+            --set-secrets IMAR_GATEWAY_SECRET=kumtas-imar-gateway:latest \
+            --quiet
