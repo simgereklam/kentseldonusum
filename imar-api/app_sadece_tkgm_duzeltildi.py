@@ -12,7 +12,6 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
 from pydantic import BaseModel
 
@@ -400,27 +399,24 @@ async def genel_form_doldur(context, page, req: SorguIstegi):
                 pass
 
     if req.mahalle:
-        hedef_mahalle = tr_normalize(req.mahalle)
-        for sel in await page.locator("select").all():
-            if not await sel.is_visible() or not await sel.is_enabled():
-                continue
-            opsiyonlar = await sel.locator("option").all_text_contents()
-            etiket = next(
-                (opt for opt in opsiyonlar if tr_normalize(opt) == hedef_mahalle),
-                None,
-            )
-            if etiket is None:
-                etiket = next(
-                    (opt for opt in opsiyonlar if hedef_mahalle in tr_normalize(opt)),
-                    None,
-                )
-            if etiket is not None:
+        select_sayisi = await page.locator("select").count()
+        for i in range(select_sayisi):
+            sel = page.locator("select").nth(i)
+            if await sel.is_visible():
                 try:
-                    await sel.select_option(label=etiket.strip())
-                except PlaywrightTimeoutError:
-                    continue
-                await page.wait_for_timeout(1000)
-                break
+                    await sel.select_option(label=str(req.mahalle))
+                    await page.wait_for_timeout(1000)
+                    break
+                except Exception:
+                    try:
+                        opsiyonlar = await sel.locator("option").all_inner_texts()
+                        for opt in opsiyonlar:
+                            if tr_normalize(req.mahalle) in tr_normalize(opt):
+                                await sel.select_option(label=opt.strip())
+                                await page.wait_for_timeout(1000)
+                                break
+                    except Exception:
+                        pass
 
     birlesik_deger = f"{req.ada}/{req.parsel}".strip("/")
     birlesik_seciciler = [
@@ -510,7 +506,6 @@ async def parsel_sorgula(req: SorguIstegi):
                 "Chrome/131.0.0.0 Safari/537.36"
             ),
         )
-        context.set_default_timeout(5000)
         page = await context.new_page()
 
         try:
