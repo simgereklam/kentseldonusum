@@ -1,0 +1,54 @@
+name: Imar Playwright Manual Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Sorgu kaynagi: Kadikoy veya TKGM"
+        required: true
+        type: choice
+        default: belediye
+        options:
+          - belediye
+          - tkgm
+
+permissions:
+  contents: read
+
+jobs:
+  imar-sorgu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: imar-api
+    env:
+      IMAR_SOURCE: ${{ inputs.source }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: imar-api/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run unchanged automation and capture images
+        run: python actions_smoke_test.py
+
+      - name: Upload test results even if query fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: imar-${{ inputs.source }}-${{ github.run_number }}
+          path: imar-api/test-outputs/
+          retention-days: 3
+          if-no-files-found: warn
