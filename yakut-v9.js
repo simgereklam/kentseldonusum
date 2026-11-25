@@ -726,6 +726,28 @@ function beginYakutAudioPlayback(){
  }
  yakutAudioPlaying=true;
 }
+let yakutSocialLast={};
+function yakutSocialReply(command){
+ const t=command.replace(/^yakut\s+/,'').replace(/\s+yakut$/,'').trim();
+ const rules=[
+ [/^(?:(?:çok|çok çok) )?(?:teşekkür(?:ler| ederim| ediyoruz)?|sağ ?ol(?:un)?|çok sağ ?ol(?:un)?|eyvallah)$/,['Rica ederim, ne demek.','Her zaman yardımcı olmaktan mutluluk duyarım.','Rica ederim, her zaman buradayım.']],
+ [/^(?:nasılsın|nasılsınız|ne haber|naber)$/,['İyiyim, teşekkür ederim. Siz nasılsınız?']],
+ [/^(?:günaydın|hayırlı sabahlar)$/,['Günaydın, güzel bir gün geçirmenizi dilerim.']],
+ [/^(?:iyi akşamlar|hayırlı akşamlar)$/,['İyi akşamlar, hoş geldiniz.']],
+ [/^(?:aferin(?: sana)?|bravo|harikasın|çok iyisin)$/,['Çok teşekkür ederim.','Teşekkür ederim, çok naziksiniz.']],
+ [/^(?:beni duyuyor musun|sesimi duyuyor musun|beni dinliyor musun)$/,['Evet, sizi dinliyorum.']],
+ [/^(?:bir dakika bekle|biraz bekle|bir saniye bekle)$/,['Tabii, bekliyorum.']],
+ [/^(?:anlamadım|anlayamadım|daha anlaşılır anlat)$/,['Tabii, hangi kısmı daha anlaşılır anlatmamı istersiniz?']],
+ [/^(?:görüşürüz|hoşça kal(?:ın)?|iyi geceler|kendine iyi bak)$/,['Görüşmek üzere, kendinize iyi bakın.']],
+ [/^(?:yardım istemiyorum|bir şey istemiyorum|gerek yok)(?: teşekkürler)?$/,['Peki, ihtiyacınız olduğunda buradayım.']]
+ ];
+ for(let i=0;i<rules.length;i++){
+  const [pattern,replies]=rules[i];if(!pattern.test(t))continue;
+  const next=((yakutSocialLast[i]??-1)+1)%replies.length;
+  yakutSocialLast[i]=next;return replies[next];
+ }
+ return '';
+}
 async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
@@ -743,6 +765,13 @@ const motionMap={'dans et':'dance_01','alkışla':'clap','gül':'laugh_02','üz�
 if(model&&/^(?:yürü|sağa yürü|sola yürü|ortaya gel)$/.test(motionCommand)){moveTo(motionCommand==='ortaya gel'?centerAnswerX():motionCommand==='sola yürü'?leftGreetingX():motionCommand==='sağa yürü'?yakutRightX():posX>centerAnswerX()?leftGreetingX():yakutRightX());return;}
 if(model&&Object.hasOwn(motionMap,motionCommand)&&clips[motionMap[motionCommand]]){phase=motionMap[motionCommand]==='wait'?'idle':'reacting';play(motionMap[motionCommand],phase==='reacting');return;}
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
+const socialReply=yakutSocialReply(spokenCommand);
+if(socialReply){
+ if(/^(?:yardım istemiyorum|bir şey istemiyorum|gerek yok)/.test(spokenCommand)){
+  yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;
+ }
+ react('agree',socialReply);return;
+}
 if(yakutIsAddressCommand(spokenCommand)){
  rememberYakutTurn(q,yakutContact.address);
  react('agree',yakutContact.address);return;
