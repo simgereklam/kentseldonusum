@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Verify Modal deployed endpoint
         env:
-          MODAL_API_URL: https://kumtasinsaatmuraterdem--kumtas-imar-backend-api.us-east.modal.run
+          MODAL_API_URL: https://kumtasinsaatmuraterdem--kumtas-imar-backend-api.us-east.modal.runn
         run: |
           python - <<'PY'
           import os, json, urllib.request, urllib.error
