@@ -27,6 +27,13 @@ async def health():
 async def protection(request: Request, call_next):
     if request.method == "OPTIONS":
         return await call_next(request)
+    # Gateway requests use a server-side shared secret; never expose it in browser JS.
+    secret = os.getenv("IMAR_GATEWAY_SECRET", "")
+    if not secret:
+        return JSONResponse(status_code=503, content={"detail": "Backend gateway secret is not configured"})
+    import hmac
+    if not hmac.compare_digest(request.headers.get("x-imar-gateway-key", ""), secret):
+        return JSONResponse(status_code=403, content={"detail": "Gateway authentication required"})
     if request.url.path != "/sorgula" or request.method != "POST":
         return await call_next(request)
     origin = request.headers.get("origin")
