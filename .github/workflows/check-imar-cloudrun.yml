@@ -1,0 +1,54 @@
+name: Validate Cloud Run Imar Container
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/check-imar-cloudrun.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  container-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout unchanged Imar code
+        uses: actions/checkout@v4
+      - name: Build Cloud Run Docker image
+        run: docker build -t kumtas-imar-cloudrun-smoke ./imar-api
+      - name: Start protected API
+        run: |
+          docker run -d --rm --name imar-smoke \
+            -e PORT=8080 -e IMAR_GATEWAY_SECRET=local-test-not-real-secret \
+            -p 127.0.0.1:18080:8080 kumtas-imar-cloudrun-smoke
+      - name: Verify health and unauthorized access blocked
+        run: |
+          python - <<'PY'
+          import json, time, urllib.request, urllib.error
+          url='http://127.0.0.1:18080'
+          for i in range(35):
+              try:
+                  with urllib.request.urlopen(url+'/health', timeout=4) as r:
+                      obj=json.load(r)
+                      assert r.status==200 and obj['ok'] is True,obj
+                      print('Docker Cloud Run image /health: OK')
+                      break
+              except Exception:
+                  if i==34: raise
+                  time.sleep(2)
+          payload=json.dumps(dict(kaynak='belediye',ilce='Kadıköy',mahalle='Erenköy',ada='1402',parsel='34')).encode()
+          req=urllib.request.Request(url+'/sorgula',data=payload,headers={'Content-Type':'application/json'},method='POST')
+          try:
+              urllib.request.urlopen(req,timeout=10)
+          except urllib.error.HTTPError as ex:
+              assert ex.code==403, f'Expected private API 403 without secret, got {ex.code}'
+              print('Unauthenticated API request rejected: OK')
+          else:
+              raise AssertionError('Unprotected backend')
+          PY
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs --tail 80 imar-smoke || true
