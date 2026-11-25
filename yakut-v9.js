@@ -7,7 +7,7 @@ if(location.protocol==='http:'&&/^(?:www\.)?xn--kentseldnm-lcb7ea99k\.com\.tr$/i
  return;
 }
 if(window.__yakutV9)return;window.__yakutV9=true;
-const url=new URL('yakut_v10.glb',document.currentScript.src).href;
+const url=new URL('yakut_v10.glb?v=39b508a',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 // Start downloading the model while Three.js loads.
 const yakutModelData=fetch(url,{priority:'high'}).then(response=>{
@@ -86,7 +86,7 @@ function show(text,ms=7000){}
 function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
 const next=clips[name];if(current===next&&next.isRunning()&&!once)return true;
 if(current&&current!==next)current.fadeOut(.18);
-next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed*(name.startsWith('YAKUT_')?1:.8)).setEffectiveWeight(1).fadeIn(.22).play();
+next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
 let audioUnlocked=false,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
