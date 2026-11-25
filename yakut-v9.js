@@ -180,7 +180,7 @@ function finishYakutSpeech(restartAfterGreeting=false){
   queueListen(0);
  }
 }
-async function speak(text,deferPlayback=true,isHoldNotice=false){
+async function speak(text,deferPlayback=true,isHoldNotice=false,walkingIntro=false){
  const prompt=prepareYakutSpokenText(String(text||'').trim());
  if(!prompt)return;
  if(!isHoldNotice)stopYakutAudioOutput();
@@ -201,6 +201,13 @@ async function speak(text,deferPlayback=true,isHoldNotice=false){
   }
   queueListen(0);
   playbackAttempted=true;
+  if(walkingIntro&&phase==='walking'){
+   const intro='Tabii, size hemen bilgi vereyim.';
+   yakutCurrentPrompt=intro;
+   await voice.speak(intro);
+   if(turn!==yakutVoiceGeneration||hidden)return;
+   yakutCurrentPrompt=prompt;
+  }
   const ok=await voice.speak(prompt,{
    chunkSize:/telefon numaramız/i.test(prompt)?450:180,
    beforePlayback:!greeting&&model?()=>new Promise(resolve=>{
@@ -247,7 +254,7 @@ function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
  return clips[preferred]?preferred:(clips.agree?'agree':'wait');
 }
-function react(clip,text,placement='left'){
+function react(clip,text,placement='left',pageNarration=false){
  if(!ready)return;
  if(model){
   const longAnswer=String(text||'').trim().split(/\s+/).length>=35;
@@ -259,7 +266,7 @@ function react(clip,text,placement='left'){
  }
  phaseTime=0;
  pendingSpeechGesture=null;
- speak(text);
+ speak(text,true,false,pageNarration&&phase==='walking');
 }
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 const yakutPages={
@@ -424,7 +431,7 @@ function yakutPageSpeech(page){
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage().replace(/\.html$/,'');
  const localText=yakutPageSpeech(page);
- if(localText)react('agree',localText,'center');
+ if(localText)react('agree',localText,'center',true);
 }
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
@@ -786,7 +793,7 @@ if(yakutParcelStep==='ilçe'&&handleYakutParcel(command))return;
 if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command)){react('agree',yakutScenarioAnswer(q));return;}
 if(yakutWantsCompanyInfo(command)){
  const about=yakutPageSpeech('kurumsal')||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
- react('agree',about.replace(/^Kurumsal sayfasındayız\.\s*/i,''),'center');return;
+ react('agree',about.replace(/^Kurumsal sayfasındayız\.\s*/i,''),'center',true);return;
 }
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
@@ -819,7 +826,7 @@ if(handleYakutOfferAnswer(command))return;
 const localPage=yakutPageCommand(spokenCommand.replace(/(?: sayfası(?:nı)?)? (?:hakkında bilgi ver|hakkında bilgi|anlat|özetle)$/, ''));
 const recording=localPage?.replace(/\.html$/,'');
 if(recording&&yakutPageSpeech(recording)){
- react('agree',yakutPageSpeech(recording),'center');return;
+ react('agree',yakutPageSpeech(recording),'center',true);return;
 }
 const localContact=yakutContactRequest(command);
 if(localContact){
