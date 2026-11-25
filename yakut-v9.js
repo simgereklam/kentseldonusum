@@ -26,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=emel-speed-20261124',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=emel-arrival-20261125',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -165,6 +165,7 @@ document.addEventListener('keydown',handleYakutActivation,true);
 function finishYakutSpeech(restartAfterGreeting=false){
  yakutAudioPlaying=false;
  speaking=false;processingSpeech=false;yakutSpeechEndedAt=Date.now();
+ releaseYakutMic();micRestartAt=0;
  if(yakutGreetingInProgress){
   yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();
   moveTo(yakutRightX());
@@ -200,7 +201,18 @@ async function speak(text,deferPlayback=true,isHoldNotice=false){
   }
   queueListen(0);
   playbackAttempted=true;
-  const ok=await voice.speak(prompt);
+  const ok=await voice.speak(prompt,{
+   chunkSize:/telefon numaramız/i.test(prompt)?450:180,
+   beforePlayback:!greeting&&model?()=>new Promise(resolve=>{
+    const check=()=>{
+     if(turn!==yakutVoiceGeneration||hidden||phase!=='walking'){
+      if(turn===yakutVoiceGeneration&&!hidden&&model)model.rotation.y=0;
+      resolve();return;
+     }
+     setTimeout(check,25);
+    };check();
+   }):undefined
+  });
   if(ok&&greeting){
    try{sessionStorage.setItem('yakutGreeted','1')}catch(_){}
   }else if(!ok&&greeting){yakutGreetingRequested=false;}
@@ -237,7 +249,7 @@ function findYakutGesture(preferred){
 }
 function react(clip,text,placement='left'){
  if(!ready)return;
- if(model)moveTo(centerAnswerX());
+ if(model&&(phase!=='walking'||Math.abs(targetX-centerAnswerX())>1))moveTo(centerAnswerX());
  phaseTime=0;
  pendingSpeechGesture=null;
  speak(text);
@@ -417,7 +429,7 @@ function speakYakutPhone(number){
     hundreds===1?'yüz':hundreds>1?yakutSpokenDigits[hundreds]+' yüz':'',
     tens[Math.floor(remainder/10)],remainder%10?yakutSpokenDigits[remainder%10]:''];
    return words.filter(Boolean).join(' ')||'sıfır';
-  }).join(', ');
+  }).join(' ');
 }
 function prepareYakutSpokenText(text){
  for(const number of Object.values(yakutPhoneNumbers)){
@@ -430,8 +442,8 @@ function prepareYakutSpokenText(text){
 }
 const yakutContact={
  address:'Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, bina numarası iki yüz kırk beş, A harfi, Bahçelievler, İstanbul.',
- landline:'Ofis sabit telefon numaramız. '+yakutPhoneNumbers.office+'.',
- mobile:'WhatsApp cep telefonu numaramız. '+yakutPhoneNumbers.whatsapp+'.',
+ landline:'Ofis sabit telefon numaramız '+yakutPhoneNumbers.office+'.',
+ mobile:'WhatsApp cep telefonu numaramız '+yakutPhoneNumbers.whatsapp+'.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
 };
 function yakutIsAddressCommand(command){
@@ -477,7 +489,7 @@ function yakutPhoneAnswer(command){
   .replace(/ (?:kaç|ne|nedir|hangisi|söyle(?:r misin(?:iz)?|yebilir misin(?:iz)?)?|ver(?:ir misin(?:iz)?|ebilir misin(?:iz)?)?|istiyorum|alabilir miyim|lazım|lütfen)(?: lütfen)?$/,'');
  const office='(?:ofis(?:in|iniz(?:in)?|imiz(?:in)?)?|sabit)';
  const mobile='(?:whats ?app(?: ın|ın)?|cep|mobil)';
- const phone='(?:telefon(?:u|unu|unuz|unuzu|umuz|umuzu)?|numara(?:sı|sını|nız|nızı|mız|mızı|larınız|larını)?|hat(?:tı|tını|tınız)?)';
+ const phone='(?:telefon(?:u|unu|unuz|unuzu|umuz|umuzu|lar|ları|larını|larınız|larınızı|larımız|larımızı)?|numara(?:sı|sını|nız|nızı|mız|mızı|lar|ları|larınız|larınızı|larını)?|hat(?:tı|tını|tınız)?)';
  const channel='(?:'+office+'|'+mobile+')';
  const line=new RegExp('^(?:'+channel+' |iletişim )*(?:'+phone+' )*'+phone+'$');
  const parts=request.split(/ (?:ve|ile) /);
@@ -692,6 +704,8 @@ const now=Date.now();
 if(command===lastUserUtterance &&
  (now-lastUserUtteranceAt<7000||now-yakutSpeechEndedAt<2500))return;
 lastUserUtterance=command;lastUserUtteranceAt=now;
+ yakutAddressPending=false;
+ try{sessionStorage.removeItem('yakutAddressPending')}catch(_){}
 const motionCommand=command.replace(/^yakut\s+/,'').replace(/\s+lütfen$/,'');
 const motionMap={'dans et':'dance_01','alkışla':'clap','gül':'laugh_02','üzül':'frustrated_01','selam ver':'greet_01','el salla':'greet_02','eğil':'bow','veda et':'wave_goodbye_02','onayla':'agree','beklemede kal':'wait','tüm hareketleri göster':'YAKUT_Tam_Canli_Akis','yüz hareketlerini göster':'YAKUT_Yuz_Goz_Dudak'};
 if(model&&/^(?:yürü|sağa yürü|sola yürü|ortaya gel)$/.test(motionCommand)){moveTo(motionCommand==='ortaya gel'?centerAnswerX():motionCommand==='sola yürü'?leftGreetingX():motionCommand==='sağa yürü'?yakutRightX():posX>centerAnswerX()?leftGreetingX():yakutRightX());return;}
@@ -755,6 +769,7 @@ if(/^(?:riskli yapı nedir|riskli yapı hakkında bilgi ver|malik hakları neler
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutTurnInFlight)return;
 yakutTurnInFlight=true;
+ if(model)moveTo(centerAnswerX());
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
@@ -878,7 +893,7 @@ function startSpeech(){
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
   if(!isYakutOwnVoice(candidate)&&navigateFromRecognition(candidate))return true;
   if(speaking||processingSpeech)return false;
-  if(Date.now()-yakutSpeechEndedAt<2500&&isYakutOwnVoice(candidate))return false;
+  if(Date.now()-yakutSpeechEndedAt<3500&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
   releaseYakutMic();
   Promise.resolve(handle(candidate)).catch(error=>{
@@ -891,8 +906,8 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,250);
-  else if(finalText&&!hasInterim)timer=setTimeout(submit,150);
+  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,180);
+  else if(finalText&&!hasInterim)timer=setTimeout(submit,120);
  };
  rec.onspeechstart=()=>{utteranceEnded=false;clearTimeout(timer);};
  rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
