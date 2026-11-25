@@ -25,7 +25,7 @@ async def health():
 
 @app.middleware("http")
 async def protection(request: Request, call_next):
-    if request.method == "OPTIONS":
+    if request.method == "OPTIONS" or (request.method == "GET" and request.url.path == "/health"):
         return await call_next(request)
     # Gateway requests use a server-side shared secret; never expose it in browser JS.
     secret = os.getenv("IMAR_GATEWAY_SECRET", "")
