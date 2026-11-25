@@ -84,7 +84,8 @@ let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,d
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){}
 function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
-const next=clips[name];if(current&&current!==next)current.fadeOut(.22);
+const next=clips[name];if(current===next&&next.isRunning())return true;
+if(current&&current!==next)current.fadeOut(.18);
 next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
@@ -122,7 +123,7 @@ function onYakutSoundReady(){
   yakutGreetingRequested=true;
   if(model)moveTo(leftGreetingX());
   yakutGreetingInProgress=true;
-  pendingSpeechGesture=findYakutGesture('greet_01');
+  pendingSpeechGesture=phase==='reacting'?null:findYakutGesture('greet_01');
   speak(welcome);return;
  }
  if(yakutAddressPending&&!speaking){
@@ -228,7 +229,7 @@ function completeYakutOpening(){
  phase='idle';play('wait');
  speak(welcome);
 }
-function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1.12);else{targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1);else{targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
@@ -1084,14 +1085,27 @@ model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false;
  if(o.morphTargetDictionary&&!face&&Object.keys(o.morphTargetDictionary).some(n=>/jawOpen|viseme|blink/i.test(n)))face=o;
 });
 scene.add(model);mixer=new THREE.AnimationMixer(model);
-gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
-mixer.addEventListener('finished',()=>{if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
+gltf.animations.forEach(source=>{
+ const c=source.clone();
+ // The screen position is controlled by positionStage; remove horizontal root travel.
+ if(c.name==='walk')for(const t of c.tracks){
+  if(/hips.*\.position$/i.test(t.name)&&t.getValueSize()===3){
+   const x=t.values[0],z=t.values[2];
+   for(let i=0;i<t.values.length;i+=3){t.values[i]=x;t.values[i+2]=z;}
+   // Blend the loop seam in the root height to avoid a vertical snap.
+   const last=t.values.length-2,delta=t.values[last]-t.values[1];
+   for(let i=1;i<t.values.length;i+=3)t.values[i]-=delta*(i-1)/(t.values.length-3||1);
+  }
+ }
+ clips[c.name]=mixer.clipAction(c);
+});
+mixer.addEventListener('finished',event=>{if(event.action!==current)return;if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 let greetedBefore=false;
 try{greetedBefore=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
 // Every full load starts from the same left-hand position, including refresh.
 // Walk to the center/right only after the initial greeting when requested.
 posX=leftGreetingX();
-targetX=posX;model.rotation.y=0;phase='idle';play('wait');
+targetX=posX;model.rotation.y=0;phase='reacting';play('greet_01',true);
 positionStage();
 startYakutSession();
 if(audioUnlocked)queueListen(0);
@@ -1131,7 +1145,7 @@ if(yakutAudioPlaying && phase==='idle'){
  }
 }
 if(phase==='walking'){
-const step=(innerWidth<650?105:175)*dt;
+const step=(innerWidth<650?65:105)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
  if(pendingSpeechGesture&&yakutAudioPlaying){const gesture=pendingSpeechGesture;pendingSpeechGesture=null;play(gesture,true);phase='reacting'}
  if(yakutIsGreetingWalking)finishYakutGreetingWalk();
