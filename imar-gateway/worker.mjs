@@ -37,20 +37,37 @@ function upstreamUrl(env, name) {
 async function send(env, name, pathname, request, body, timeoutMs) {
   const base = upstreamUrl(env, name);
   if (!base) throw Error("Backend not configured");
-  const url = base + pathname;
+  const origin = new URL(base).origin;
+  let endpoint = base + pathname;
+  let method = request.method;
+  let requestBody = body;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, {
-      method: request.method, signal: controller.signal,
-      headers: {
-        "content-type": "application/json",
-        "x-imar-gateway-key": env.IMAR_GATEWAY_SECRET,
-        // No direct user-provided destination URL is forwarded.
-      },
-      body,
-      redirect: "error",
-    });
+    // Modal uses HTTP 303 after ~150 seconds to poll its pending web result.
+    // Follow only same-origin 303 redirects; never forward our private key elsewhere.
+    for (let redirects = 0; redirects <= 5; redirects++) {
+      const response = await fetch(endpoint, {
+        method, signal: controller.signal,
+        headers: {
+          "content-type": "application/json",
+          "x-imar-gateway-key": env.IMAR_GATEWAY_SECRET,
+        },
+        body: requestBody,
+        redirect: "manual",
+      });
+      if (response.status !== 303) return response;
+      const location = response.headers.get("location");
+      if (!location) throw Error("Backend redirected without destination");
+      const next = new URL(location, endpoint);
+      if (next.protocol !== "https:" || next.origin !== origin) {
+        throw Error("Unsafe backend redirect refused");
+      }
+      endpoint = next.href;
+      method = "GET";
+      requestBody = undefined;
+    }
+    throw Error("Too many backend redirects");
   } finally { clearTimeout(timer); }
 }
 function sanitize(body) {
@@ -100,7 +117,7 @@ export default {
       for (const provider of ordered) {
         if ((offlineUntil.get(provider)||0) > Date.now()) continue;
         try {
-          const response = await send(env,provider,"/sorgula",request,JSON.stringify(params),90000);
+          const response = await send(env,provider,"/sorgula",request,JSON.stringify(params),230000);
           if (response.status >= 500 || [401, 402, 403, 408, 425, 429].includes(response.status)) {
             lastError = provider + ": HTTP " + response.status;
             offlineUntil.set(provider,Date.now()+20000);
