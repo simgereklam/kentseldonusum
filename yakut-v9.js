@@ -449,7 +449,7 @@ function prepareYakutSpokenText(text){
  return text;
 }
 const yakutContact={
- address:'Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, bina numarası iki yüz kırk beş bölü A, Bahçelievler, İstanbul.',
+ address:'Merkez adresimiz Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, numara iki yüz kırk beş bölü A, Bahçelievler, İstanbul.',
  landline:'Ofis sabit telefon numaramız '+yakutPhoneNumbers.office+'.',
  mobile:'WhatsApp cep telefonu numaramız '+yakutPhoneNumbers.whatsapp+'.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
@@ -476,7 +476,10 @@ function refreshYakutContactPhones(){
  return yakutContactRead;
 }
 function yakutIsAddressCommand(command){
- return /^(?:(?:lütfen|bana|bize|ofis|ofisin|şirketin|firma|firmanın|kumtaş|kumtaş inşaat(?: ın)?) )*(?:adres|adresi|adresini|adresiniz|adresinizi|adresinizin|adresimiz|adres bilgisi)(?: (?:ne|nedir|nerede|söyle|söyler misin|söyleyebilir misin|ver|verir misin|verebilir misin|oku|okur musun|istiyorum|lütfen))*$/.test(command);
+ const t=normalizeYakutCommand(command);
+ if(/(?:mail|e posta|eposta|ip adres|parsel|başka adres|yol tarifi|nasıl gider|nasıl gel|nasıl ulaş|metrobüs|taksi|telefon|whatsapp)/.test(t))return false;
+ return /(?:^| )(?:adres|adresi|adresini|adresiniz|adresinizi|adresinizin|adresimiz|adresimizi|adresin|adresine|adresinize)(?: |$)/.test(t)
+ || /^(?:(?:yakut|lütfen|merkez|ofis|şirket) )*(?:neredesiniz|nerede bulunuyorsunuz)$/.test(t);
 }
 function yakutWantsLocation(command){
  return /(?:^| )(?:konum(?:u|unuz|unuzu|unu)?|lokasyon(?:u|unuz|unuzu)?|harita)(?: |$)/.test(command)&&
@@ -740,6 +743,10 @@ const motionMap={'dans et':'dance_01','alkışla':'clap','gül':'laugh_02','üz�
 if(model&&/^(?:yürü|sağa yürü|sola yürü|ortaya gel)$/.test(motionCommand)){moveTo(motionCommand==='ortaya gel'?centerAnswerX():motionCommand==='sola yürü'?leftGreetingX():motionCommand==='sağa yürü'?yakutRightX():posX>centerAnswerX()?leftGreetingX():yakutRightX());return;}
 if(model&&Object.hasOwn(motionMap,motionCommand)&&clips[motionMap[motionCommand]]){phase=motionMap[motionCommand]==='wait'?'idle':'reacting';play(motionMap[motionCommand],phase==='reacting');return;}
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
+if(yakutIsAddressCommand(spokenCommand)){
+ rememberYakutTurn(q,yakutContact.address);
+ react('agree',yakutContact.address);return;
+}
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(/^(?:yakut|yakut dinle)$/.test(command)) {react('agree','Dinliyorum, size nasıl yardımcı olabilirim?');return;}
 if(isYakutHomeCommand(command)||isYakutHomeCommand(spokenCommand))return openYakutPage('index.html');
@@ -754,11 +761,7 @@ if(yakutWantsCompanyInfo(command)){
 }
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(yakutWantsLocation(command)){yakutShareLocation();return;}
-if(yakutIsAddressCommand(spokenCommand)){
- if(getYakutCurrentPage()==='iletisim.html'){react('agree',yakutContact.address,'center');return;}
- try{sessionStorage.setItem('yakutAddressPending','1');}catch(_){}
- return openYakutPage('iletisim.html');
-}
+
 if(/telefon|numara|whats ?app|cep|mobil|sabit|iletişim bilgi/.test(command)){
   const generation=yakutVoiceGeneration;
   processingSpeech=true;
