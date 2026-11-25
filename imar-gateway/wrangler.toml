@@ -1,0 +1,10 @@
+name = "kumtas-imar-gateway"
+main = "worker.mjs"
+compatibility_date = "2026-11-25"
+workers_dev = true
+
+# Set secrets separately using wrangler secret put:
+# IMAR_GATEWAY_SECRET
+# MODAL_URL
+# CLOUD_RUN_URL
+# Never put service credentials or the shared secret into this file.
