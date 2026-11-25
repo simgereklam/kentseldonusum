@@ -7,7 +7,7 @@ if(location.protocol==='http:'&&/^(?:www\.)?xn--kentseldnm-lcb7ea99k\.com\.tr$/i
  return;
 }
 if(window.__yakutV9)return;window.__yakutV9=true;
-const url=new URL('YAKUT_V9.glb',document.currentScript.src).href;
+const url=new URL('yakut_v10.glb',document.currentScript.src).href;
 const yakutFreshReload=performance.getEntriesByType('navigation')?.[0]?.type==='reload';
 // Start downloading the model while Three.js loads.
 const yakutModelData=fetch(url,{priority:'high'}).then(response=>{
