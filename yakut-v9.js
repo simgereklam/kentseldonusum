@@ -84,9 +84,9 @@ let phase='loading',posX=-280,targetX=0,walkTimer=0,phaseTime=0,turnRight=true,d
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function show(text,ms=7000){}
 function play(name,once=false,speed=1){if(!THREE||!clips[name])return false;
-const next=clips[name];if(current===next&&next.isRunning())return true;
+const next=clips[name];if(current===next&&next.isRunning()&&!once)return true;
 if(current&&current!==next)current.fadeOut(.18);
-next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed).setEffectiveWeight(1).fadeIn(.22).play();
+next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity).setEffectiveTimeScale(speed*(name.startsWith('YAKUT_')?1:.8)).setEffectiveWeight(1).fadeIn(.22).play();
 next.clampWhenFinished=!!once;current=next;return true;
 }
 let audioUnlocked=false,yakutAudioPlaying=false,yakutVoiceGeneration=0,yakutGestureClock=0;
@@ -121,7 +121,7 @@ function onYakutSoundReady(){
  }
  if(characterRendered&&getYakutCurrentPage()==='index.html'&&!yakutGreetingRequested&&!speaking&&!processingSpeech){
   yakutGreetingRequested=true;
-  if(model)moveTo(leftGreetingX());
+  if(model&&Math.abs(posX-leftGreetingX())>12)moveTo(leftGreetingX());
   yakutGreetingInProgress=true;
   pendingSpeechGesture=phase==='reacting'?null:findYakutGesture('greet_01');
   speak(welcome);return;
@@ -229,7 +229,7 @@ function completeYakutOpening(){
  phase='idle';play('wait');
  speak(welcome);
 }
-function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>12){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1);else{targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
+function moveTo(x){if(!model)return;targetX=Math.max(0,Math.min(x,innerWidth-stage.offsetWidth));if(!reduced&&Math.abs(targetX-posX)>1){phase='walking';turnRight=targetX>posX;model.rotation.y=turnRight?Math.PI/2:-Math.PI/2;const gait=Object.keys(clips).find(n=>/^(walk|walk_\d+|walking)$/i.test(n))||Object.keys(clips).find(n=>/walk|yürü/i.test(n));if(gait)play(gait,false,1);else{targetX=posX;phase='idle';play('wait')}}else{posX=targetX;positionStage();phase='idle';play('wait')}}
 let pendingSpeechGesture=null;
 function findYakutGesture(preferred){
  if(preferred==='bow')return Object.keys(clips).find(n=>/^(to[ _-]?bow|bow|bow_\d+|bowing|respect|selam_eğil)$/i.test(n))||Object.keys(clips).find(n=>/bow|eğil|saygı/i.test(n))||null;
@@ -1085,20 +1085,7 @@ model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false;
  if(o.morphTargetDictionary&&!face&&Object.keys(o.morphTargetDictionary).some(n=>/jawOpen|viseme|blink/i.test(n)))face=o;
 });
 scene.add(model);mixer=new THREE.AnimationMixer(model);
-gltf.animations.forEach(source=>{
- const c=source.clone();
- // The screen position is controlled by positionStage; remove horizontal root travel.
- if(c.name==='walk')for(const t of c.tracks){
-  if(/hips.*\.position$/i.test(t.name)&&t.getValueSize()===3){
-   const x=t.values[0],z=t.values[2];
-   for(let i=0;i<t.values.length;i+=3){t.values[i]=x;t.values[i+2]=z;}
-   // Blend the loop seam in the root height to avoid a vertical snap.
-   const last=t.values.length-2,delta=t.values[last]-t.values[1];
-   for(let i=1;i<t.values.length;i+=3)t.values[i]-=delta*(i-1)/(t.values.length-3||1);
-  }
- }
- clips[c.name]=mixer.clipAction(c);
-});
+gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',event=>{if(event.action!==current)return;if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 let greetedBefore=false;
 try{greetedBefore=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
@@ -1158,7 +1145,7 @@ if(walkTimer>=22&&!speaking&&!processingSpeech){
  moveTo(posX>centerAnswerX()?leftGreetingX():yakutRightX());
 }
 }
-if(face&&current!==clips.YAKUT_Yuz_Goz_Dudak){
+if(face&&current!==clips.YAKUT_Yuz_Goz_Dudak&&current!==clips.YAKUT_Tam_Canli_Akis){
 blinkTime+=dt;
 if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
 const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
