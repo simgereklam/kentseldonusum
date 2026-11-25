@@ -21,7 +21,7 @@ _gate = asyncio.Semaphore(1)
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "service": "imar", "supported": ["kadikoy", "tkgm"]}
+    return {"ok": True, "service": "imar", "supported": ["kadikoy"]}
 
 @app.middleware("http")
 async def protection(request: Request, call_next):
@@ -55,7 +55,7 @@ async def protection(request: Request, call_next):
         return JSONResponse(status_code=400, content={"detail": "Geçersiz sorgu"})
     source = str(body.get("kaynak", "belediye")).lower()
     district = str(body.get("ilce", "")).strip().casefold()
-    if source not in ("belediye", "tkgm"):
+    if source != "belediye":
         return JSONResponse(status_code=400, content={"detail": "Bilinmeyen sorgu kaynağı"})
     if source == "belediye" and district != "kadıköy":
         return JSONResponse(status_code=422, content={"detail": "Otomatik e-İmar şu anda yalnızca Kadıköy için hazır"})
