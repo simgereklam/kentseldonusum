@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/test-real-modal-kadikoy.yml'
+      - 'imar-api/modal_endpoint_smoke.py'
   workflow_dispatch:
 
 permissions:
