@@ -1,0 +1,20 @@
+name: Check Imar Gateway Syntax
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'imar-gateway/worker.mjs'
+      - '.github/workflows/check-imar-gateway.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check e-imar Cloudflare Worker syntax
+        run: node --check imar-gateway/worker.mjs
