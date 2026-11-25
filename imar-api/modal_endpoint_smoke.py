@@ -33,9 +33,15 @@ def check_deployed_kadikoy():
         "ada": "1402",
         "parsel": "34",
     }
-    with httpx.Client(timeout=httpx.Timeout(210.0, connect=30.0), follow_redirects=False) as client:
+    with httpx.Client(timeout=httpx.Timeout(210.0, connect=30.0), follow_redirects=True, max_redirects=5) as client:
         resp = client.post(base + "/sorgula", json=payload, headers=headers)
-        print("Deployed Modal /sorgula HTTP status:", resp.status_code, flush=True)
+        print("Deployed Modal /sorgula HTTP status:", resp.status_code, "redirect count:", len(resp.history), flush=True)
+        # Allow only Modal's same-origin long-running request polling redirects.
+        for previous in resp.history:
+            if previous.status_code != 303 or previous.headers.get("location") is None:
+                raise RuntimeError("Unexpected HTTP redirect during e-imar query")
+        if resp.url.host != httpx.URL(base).host:
+            raise RuntimeError("Redirect led to an unexpected domain")
         if resp.status_code != 200:
             # Never dump request headers (shared secret).
             raise RuntimeError("Modal /sorgula failed: HTTP %s, body: %s" %
