@@ -209,7 +209,7 @@ async function speak(text,deferPlayback=true,isHoldNotice=false){
       if(turn===yakutVoiceGeneration&&!hidden&&model)model.rotation.y=0;
       resolve();return;
      }
-     setTimeout(check,25);
+     setTimeout(check,10);
     };check();
    }):undefined
   });
@@ -752,6 +752,7 @@ if(/telefon|numara|whats ?app|cep|mobil|sabit|iletişim bilgi/.test(command)){
   const generation=yakutVoiceGeneration;
   processingSpeech=true;
   queueListen(0);
+  if(model&&(phase!=='walking'||Math.abs(targetX-centerAnswerX())>1))moveTo(centerAnswerX());
   await refreshYakutContactPhones();
   if(generation!==yakutVoiceGeneration||hidden)return;
   processingSpeech=false;
@@ -926,14 +927,14 @@ function startSpeech(){
    console.warn('Yakut komut hatası:',error);
    processingSpeech=false;
   }).finally(()=>{
-   if(!speaking&&!processingSpeech)queueListen(80);
+   if(!speaking&&!processingSpeech)queueListen(0);
   });
   return true;
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,180);
-  else if(finalText&&!hasInterim)timer=setTimeout(submit,120);
+  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,60);
+  else if(finalText&&!hasInterim)timer=setTimeout(submit,90);
  };
  rec.onspeechstart=()=>{utteranceEnded=false;clearTimeout(timer);};
  rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
