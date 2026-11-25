@@ -1,6 +1,10 @@
 name: Imar Playwright Manual Test
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/imar-playwright-test.yml'
   workflow_dispatch:
     inputs:
       source:
@@ -17,13 +21,13 @@ permissions:
 
 jobs:
   imar-sorgu:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
         working-directory: imar-api
     env:
-      IMAR_SOURCE: ${{ inputs.source }}
+      IMAR_SOURCE: ${{ inputs.source || 'belediye' }}
       PYTHONUNBUFFERED: "1"
     steps:
       - name: Checkout
