@@ -419,10 +419,14 @@ function yakutSpeakCurrentPage(){
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
 function speakYakutPhone(number){
- // Spell each digit explicitly; never let TTS interpret a telephone as a number.
+ const tens=['','on','yirmi','otuz','kırk','elli','altmış','yetmiş','seksen','doksan'];
  const digits=String(number).replace(/\D/g,'');
- return [digits.slice(0,4),digits.slice(4,7),digits.slice(7,9),digits.slice(9)]
-  .filter(Boolean).map(group=>Array.from(group,d=>yakutSpokenDigits[Number(d)]).join(' ')).join(', ');
+ function groupWords(group){
+  const leading=group.match(/^0+/)?.[0].length||0;
+  const n=Number(group),h=Math.floor(n/100),t=Math.floor(n%100/10),u=n%10;
+  return [...Array(leading).fill('sıfır'),h===1?'yüz':h>1?yakutSpokenDigits[h]+' yüz':'',tens[t],u?yakutSpokenDigits[u]:''].filter(Boolean).join(' ');
+ }
+ return [digits.slice(0,4),digits.slice(4,7),digits.slice(7,9),digits.slice(9)].filter(Boolean).map(groupWords).join(', ');
 }
 function prepareYakutSpokenText(text){
  for(const number of Object.values(yakutPhoneNumbers)){
@@ -434,7 +438,7 @@ function prepareYakutSpokenText(text){
  return text;
 }
 const yakutContact={
- address:'Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, bina numarası iki yüz kırk beş, A harfi, Bahçelievler, İstanbul.',
+ address:'Kocasinan Merkez Mahallesi, Mahmutbey Caddesi, bina numarası iki yüz kırk beş bölü A, Bahçelievler, İstanbul.',
  landline:'Ofis sabit telefon numaramız '+yakutPhoneNumbers.office+'.',
  mobile:'WhatsApp cep telefonu numaramız '+yakutPhoneNumbers.whatsapp+'.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
