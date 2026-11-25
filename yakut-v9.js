@@ -417,11 +417,14 @@ function handleYakutOfferAnswer(t){
  }
  return false;
 }
+const yakutApprovedPageSpeech=Object.freeze({"kurumsal":"2004 yılında kurulan Kumtaş İnşaat Ltd. Şti., 21 yılı aşkın köklü geçmişiyle Türkiye’nin farklı bölgelerinde inşaat, taahhüt, madencilik, hafriyat ve konut üretimi alanlarında faaliyet göstermektedir. Faaliyet alanlarımız: İnşaat taahhüt projeleri, madencilik ve hafriyat hizmetleri, konut ve ticari yapılar, sanayi yapıları, soğuk hava depoları ve antrepolar. Öne çıkan referanslarımız: Bursa Şişecam Fabrikası. 2004 yılından bu yana aralıksız iş ortaklığı. Kumtaş İnşaat, Bursa Şişecam tesislerinde sürekli taahhüt işleri yürütmekte olup, aynı sahada yerleşik şube ofisi ve makine parkuru bulundurmaktadır. Konut projeleri: 50 konut ve ticari alan projeleri başarıyla tamamlanmış ve sahiplerine teslim edilmiştir.","kentsel-donusum":"Binanızı yıkmadan önce haklarınızı netleştirin. Süreç sade, anlaşılır ve maliklerin karar verebileceği şekilde ilerler. Birinci aşama, ön görüşme. İlçe, mahalle, ada parsel, daire metrekare ve bina bilgileri alınır. İkinci aşama, imar ve fizibilite. Arsa alanı, mevcut ruhsat, kat adedi ve yapılabilir proje modeli incelenir. Üçüncü aşama, malik bilgilendirme. Kat karşılığı model, metrekare dengesi ve teslim şartları anlatılır. Dördüncü aşama, sözleşme ve teminat. Noter onaylı sözleşme, teminat ve malzeme standardı netleştirilir. Beşinci aşama, yıkım ve ruhsat. Yasal süreçler, ruhsat hazırlığı ve kontrollü yıkım planlanır. Altıncı aşama, yeni bina teslimi. Kaba inşaat, ince işler, dış cephe ve anahtar teslim süreci tamamlanır."});
+function yakutPageSpeech(page){
+ return yakutApprovedPageSpeech[page]||window.yakutSiteVoice?.[page]||'';
+}
 function yakutSpeakCurrentPage(){
  const page=getYakutCurrentPage().replace(/\.html$/,'');
- const localText=window.yakutSiteVoice?.[page];
- const summary=collectYakutPageSpeech();
- if(summary||localText)react('agree',summary||localText,'center');
+ const localText=yakutPageSpeech(page);
+ if(localText)react('agree',localText,'center');
 }
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
@@ -436,6 +439,7 @@ function speakYakutPhone(number){
  return [digits.slice(0,4),digits.slice(4,7),digits.slice(7,9),digits.slice(9)].filter(Boolean).map(groupWords).join(', ');
 }
 function prepareYakutSpokenText(text){
+ text=text.replace(/\b245\s*\/\s*a\b/gi,'iki yüz kırk beş bölü A');
  for(const number of Object.values(yakutPhoneNumbers)){
   const separator='[ .()\\-]*';
   const digits=number.slice(1).split('').join(separator);
@@ -740,12 +744,12 @@ if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum
 if(/^(?:yakut|yakut dinle)$/.test(command)) {react('agree','Dinliyorum, size nasıl yardımcı olabilirim?');return;}
 if(isYakutHomeCommand(command)||isYakutHomeCommand(spokenCommand))return openYakutPage('index.html');
 if(/(?:hangi sayfadayız|hangi sayfadasın|hangi sayfadayım|bu sayfanın adı|şu an neredeyiz)/.test(command)){
- yakutSpeakCurrentPage();return;
+ react('agree',yakutPageIntro(getYakutCurrentPage()).trim());return;
 }
 if(yakutParcelStep==='ilçe'&&handleYakutParcel(command))return;
 if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command)){react('agree',yakutScenarioAnswer(q));return;}
 if(yakutWantsCompanyInfo(command)){
- const about=window.yakutSiteVoice?.kurumsal||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
+ const about=yakutPageSpeech('kurumsal')||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
  react('agree',about.replace(/^Kurumsal sayfasındayız\.\s*/i,''),'center');return;
 }
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
@@ -782,8 +786,8 @@ if(handleYakutParcel(command))return;
 if(handleYakutOfferAnswer(command))return;
 const localPage=yakutPageCommand(spokenCommand.replace(/(?: sayfası(?:nı)?)? (?:hakkında bilgi ver|hakkında bilgi|anlat|özetle)$/, ''));
 const recording=localPage?.replace(/\.html$/,'');
-if(recording&&window.yakutSiteVoice?.[recording]){
- react('agree',window.yakutSiteVoice[recording],'center');return;
+if(recording&&yakutPageSpeech(recording)){
+ react('agree',yakutPageSpeech(recording),'center');return;
 }
 const localContact=yakutContactRequest(command);
 if(localContact){
@@ -817,7 +821,7 @@ processingSpeech=true;
  const url=new URL(yakutChatEndpoint());
  const research=Boolean(weather||webRequest||officialResearch);
  const contact=yakutContactRequest(q);
- const reference=('Açık sayfa: '+yakutPageName(getYakutCurrentPage())+'. '+(contact?contact+' ':'')+collectYakutPageSpeech()).slice(0,1500);
+ const reference=('Açık sayfa: '+yakutPageName(getYakutCurrentPage())+'. '+(contact?contact+' ':'')+yakutPageSpeech(getYakutCurrentPage().replace(/\.html$/,''))).slice(0,1500);
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
  const controller=new AbortController();
  yakutChatController=controller;
