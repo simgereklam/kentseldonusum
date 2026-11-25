@@ -8,6 +8,11 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from app_sadece_tkgm_duzeltildi import app
 
+MUNICIPAL_URLS = {
+    "kadıköy": "https://webgis.kadikoy.bel.tr/imardurumu/",
+    "bağcılar": "https://bbgis.bagcilar.bel.tr/imardurumu/",
+}
+
 ORIGINS = {
     "https://xn--kentseldnm-lcb7ea99k.com.tr",
     "https://www.xn--kentseldnm-lcb7ea99k.com.tr",
@@ -21,7 +26,7 @@ _gate = asyncio.Semaphore(1)
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "service": "imar", "supported": ["kadikoy", "tkgm"]}
+    return {"ok": True, "service": "imar", "supported": ["kadikoy", "bagcilar", "tkgm"]}
 
 @app.middleware("http")
 async def protection(request: Request, call_next):
@@ -57,12 +62,12 @@ async def protection(request: Request, call_next):
     district = str(body.get("ilce", "")).strip().casefold()
     if source not in ("belediye", "tkgm"):
         return JSONResponse(status_code=400, content={"detail": "Bilinmeyen sorgu kaynağı"})
-    if source == "belediye" and district != "kadıköy":
-        return JSONResponse(status_code=422, content={"detail": "Otomatik e-İmar şu anda yalnızca Kadıköy için hazır"})
+    if source == "belediye" and district not in MUNICIPAL_URLS:
+        return JSONResponse(status_code=422, content={"detail": "Otomatik e-İmar şu anda Kadıköy ve Bağcılar için hazır"})
     if not all(str(body.get(k,"")).isdigit() and len(str(body[k])) <= 10 for k in ("ada", "parsel")):
         return JSONResponse(status_code=422, content={"detail": "Ada ve parsel numaraları geçersiz"})
     # Crucial: forbid arbitrary URL navigation (SSRF via Playwright).
-    body["url"] = None
+    body["url"] = MUNICIPAL_URLS.get(district) if source == "belediye" else None
     request._body = __import__("json").dumps(body,ensure_ascii=False).encode("utf-8")
     bucket.append(now)
     async with _gate:
