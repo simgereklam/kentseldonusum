@@ -101,7 +101,7 @@ export default {
         if ((offlineUntil.get(provider)||0) > Date.now()) continue;
         try {
           const response = await send(env,provider,"/sorgula",request,JSON.stringify(params),90000);
-          if (response.status >= 500 || response.status === 429) {
+          if (response.status >= 500 || [401, 402, 403, 408, 425, 429].includes(response.status)) {
             lastError = provider + ": HTTP " + response.status;
             offlineUntil.set(provider,Date.now()+20000);
             continue;
