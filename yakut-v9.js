@@ -121,7 +121,8 @@ function onYakutSoundReady(){
  if(characterRendered&&getYakutCurrentPage()==='index.html'&&!yakutGreetingRequested&&!speaking&&!processingSpeech){
   yakutGreetingRequested=true;
   if(model)moveTo(leftGreetingX());
-  pendingSpeechGesture=findYakutGesture('wait');
+  yakutGreetingInProgress=true;
+  pendingSpeechGesture=findYakutGesture('greet_01');
   speak(welcome);return;
  }
  if(yakutAddressPending&&!speaking){
@@ -690,6 +691,10 @@ const now=Date.now();
 if(command===lastUserUtterance &&
  (now-lastUserUtteranceAt<7000||now-yakutSpeechEndedAt<2500))return;
 lastUserUtterance=command;lastUserUtteranceAt=now;
+const motionCommand=command.replace(/^yakut\s+/,'').replace(/\s+lütfen$/,'');
+const motionMap={'dans et':'dance_01','alkışla':'clap','gül':'laugh_02','üzül':'frustrated_01','selam ver':'greet_01','el salla':'greet_02','eğil':'bow','veda et':'wave_goodbye_02','onayla':'agree','beklemede kal':'wait','tüm hareketleri göster':'YAKUT_Tam_Canli_Akis','yüz hareketlerini göster':'YAKUT_Yuz_Goz_Dudak'};
+if(model&&/^(?:yürü|sağa yürü|sola yürü|ortaya gel)$/.test(motionCommand)){moveTo(motionCommand==='ortaya gel'?centerAnswerX():motionCommand==='sola yürü'?leftGreetingX():motionCommand==='sağa yürü'?yakutRightX():posX>centerAnswerX()?leftGreetingX():yakutRightX());return;}
+if(model&&Object.hasOwn(motionMap,motionCommand)&&clips[motionMap[motionCommand]]){phase=motionMap[motionCommand]==='wait'?'idle':'reacting';play(motionMap[motionCommand],phase==='reacting');return;}
 const spokenCommand=command.replace(/^(?:(?:merhaba|selam|hey|alo)\s+)?yakut(?:\s+|$)/,'').trim()||command;
 if(/^(?:yakut\s+)?(?:hayır|istemiyorum|bir şey istemiyorum|yardım istemiyorum|gerek yok|şimdilik gerek yok|sonra|şimdi değil)(?:\s+teşekkürler)?$/.test(command)){yakutScenario=null;cancelYakutSpeech();yakutPageOfferPending=false;return}
 if(/^(?:yakut|yakut dinle)$/.test(command)) {react('agree','Dinliyorum, size nasıl yardımcı olabilirim?');return;}
@@ -1122,7 +1127,7 @@ if(yakutAudioPlaying && phase==='idle'){
  yakutGestureClock+=dt;
  if(yakutGestureClock>3.5){
   yakutGestureClock=0;
-  if(clips.agree){phase='reacting';play('agree',true)}
+  const gestures=['agree','greet_02'].filter(n=>clips[n]);if(gestures.length){phase='reacting';play(gestures[Math.floor(Math.random()*gestures.length)],true)}
  }
 }
 if(phase==='walking'){
@@ -1139,7 +1144,7 @@ if(walkTimer>=22&&!speaking&&!processingSpeech){
  moveTo(posX>centerAnswerX()?leftGreetingX():yakutRightX());
 }
 }
-if(face){
+if(face&&current!==clips.YAKUT_Yuz_Goz_Dudak){
 blinkTime+=dt;
 if(blinkTime>=blinkAt){blinkTime=0;blinkAt=2.6+Math.random()*3.9;blinkPhase=.17;}
 const blink=blinkPhase>0?Math.sin(Math.PI*(1-Math.max(0,blinkPhase)/.17)):0;
@@ -1147,10 +1152,11 @@ blinkPhase=Math.max(0,blinkPhase-dt);
 let amp=yakutAudioPlaying?.35:0;
 if(yakutAudioPlaying&&yakutVoice)amp=yakutVoice.getLevel();
 for(const [name,i] of Object.entries(face.morphTargetDictionary)){
-const isMouth=/jawOpen|viseme_A|viseme_O/i.test(name);
+const isMouth=/jawOpen|viseme_/i.test(name);
 const isBlink=/eyeBlink|blinkLeft|blinkRight|eyesClosed|blink/i.test(name);
 if(!isMouth&&!isBlink)continue; // Keep authored facial expressions intact.
-const influence=isBlink?blink:/viseme_O/i.test(name)?amp*.22:amp*.75;
+const vowel=['A','O','U','E','MBP'][Math.floor(gestureTime*9)%5];
+ const influence=isBlink?blink:/jawOpen/i.test(name)?amp*.65:name.toUpperCase()===('VISEME_'+vowel)?amp*.48:0;
 face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],influence,48,dt)}
 }
 }
