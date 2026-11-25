@@ -419,17 +419,10 @@ function yakutSpeakCurrentPage(){
 const yakutPhoneNumbers={office:'02129555599',whatsapp:'05431813485'};
 const yakutSpokenDigits=['sıfır','bir','iki','üç','dört','beş','altı','yedi','sekiz','dokuz'];
 function speakYakutPhone(number){
- const tens=['','on','yirmi','otuz','kırk','elli','altmış','yetmiş','seksen','doksan'];
- return ['sıfır '+number.slice(1,4),number.slice(4,7),number.slice(7,9),number.slice(9)]
-  .map(group=>{
-   const value=Number(group.replace('sıfır ',''));
-   const hundreds=Math.floor(value/100);
-   const remainder=value%100;
-   const words=[group.startsWith('sıfır ')||group.startsWith('0')?'sıfır':'',
-    hundreds===1?'yüz':hundreds>1?yakutSpokenDigits[hundreds]+' yüz':'',
-    tens[Math.floor(remainder/10)],remainder%10?yakutSpokenDigits[remainder%10]:''];
-   return words.filter(Boolean).join(' ')||'sıfır';
-  }).join(' ');
+ // Spell each digit explicitly; never let TTS interpret a telephone as a number.
+ const digits=String(number).replace(/\D/g,'');
+ return [digits.slice(0,4),digits.slice(4,7),digits.slice(7,9),digits.slice(9)]
+  .filter(Boolean).map(group=>Array.from(group,d=>yakutSpokenDigits[Number(d)]).join(' ')).join(', ');
 }
 function prepareYakutSpokenText(text){
  for(const number of Object.values(yakutPhoneNumbers)){
@@ -446,6 +439,27 @@ const yakutContact={
  mobile:'WhatsApp cep telefonu numaramız '+yakutPhoneNumbers.whatsapp+'.',
  email:'E-posta adresimiz: info, et işareti, kumtas, nokta, com, nokta, tr.'
 };
+function readYakutContactPhones(root){
+ const links=Array.from(root.querySelectorAll('a[href^="tel:"]'));
+ for(const link of links){
+  let number=link.getAttribute('href').slice(4).replace(/\D/g,'');
+  if(number.length===12&&number.startsWith('90'))number='0'+number.slice(2);
+  if(!/^0\d{10}$/.test(number))continue;
+  if(number.startsWith('05'))yakutPhoneNumbers.whatsapp=number;
+  else yakutPhoneNumbers.office=number;
+ }
+ yakutContact.landline='Ofis sabit telefon numaramız: '+yakutPhoneNumbers.office+'.';
+ yakutContact.mobile='WhatsApp cep telefonu numaramız: '+yakutPhoneNumbers.whatsapp+'.';
+}
+let yakutContactRead=null;
+function refreshYakutContactPhones(){
+ if(getYakutCurrentPage()==='iletisim.html'){readYakutContactPhones(document);return Promise.resolve();}
+ if(!yakutContactRead)yakutContactRead=fetch(new URL('iletisim.html',location.origin+'/'),{signal:AbortSignal.timeout(2500)})
+  .then(response=>{if(!response.ok)throw Error('contact page');return response.text()})
+  .then(html=>readYakutContactPhones(new DOMParser().parseFromString(html,'text/html')))
+  .catch(()=>{yakutContactRead=null;});
+ return yakutContactRead;
+}
 function yakutIsAddressCommand(command){
  return /^(?:(?:lütfen|bana|bize|ofis|ofisin|şirketin|firma|firmanın|kumtaş|kumtaş inşaat(?: ın)?) )*(?:adres|adresi|adresini|adresiniz|adresinizi|adresinizin|adresimiz|adres bilgisi)(?: (?:ne|nedir|nerede|söyle|söyler misin|söyleyebilir misin|ver|verir misin|verebilir misin|oku|okur musun|istiyorum|lütfen))*$/.test(command);
 }
@@ -730,7 +744,15 @@ if(yakutIsAddressCommand(spokenCommand)){
  try{sessionStorage.setItem('yakutAddressPending','1');}catch(_){}
  return openYakutPage('iletisim.html');
 }
-const phoneAnswer=yakutPhoneAnswer(command);
+if(/telefon|numara|whats ?app|cep|mobil|sabit|iletişim bilgi/.test(command)){
+  const generation=yakutVoiceGeneration;
+  processingSpeech=true;
+  queueListen(0);
+  await refreshYakutContactPhones();
+  if(generation!==yakutVoiceGeneration||hidden)return;
+  processingSpeech=false;
+ }
+ const phoneAnswer=yakutPhoneAnswer(command);
 if(phoneAnswer){
  rememberYakutTurn(q,phoneAnswer);react('agree',phoneAnswer,'center');return;
 }
@@ -1041,6 +1063,7 @@ function startYakutSession(){
  if(ready)return;
  clearTimeout(yakutStartTimer);
  ready=true;
+ refreshYakutContactPhones();
  listenEnabled=true;
  yakutPageOfferPending=false;
  try{
