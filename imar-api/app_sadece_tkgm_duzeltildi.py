@@ -488,10 +488,11 @@ async def genel_form_doldur(context, page, req: SorguIstegi):
 
 @app.post("/sorgula")
 async def parsel_sorgula(req: SorguIstegi):
-    if req.kaynak.lower() != "belediye":
-        raise HTTPException(status_code=400, detail="Bilinmeyen sorgu kaynağı")
-
-    hedef_url = req.url or "https://webgis.kadikoy.bel.tr/imardurumu/"
+    hedef_url = req.url or (
+        "https://parselsorgu.tkgm.gov.tr/"
+        if req.kaynak.lower() == "tkgm"
+        else "https://webgis.kadikoy.bel.tr/imardurumu/"
+    )
 
     kayit_id = str(uuid.uuid4())[:8]
 
@@ -550,7 +551,6 @@ async def goruntu_sayfasi(kayit_id: str):
         raise HTTPException(status_code=404, detail="Ekran görüntüsü bulunamadı")
 
     img1_src = f"/shots/{kayit_id}_1.png" if p1.exists() else f"/shots/{kayit_id}.png"
-    ilk_baslik = "1. Parça — İmar Planı ve Parsel Haritası" if p2.exists() else "TKGM — Tapu Parsel Haritası"
     img2_html = (
         f"""
         <div class="card">
@@ -558,7 +558,7 @@ async def goruntu_sayfasi(kayit_id: str):
           <div class="viewer">
             <img class="zoom-img" src="/shots/{kayit_id}_2.png" alt="Kadastro Parseli ve Bilgiler" onclick="toggleZoom(this)" />
           </div>
-          <div class="links"><a href="/shots/{kayit_id}_2.png" target="_blank">Tam Boyut 2. Görseli Aç</a> · <a href="/shots/{kayit_id}_2.png" download>İndir</a></div>
+          <div class="links"><a href="/shots/{kayit_id}_2.png" target="_blank">Tam Boyut 2. Görseli Aç</a></div>
         </div>
         """
         if p2.exists()
@@ -618,11 +618,11 @@ async def goruntu_sayfasi(kayit_id: str):
         </div>
 
         <div class="card">
-          <div class="card-title">{ilk_baslik}</div>
+          <div class="card-title">1. Parça — İmar Planı ve Parsel Haritası</div>
           <div class="viewer">
             <img class="zoom-img" src="{img1_src}" alt="İmar Planı ve Harita" onclick="toggleZoom(this)" />
           </div>
-          <div class="links"><a href="{img1_src}" target="_blank">Tam Boyut 1. Görseli Aç</a> · <a href="{img1_src}" download>İndir</a></div>
+          <div class="links"><a href="{img1_src}" target="_blank">Tam Boyut 1. Görseli Aç</a></div>
         </div>
 
         {img2_html}
