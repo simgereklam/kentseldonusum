@@ -249,7 +249,14 @@ function findYakutGesture(preferred){
 }
 function react(clip,text,placement='left'){
  if(!ready)return;
- if(model&&(phase!=='walking'||Math.abs(targetX-centerAnswerX())>1))moveTo(centerAnswerX());
+ if(model){
+  const longAnswer=String(text||'').trim().split(/\s+/).length>=35;
+  if(longAnswer){
+   if(phase!=='walking'||Math.abs(targetX-centerAnswerX())>1)moveTo(centerAnswerX());
+  }else if(phase==='walking'){
+   targetX=posX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
+  }
+ }
  phaseTime=0;
  pendingSpeechGesture=null;
  speak(text);
@@ -752,7 +759,7 @@ if(/telefon|numara|whats ?app|cep|mobil|sabit|iletişim bilgi/.test(command)){
   const generation=yakutVoiceGeneration;
   processingSpeech=true;
   queueListen(0);
-  if(model&&(phase!=='walking'||Math.abs(targetX-centerAnswerX())>1))moveTo(centerAnswerX());
+  
   await refreshYakutContactPhones();
   if(generation!==yakutVoiceGeneration||hidden)return;
   processingSpeech=false;
@@ -796,7 +803,6 @@ if(/^(?:riskli yapı nedir|riskli yapı hakkında bilgi ver|malik hakları neler
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutTurnInFlight)return;
 yakutTurnInFlight=true;
- if(model)moveTo(centerAnswerX());
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
@@ -933,8 +939,8 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,60);
-  else if(finalText&&!hasInterim)timer=setTimeout(submit,90);
+  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,10);
+  else if(finalText&&!hasInterim)timer=setTimeout(submit,10);
  };
  rec.onspeechstart=()=>{utteranceEnded=false;clearTimeout(timer);};
  rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
