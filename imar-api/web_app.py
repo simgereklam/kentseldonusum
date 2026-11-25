@@ -1,11 +1,14 @@
 """Kumtas imar API: production-facing wrapper around unchanged working automation."""
 import asyncio
+import logging
 import os
 import time
 from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app_sadece_tkgm_duzeltildi import app
 
 MUNICIPAL_URLS = {
@@ -23,6 +26,14 @@ ORIGINS = {
 ORIGINS.update(x.strip().rstrip("/") for x in os.getenv("IMAR_ALLOWED_ORIGINS", "").split(",") if x.strip())
 _buckets = defaultdict(deque)
 _gate = asyncio.Semaphore(1)
+logger = logging.getLogger("uvicorn.error")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def log_automation_failure(request: Request, exc: StarletteHTTPException):
+    if request.url.path == "/sorgula" and exc.status_code >= 500:
+        logger.error("İmar sorgusu başarısız (%s): %.1500s", exc.status_code, exc.detail)
+    return await http_exception_handler(request, exc)
 
 @app.get("/health")
 async def health():
