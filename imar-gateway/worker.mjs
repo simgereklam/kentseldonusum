@@ -72,7 +72,7 @@ async function send(env, name, pathname, request, body, timeoutMs) {
 }
 function sanitize(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return null;
-  const kaynak = body.kaynak === "belediye" ? "belediye" : null;
+  const kaynak = body.kaynak === "tkgm" ? "tkgm" : body.kaynak === "belediye" ? "belediye" : null;
   const ilce = typeof body.ilce === "string" ? body.ilce.trim().slice(0, 50) : "";
   const mahalle = typeof body.mahalle === "string" ? body.mahalle.trim().slice(0, 80) : "";
   const ada = String(body.ada || ""), parsel = String(body.parsel || "");
