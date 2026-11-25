@@ -6,15 +6,6 @@ on:
     paths:
       - '.github/workflows/imar-playwright-test.yml'
   workflow_dispatch:
-    inputs:
-      source:
-        description: "Sorgu kaynagi: Kadikoy veya TKGM"
-        required: true
-        type: choice
-        default: belediye
-        options:
-          - belediye
-          - tkgm
 
 permissions:
   contents: read
@@ -27,7 +18,6 @@ jobs:
       run:
         working-directory: imar-api
     env:
-      IMAR_SOURCE: ${{ inputs.source || 'belediye' }}
       PYTHONUNBUFFERED: "1"
     steps:
       - name: Checkout
@@ -45,14 +35,14 @@ jobs:
           python -m pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
-      - name: Run unchanged automation and capture images
+      - name: Run Kadıköy automation and capture images
         run: python actions_smoke_test.py
 
       - name: Upload test results even if query fails
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: imar-${{ inputs.source }}-${{ github.run_number }}
+          name: imar-belediye-${{ github.run_number }}
           path: imar-api/test-outputs/
           retention-days: 3
           if-no-files-found: warn

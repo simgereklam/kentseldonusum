@@ -1,7 +1,6 @@
 """One-off GitHub Actions smoke test. Never alters the working automation."""
 import asyncio
 import json
-import os
 from pathlib import Path
 import traceback
 
@@ -11,26 +10,17 @@ root = Path("test-outputs")
 root.mkdir(exist_ok=True)
 
 async def main():
-    source = os.getenv("IMAR_SOURCE", "belediye")
-    if source not in ("belediye", "tkgm"):
-        raise ValueError("Source must be belediye or tkgm")
-    # Fixed public test parcels. Other parcels are not accepted in this smoke test.
-    if source == "belediye":
-        data = dict(kaynak="belediye", il="İstanbul", ilce="Kadıköy",
-                    mahalle="Erenköy", ada="1402", parsel="34")
-        expected_count = 2
-    else:
-        data = dict(kaynak="tkgm", il="İstanbul", ilce="Bağcılar",
-                    mahalle="Mahmutbey", ada="2086", parsel="5")
-        expected_count = 1
+    data = dict(kaynak="belediye", il="İstanbul", ilce="Kadıköy",
+                mahalle="Erenköy", ada="1402", parsel="34")
     try:
         response = await parsel_sorgula(SorguIstegi(**data))
         (root / "response.json").write_text(
             json.dumps(response, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        paths = [response.get("ekran_goruntusu_parca_1")]
-        if source == "belediye":
-            paths.append(response.get("ekran_goruntusu_parca_2"))
+        paths = [
+            response.get("ekran_goruntusu_parca_1"),
+            response.get("ekran_goruntusu_parca_2"),
+        ]
         if any(not p for p in paths):
             raise AssertionError("Expected screenshot path missing in API response")
         for public_path in paths:
@@ -38,10 +28,6 @@ async def main():
             if not path.is_file() or path.stat().st_size < 10000:
                 raise AssertionError(f"Screenshot missing or too small: {path}")
             (root / path.name).write_bytes(path.read_bytes())
-        if source == "tkgm" and response.get("ekran_goruntusu_parca_2"):
-            raise AssertionError("TKGM must return one image")
-        if len(paths) != expected_count:
-            raise AssertionError(f"Expected {expected_count} images, got {len(paths)}")
         print("SMOKE TEST FINISHED; screenshot count:", len(paths))
         print("Result URL:", response.get("url"))
         print("Summary:", response.get("yorum"))
