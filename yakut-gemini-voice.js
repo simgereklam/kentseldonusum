@@ -8,6 +8,7 @@ class YakutGeminiVoice{
   this.onStart=onStart;this.onEnd=onEnd;this.onError=onError;
   this.context=null;this.analyser=null;this.samples=null;
   this.cache=new Map();
+  this.manifest=fetch(new URL('yakut-sesler/manifest.json',location.origin+'/')).then(r=>r.ok?r.json():{}).catch(()=>({}));
   this.generation=0;this.controller=null;this.sources=new Set();this.playing=false;
  }
  unlock(){
@@ -73,7 +74,10 @@ class YakutGeminiVoice{
   try{
    const load=async phrase=>{
     if(this.cache.has(phrase))return this.cache.get(phrase);
-    const response=await fetch(new URL('/live',this.endpoint),{
+    const manifest=await this.manifest;
+    let local=null;
+    if(manifest[phrase])local=await fetch(new URL('yakut-sesler/'+manifest[phrase],location.origin+'/'),{signal:controller.signal}).catch(()=>null);
+    const response=local?.ok?local:await fetch(new URL('/live',this.endpoint),{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({readAloud:phrase}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(65000)])
     });
