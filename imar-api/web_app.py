@@ -171,6 +171,57 @@ async def sorgula_fatih(body):
             await browser.close()
 
 
+async def sorgula_ibb(body, district):
+    ada, parsel = str(int(body["ada"])), str(int(body["parsel"]))
+    mahalle = tr_normalize(str(body.get("mahalle") or ""))
+    ilce = {"fatih": "FATİH", "bağcılar": "BAĞCILAR"}[district]
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        try:
+            page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
+            page.set_default_timeout(15000)
+            response = await page.goto("https://eplan.ibb.istanbul/sorgu/", wait_until="domcontentloaded", timeout=25000)
+            if response is None or not response.ok:
+                return JSONResponse({"detail": "İBB e-Plan sorgu ekranı açılmadı."}, status_code=502)
+            notice = page.get_by_role("button", name="Kabul ediyorum", exact=True)
+            if await notice.is_visible():
+                await notice.click()
+            await page.locator("#cbTownAdaParsel").select_option(label=ilce)
+            await page.locator("#txtAda").fill(ada)
+            await page.locator("#txtParsel").fill(parsel)
+            await page.locator("#btnFindByAdaParsel").click()
+
+            options = page.get_by_role("listbox").get_by_role("option")
+            await options.first.wait_for(state="attached")
+            matches = []
+            for label in await options.all_text_contents():
+                number, sep, district_label = label.partition(" - ")
+                if sep and number.replace(" ", "") == f"{ada}/{parsel}" and (
+                    not mahalle or tr_normalize(district_label) == mahalle
+                ):
+                    matches.append(label.strip())
+            if len(matches) != 1:
+                return JSONResponse({"detail": "İBB e-Plan’da tek bir mahalle ve ada/parsel eşleşmesi bulunamadı."}, status_code=422)
+            await page.get_by_role("listbox").select_option(label=matches[0])
+            await page.get_by_role("button", name="Plan Durumu", exact=True).click()
+            await page.wait_for_url("https://eplan.ibb.istanbul/sorgu/plandurumu?**")
+            await page.get_by_text("PARSEL BİLGİLERİ", exact=True).wait_for(state="visible")
+            kayit_id = uuid.uuid4().hex[:8]
+            dosya = f"{kayit_id}_1.png"
+            await page.screenshot(path=str(SHOT_DIR / dosya), full_page=True)
+            return JSONResponse({
+                "id": kayit_id,
+                "url": page.url,
+                "ekran_goruntusu_url": f"/shots/{dosya}",
+                "ekran_goruntusu_parca_1": f"/shots/{dosya}",
+                "plan_olcegi": "1/5000",
+                "yorum": f"İBB e-Plan · {ilce} {matches[0]} · 1/5000 nazım imar planı. Arama listesindeki mahalle ile rapordaki mahalle adı farklı olabilir.",
+            })
+        finally:
+            await browser.close()
+
+
 @app.middleware("http")
 async def protection(request: Request, call_next):
     if request.method == "OPTIONS" or (request.method == "GET" and request.url.path == "/health"):
@@ -214,16 +265,10 @@ async def protection(request: Request, call_next):
     request._body = __import__("json").dumps(body,ensure_ascii=False).encode("utf-8")
     bucket.append(now)
     async with _gate:
-        if source == "belediye" and district == "fatih":
+        if source == "belediye" and district in ("fatih", "bağcılar"):
             try:
-                return await sorgula_fatih(body)
+                return await sorgula_ibb(body, district)
             except PlaywrightError as exc:
-                logger.error("Fatih Kent Rehberi sorgusu başarısız: %.1200s", str(exc))
-                return JSONResponse({"detail": "Fatih imar planında parsel görüntüsü alınamadı."}, status_code=502)
-        if source == "belediye" and district == "bağcılar":
-            try:
-                return await sorgula_bagcilar(body)
-            except PlaywrightError as exc:
-                logger.error("Bağcılar e-İmar otomasyonu başarısız: %.1500s", str(exc))
-                return JSONResponse({"detail": "Bağcılar e-İmar raporu açılırken tarayıcı hatası oluştu."}, status_code=502)
+                logger.error("İBB e-Plan sorgusu başarısız: %.1000s", str(exc))
+                return JSONResponse({"detail": "İBB e-Plan raporu alınamadı."}, status_code=502)
         return await call_next(request)
