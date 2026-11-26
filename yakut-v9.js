@@ -26,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=emel-continuous-20261126',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=emel-parallel-20261126',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -196,14 +196,8 @@ async function speak(text,deferPlayback=true,isHoldNotice=false,walkingIntro=fal
   }
   queueListen(0);
   playbackAttempted=true;
-  if(walkingIntro&&phase==='walking'){
-   const intro='Tabii, size hemen bilgi vereyim.';
-   yakutCurrentPrompt=intro;
-   await voice.speak(intro);
-   if(turn!==yakutVoiceGeneration||hidden)return;
-   yakutCurrentPrompt=prompt;
-  }
   const ok=await voice.speak(prompt,{
+   intro:walkingIntro?"Tabii ki, size yardımcı olayım.":"",
    chunkSize:2000,
    beforePlayback:!greeting&&model?()=>new Promise(resolve=>{
     const check=()=>{
@@ -261,7 +255,7 @@ function react(clip,text,placement='left',pageNarration=false){
  }
  phaseTime=0;
  pendingSpeechGesture=null;
- speak(text,true,false,pageNarration&&phase==='walking');
+ speak(text,true,false,phase==='walking');
 }
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
 const yakutPages={
