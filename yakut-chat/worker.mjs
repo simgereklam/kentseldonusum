@@ -345,18 +345,36 @@ async function yakutChatAnswer(prompt, system, env) {
     {name:'openrouter',enabled:env.OPENROUTER_API_KEY,run:()=>fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.OPENROUTER_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'openrouter/free',messages,max_tokens:180,temperature:0.35}),signal:AbortSignal.timeout(6000)})},
     {name:'gonka',enabled:env.GONKA_API_KEY,run:()=>fetch('https://proxy.gonkabroker.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.GONKA_API_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'MiniMaxAI/MiniMax-M2.7',messages:[{role:'system',content:system+'\nTürkçe, kısa ve doğrudan cevap ver.'},{role:'user',content:prompt}],max_tokens:512,temperature:0.35,reasoning_effort:'none'}),signal:AbortSignal.timeout(6000)})}
   ];
-  for(const p of providers){
-    if(!p.enabled||(cooldowns.get(p.name)||0)>Date.now())continue;
+  const eligible=providers.filter(p=>p.enabled&&(cooldowns.get(p.name)||0)<=Date.now());
+  const firstPass=eligible.filter(p=>p.name==='groq'||p.name==='cloudflare');
+  const runProvider=async p=>{
     try{
       const result=await p.run();
       if(result instanceof Response&&!result.ok){
         if([402,429].includes(result.status))cooldowns.set(p.name,Date.now()+retryDelay(result.headers.get('Retry-After')));
-        continue;
+        return null;
       }
       const data=result instanceof Response?await result.json():result;
       const answer=String(data?.choices?.[0]?.message?.content||data?.response||'').trim();
       if(answer)return {answer,provider:p.name};
     }catch(error){console.warn('Yakut provider unavailable',p.name,error?.name);}
+    return null;
+  };
+  if(firstPass.length){
+    let hedge;
+    try{
+      return await Promise.any(firstPass.map(async (provider,index)=>{
+        if(index)await new Promise(resolve=>{hedge=setTimeout(resolve,300);});
+        const answer=await runProvider(provider);
+        if(!answer)throw new Error('Provider returned no answer');
+        return answer;
+      }));
+    }catch{}
+    finally{clearTimeout(hedge);}
+  }
+  for(const provider of eligible.slice(firstPass.length)){
+    const answer=await runProvider(provider);
+    if(answer)return answer;
   }
   return null;
 }
@@ -460,7 +478,8 @@ export default {
     if (!origin || !allowed.includes(origin)) return new Response(null, { status: 403 });
     const headers = { 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Cache-Control': 'no-store' };
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: {
-      ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type'
+      ...headers, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age':'600'
     } });
     const pathname = new URL(request.url).pathname;
     if (!['/chat','/live','/live-token','/imar'].includes(pathname) || request.method !== 'POST')
@@ -560,7 +579,7 @@ export default {
       return Response.json({error:'SEARCH_UNAVAILABLE',answer:'Güncel bilgiye şu anda erişemedim. Arama hizmeti veya kotası kullanılamıyor.'},{status:503,headers});
     }
     const prompt=JSON.stringify({question:payload.question,page_context:payload.reference,history:Array.isArray(payload.history)?payload.history.slice(-8):[]});
-    const result=await yakutChatAnswer(prompt,'Sen Yakut, Kumtaş İnşaat Türkçe asistanısın. En fazla iki kısa cümleyle doğal cevap ver. Güncel internet bilgisi gerekiyorsa yalnızca WEB_ARAMASI_GEREKLI yaz. Bilmediğin bilgiyi uydurma.',env);
+    const result=await yakutChatAnswer(prompt,'Sen Yakut. Günlük Türkçeyle, doğrudan ve konuşmaya uygun kısa cümlelerle cevap ver. Önceki konuşmayı takip et. Gereksiz selam, giriş, tekrar ve kapanış kullanma. Kullanıcının kastı belirsizse tek bir kısa soru sor. Güncel internet bilgisi gerekiyorsa yalnızca WEB_ARAMASI_GEREKLI yaz. Bilmediğin bilgiyi uydurma.',env);
     return Response.json(result||{error:'CHAT_UNAVAILABLE',answer:'Sohbet servisleri şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.'},{status:result?200:503,headers});
 
   }

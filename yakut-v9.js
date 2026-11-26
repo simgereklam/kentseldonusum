@@ -77,7 +77,6 @@ let processingSpeech=false;
 let micStartTimer;
 let yakutMicStream=null,yakutMicRequest=null,yakutUseDefaultMic=false;
 let lastUserUtterance='',lastUserUtteranceAt=0;
-let yakutTurnInFlight=false;
 let yakutGreetingRequested=false;
 let yakutFirstGreetingDone=false,yakutPageOfferPending=false,yakutOfferSpoken=false,yakutIsGreetingWalking=false,yakutPendingPageSpeech=false;
 let yakutGreetingInProgress=false,yakutGreetingEndAt=0;
@@ -353,6 +352,7 @@ function stopYakutAudioOutput(){yakutVoice?.stop();}
 function cancelYakutSpeech(){
  stopYakutAudioOutput();
  yakutChatController?.abort();
+ yakutChatController=null;
  ++yakutVoiceGeneration;yakutAudioPlaying=false;yakutDeferredSpeech=null;
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
@@ -464,7 +464,7 @@ const yakutContact={
 function yakutIsAddressCommand(command){
  const t=normalizeYakutCommand(command);
  if(/(?:mail|e posta|eposta|ip adres|parsel|başka adres|yol tarifi|nasıl gider|nasıl gel|nasıl ulaş|metrobüs|taksi|telefon|whatsapp)/.test(t))return false;
- return /^(?:(?:yakut|lütfen|merkez|ofis|şirket|bana|bize|kumtaş(?: inşaat)?(?: ın|ın)?|şirketin|firmanın) )*(?:adres|adresi|adresini|adresiniz|adresinizi|adresinizin|adresimiz|adresimizi|adresin)(?: |$)/.test(t)
+ return /^(?:(?:yakut|lütfen|merkez(?:in)?|ofis(?:in|inizin|imizin)?|şirket|açık|bana|bize|kumtaş(?: inşaat)?(?: ın|ın)?|şirketin|firmanın) )*(?:adres|adresi|adresini|adresiniz|adresinizi|adresinizin|adresimiz|adresimizi|adresin)(?: |$)/.test(t)
  || /^(?:(?:yakut|lütfen|merkez|ofis|şirket) )*(?:neredesiniz|nerede bulunuyorsunuz)$/.test(t);
 }
 function yakutWantsLocation(command){
@@ -587,18 +587,26 @@ function yakutScenarioAnswer(message) {
  state.district = namedDistrict || state.district;
  const number = '(\\d+(?:[.,]\\d+)*)';
  const read = value => value && Number(value.replace(/\.(?=\d{3}(?:[.,]|$))/g,'').replace(',','.'));
- const area = original.match(new RegExp(number + '\\s*' + yakutAreaUnit, 'i'));
+ const measuredAreas=[...original.matchAll(new RegExp(number+'\\s*'+yakutAreaUnit,'gi'))];
  const bare = original.trim().match(new RegExp('^' + number + '$'));
  const floors = original.match(/\b(\d+)\s*kat(?:lı|lıysa)?(?:[\s.,!?]|$)/);
- const flat = /(?:brüt|daire başına)/.test(t);
  const shop = /dükk[aâ]n|mağaza/.test(t);
- const value = read(area?.[1] || bare?.[1]);
- if (floors && Number(floors[1]) > 0) state.floors = Number(floors[1]);
- if (Number.isFinite(value) && value > 0) {
-  if (shop && !/arsa/.test(t) || state.waiting === 'shop' && !/arsa|brüt/.test(t)) state.shop = value;
-  else if (flat || state.waiting === 'flat' && !/arsa/.test(t)) state.flat = value;
-  else if (state.waiting === 'area' || area && (!state.area || /arsa/.test(t))) state.area = value;
-  else if (bare && state.waiting === 'floors' && Number.isInteger(value)) state.floors = value;
+ const floorCount=Number(floors?.[1]);
+ if (floorCount>0&&floorCount<=999) state.floors = floorCount;
+ let previousEnd=0;
+ for(const [index,measurement] of (bare?[bare]:measuredAreas).entries()){
+  const before=original.slice(previousEnd,measurement.index);
+  previousEnd=measurement.index+measurement[0].length;
+  const after=original.slice(previousEnd,measuredAreas[index+1]?.index);
+  const value=read(measurement[1]);
+  if(!Number.isFinite(value)||value<0.01||value>1000000000)continue;
+  if(/(?:arsa\S*|parsel\S*)(?: alan\S*)?\W*$/.test(before)||/^\s+(?:arsa|parsel)/.test(after))state.area=value;
+  else if(/(?:brüt|daire başına)\W*$/.test(before)||/^\s+brüt/.test(after))state.flat=value;
+  else if(/(?:dükk[aâ]n|mağaza)\W*$/.test(before)||/^\s+dükk[aâ]n/.test(after))state.shop=value;
+  else if(state.waiting==='shop')state.shop=value;
+  else if(state.waiting==='flat')state.flat=value;
+  else if(state.waiting==='area'||!state.area&&measuredAreas.length)state.area=value;
+  else if(bare&&state.waiting==='floors'&&Number.isInteger(value)&&value<=999)state.floors=value;
  }
  if (!state.district) {
   state.waiting = 'district';
@@ -707,7 +715,10 @@ function yakutLocalTopic(command){
   [/^imar ve ada parsel incelemesi(?: nedir| nasıl yapılır)?$/,'imar-inceleme'],
   [/^kat karşılığı inşaat(?: nedir| ne demek| nasıl oluyor)?$/,'kat-karsiligi'],
   [/^noter onaylı sözleşme(?: nedir| ne demek| nasıl yapılır)?$/,'sozlesme'],
-  [/^anahtar teslim(?: bina yenileme)?(?: nedir| ne demek| nasıl yapılır)?$/,'anahtar-teslim']
+  [/^anahtar teslim(?: bina yenileme)?(?: nedir| ne demek| nasıl yapılır)?$/,'anahtar-teslim'],
+  [/^(?:hangi (?:ilçelerde|bölgelerde)|nerelerde) (?:hizmet veriyorsunuz|çalışıyorsunuz)$/,'bolgeler'],
+  [/^(?:hangi hizmetleri veriyorsunuz|hizmetleriniz neler|ne tür hizmetler sunuyorsunuz)$/,'hizmetlerimiz'],
+  [/^(?:başvuru için hangi bilgiler (?:lazım|gerekli)|başvuru nasıl yapılır|nasıl başvurabilirim)$/,'basvuru']
  ];
  const t=command.replace(/^(?:(?:yakut|asistan|lütfen|bana) )+/,'').replace(/ lütfen$/,'');
  const key=rules.find(([pattern])=>pattern.test(t))?.[1];
@@ -747,10 +758,7 @@ if(yakutScenario?.waiting==='district'&&Object.hasOwn(yakutDistrictPages,command
 if(/(?:kumtaş|şirketiniz|firma(?:nız)?) (?:ne zaman|hangi yılda|kaç yılında) kuruldu/.test(command)){
  react('agree',siteSpeech.kurulus,'center');return;
 }
-if(yakutWantsCompanyInfo(command)){
- const about=yakutPageSpeech('kurumsal')||'Kumtaş İnşaat, inşaat, taahhüt ve kentsel dönüşüm alanlarında çalışmalar yürütmektedir.';
- react('agree',about.replace(/^Kurumsal sayfasındayız\.\s*/i,''),'center');return;
-}
+if(yakutWantsCompanyInfo(command)){react('agree',yakutPageSpeech('kurumsal'),'center');return;}
 if(/başvuru (?:yapmak istiyorum|yapacağım|yapabilir miyim|yapmak isterim|yapmak için)|(?:ücretsiz )?keşif (?:al|istiyorum|talep etmek istiyorum)/.test(command))return openYakutPage('iletisim.html');
 if(!routeQuestion&&yakutWantsLocation(command)){yakutShareLocation();return;}
 
@@ -761,7 +769,7 @@ if(phoneAnswer){
 const destination=yakutPageCommand(command)||yakutPageCommand(spokenCommand);
 if(destination){yakutScenario=null;return openYakutPage(destination);}
 if(handleYakutOfferAnswer(command))return;
-const localPage=yakutPageCommand(spokenCommand.replace(/(?: sayfası(?:nı)?)? (?:hakkında bilgi ver|hakkında bilgi|anlat|özetle)$/, ''));
+const localPage=yakutPageCommand(spokenCommand.replace(/(?: sayfası(?:nı)?)? (?:hakkında bilgi(?: ver(?:ir misin|ebilir misin)?)?|anlat(?:ır mısın|abilir misin)?|özetle(?:r misin|yebilir misin)?)(?: lütfen)?$/, ''));
 const recording=localPage?.replace(/\.html$/,'');
 if(recording&&yakutPageSpeech(recording)){
  react('agree',yakutPageSpeech(recording),'center');return;
@@ -770,24 +778,23 @@ const localContact=routeQuestion?null:yakutContactRequest(command);
 if(localContact){
  react('agree',localContact,'center');return;
 }
-if(/^(?:(?:yakut|lütfen) )*(?:bu )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat|özetle|bilgi ver(?:ir misin|ebilir misin)?)(?: lütfen)?$/.test(command)){
+if(/^(?:(?:yakut|lütfen|bana) )*(?:(?:bu|bulunduğumuz|açık) )?sayfa(?:yı|daki bilgileri| hakkında)? (?:anlat(?:ır mısın|abilir misin)?|özetle(?:r misin|yebilir misin)?|bilgi ver(?:ir misin|ebilir misin)?)(?: lütfen)?$/.test(command)){
  yakutPageOfferPending=false;yakutSpeakCurrentPage();return;
 }
 const siteAnswer=yakutLocalTopic(spokenCommand);
 if(siteAnswer){react('agree',siteAnswer,'center');return;}
 const weather=yakutWeatherRequest(command);
-const webRequest=routeQuestion||/(?:araştır|internet|kaynak|webde ara|güncel|bugün|yarın|son dakika|en son|maç|skor|kaç kaç|kim kazandı|kim yendi|fikstür|puan durumu|haber|döviz|dolar|euro|altın|ne yenir|nerede yenir|gezilecek)/.test(command);
+const webRequest=routeQuestion||/(?:araştır|internet|kaynak|webde ara|güncel|son dakika|en son|maç|skor|kaç kaç|kim kazandı|kim yendi|fikstür|puan durumu|haber|döviz|dolar|euro|altın|borsa|ne yenir|nerede yenir|gezilecek|konser|etkinlik|sefer saati)/.test(command);
 const officialResearch=/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.test(command);
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
-if(yakutTurnInFlight)return;
-yakutTurnInFlight=true;
+if(yakutChatController)return;
 processingSpeech=true;
  if(!weather){yakutWeatherPending='';yakutWeatherCity='';}
  if(weather?.ask){
   yakutWeatherPending=weather.period;
   const reply=siteSpeech['hava-sehir'];
   rememberYakutTurn(q,reply);
-  processingSpeech=false;yakutTurnInFlight=false;react('agree',reply,'center');return;
+  processingSpeech=false;react('agree',reply,'center');return;
  }
  if(weather){yakutWeatherPending='';yakutWeatherCity=weather.city;}
  let answer=siteSpeech['dis-yanit-hatasi'];
@@ -795,8 +802,8 @@ processingSpeech=true;
  const generation=yakutVoiceGeneration;
  const url=new URL(yakutChatEndpoint());
  const research=Boolean(weather||webRequest||officialResearch);
- const contact=yakutContactRequest(q);
- const reference=('Açık sayfa: '+yakutPageName(getYakutCurrentPage())+'. '+(contact?[contact].flat().join(' ')+' ':'')+yakutPageSpeech(getYakutCurrentPage().replace(/\.html$/,''))).slice(0,1500);
+ const page=getYakutCurrentPage();
+ const reference=(yakutPageSpeech(page.replace(/\.html$/,''))||yakutPageIntro(page)).slice(0,1500);
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
  const controller=new AbortController();
  yakutChatController=controller;
@@ -806,28 +813,17 @@ processingSpeech=true;
    const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({...payload,research:search,weather:weather?.city?weather:undefined}),
     signal:AbortSignal.any([controller.signal,AbortSignal.timeout(search?45000:25000)])});
-   let result=null;
-   try{result=await response.json()}catch(_){}
-   if(response.ok)return result;
-   const reason=typeof result?.answer==='string'&&result.answer.trim()
-    ?result.answer.trim():(response.status===429?'Yakut yoğun kullanım nedeniyle kısa süre bekliyor. Lütfen yeniden deneyin.':
-    response.status===403?'Yakut bağlantısı site yetkilendirmesi nedeniyle reddedildi.':
-    response.status===503?'Gemini veya internet araması geçici olarak yanıt vermiyor.':
-    'Yakut sunucusu HTTP '+response.status+' hatası verdi.');
-   return {answer:reason,serverError:true};
+   return response.ok?await response.json():null;
   };
-  // Outside-site questions use Gemini chat, with research through the three configured providers.
+  // Request research directly when the question already signals a need for current information.
   let result=await ask(research);
   const needsSearch=research||result?.answer?.trim()==='WEB_ARAMASI_GEREKLI';
   if(!research&&needsSearch)result=await ask(true);
   if(generation!==yakutVoiceGeneration||hidden)return;
   if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.trim()!=='WEB_ARAMASI_GEREKLI'){
-   if(result.serverError)answer=siteSpeech[needsSearch?'dis-arama-hatasi':'dis-yanit-hatasi'];
-   else {
-    answer=result.answer.trim().replace(/\*\*/g,'');
-    externalAnswer=true;
-    rememberYakutTurn(q,answer);
-   }
+   answer=result.answer.trim().replace(/\*\*/g,'');
+   externalAnswer=true;
+   rememberYakutTurn(q,answer);
   }else if(needsSearch)answer=siteSpeech['dis-arama-hatasi'];
  }catch(error){
   if(!controller.signal.aborted){
@@ -836,7 +832,6 @@ processingSpeech=true;
   }
  }finally{
   if(yakutChatController===controller)yakutChatController=null;
-  yakutTurnInFlight=false;
  }
  if(generation!==yakutVoiceGeneration||hidden)return;
  processingSpeech=false;
@@ -958,6 +953,8 @@ function startSpeech(){
   else if(utteranceEnded&&interimText)timer=setTimeout(submit,300);
  };
  rec.onspeechstart=()=>{
+  if(recognition!==rec)return;
+  if(finalText||interimText)submit();
   if(recognition!==rec)return;
   // A new utterance can reuse a slot when the browser dropped an interim result.
   if(consumedInterim){
