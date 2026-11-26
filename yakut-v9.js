@@ -304,7 +304,7 @@ function navigateFromRecognition(transcript){
  return true;
 }
 function normalizeYakutCommand(message){
- return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim();
+ return String(message||'').toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9\s]/gi,' ').replace(/\s+/g,' ').trim().replace(/\b(?:montaj inşaat|kum taş|kumtaç|kumtaşş)\b/g,'kumtaş'+(String(message).toLocaleLowerCase('tr-TR').includes('montaj inşaat')?' inşaat':'')).replace(/\bkent sel dönüşüm\b/g,'kentsel dönüşüm').replace(/\be mar\b/g,'imar').replace(/\ben sal\b/g,'emsal').replace(/^yakup(?= |$)/,'yakut');
 }
 function isYakutOwnVoice(text){
  const heard=normalizeYakutCommand(text);
@@ -317,7 +317,7 @@ function isYakutOwnVoice(text){
  return words.filter(word=>ownWords.has(word)).length/words.length>=0.75;
 }
 function isYakutStopCommand(command){
- return /^(?:(?:yakut|asistan|lütfen) )*(?:dur(?:un)?|sus(?:un)?|konuşma|kes|yeter|bekle|bir saniye|bi saniye)(?: (?:lütfen|yakut|artık))*$/.test(command);
+ return /^(?:(?:yakut|asistan|lütfen|hey|ya) )*(?:dur(?:un|sana)?|sus(?:un|sana)?|konuşma|konuşmayı (?:kes|durdur)|kes|yeter|bu kadar yeter|bekle|bir dakika(?: bekle)?|bi dakika|bir saniye(?: bekle)?|bi saniye|beni dinle|sessiz ol)(?: (?:lütfen|yakut|artık|ya))*$/.test(command);
 }
 function getYakutCurrentPage(){
  const path=location.pathname.split('/').filter(Boolean).pop()||'index.html';
@@ -348,7 +348,7 @@ function stopYakutAnswer(){
  }
  yakutPageOfferPending=false;
  cancelYakutSpeech();
- if(phase==='reacting'){phase='idle';play('wait')}
+ if(phase==='reacting'||phase==='walking'){targetX=posX;phase='idle';if(model)model.rotation.y=0;play('wait');walkTimer=0;}
  finishYakutSpeech();
 }
 function collectYakutPageSpeech(){
@@ -657,8 +657,14 @@ function beginYakutAudioPlayback(){
 }
 let yakutSocialLast={};
 function yakutSocialReply(command){
- const t=command.replace(/^yakut\s+/,'').replace(/\s+yakut$/,'').trim();
+ const t=command.replace(/^yakut\s+/,'').replace(/\s+yakut$/,'').replace(/^(?:merhaba|selam)\s+(?=nasıl|ne haber|naber)/,'').replace(/\s+(?:acaba|bakalım|bugün)$/,'').trim();
  const rules=[
+ [/^(?:sen kimsin|kimsin|adın ne|ismin ne)$/,['Ben Kumtaş İnşaat dijital asistanı Yakut.']],
+ [/^(?:ne yapıyorsun|ne iş yapıyorsun|ne işe yarıyorsun)$/,['Size yardımcı olmak için buradayım.']],
+ [/^(?:beni anladın mı|anladın mı)$/,['Sizi dinliyorum. İsteğinizi doğru anladığımdan emin olmak için tekrar söyleyebilirsiniz.']],
+ [/^(?:yanlış anladın|beni yanlış anladın)$/,['Özür dilerim, tekrar söyler misiniz?']],
+ [/^(?:çok güzelsin|güzelsin|çok tatlısın)$/,['Çok naziksiniz, teşekkür ederim.']],
+ [/^(?:iyiyim|ben de iyiyim|iyiyim teşekkür ederim|çok iyiyim)$/,['İyi olmanıza sevindim.']],
  [/^(?:merhaba(?:lar)?|selam(?:lar)?)(?:\s+(?:yakut|merhaba|selam|hoş bulduk))*$/,['Merhaba, sizi dinliyorum.']],
  [/^(?:(?:çok|çok çok) )?(?:teşekkür(?:ler| ederim| ediyoruz)?|sağ ?ol(?:un)?|çok sağ ?ol(?:un)?|eyvallah)$/,['Rica ederim, ne demek.','Her zaman yardımcı olmaktan mutluluk duyarım.','Rica ederim, her zaman buradayım.']],
  [/^(?:nasılsın|nasılsınız|ne haber|naber)$/,['İyiyim, teşekkür ederim. Siz nasılsınız?']],
@@ -685,8 +691,7 @@ if(isYakutStopCommand(command)){stopYakutAnswer();return}
 // Browser speech recognition may resend the same phrase when restarted.
 // Do not generate a second reply for a single utterance.
 const now=Date.now();
-if(command===lastUserUtterance &&
- (now-lastUserUtteranceAt<7000||now-yakutSpeechEndedAt<2500))return;
+if(command===lastUserUtterance && now-lastUserUtteranceAt<1200)return;
 lastUserUtterance=command;lastUserUtteranceAt=now;
  yakutAddressPending=false;
  try{sessionStorage.removeItem('yakutAddressPending')}catch(_){}
@@ -863,12 +868,12 @@ function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
  let hasInterim=false;
- let ignoredResults=0;
+ let ignoredResults=0,lastFinalCount=0;
  let acceptedInput=false;
  let utteranceEnded=false;
  let timer;
@@ -884,7 +889,7 @@ function startSpeech(){
   if(speaking||processingSpeech)return false;
   if(Date.now()-yakutSpeechEndedAt<3500&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
-  releaseYakutMic();
+  ignoredResults=rec?Math.max(ignoredResults,lastFinalCount):ignoredResults;
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
    processingSpeech=false;
@@ -905,6 +910,13 @@ function startSpeech(){
   micFailureCount=0;emptyRecognitionCount=0;
   clearTimeout(timer);
   const results=Array.from(e.results);
+  lastFinalCount=results.filter(result=>result.isFinal).length;
+  for(const result of results.slice(e.resultIndex)){
+   const alternatives=Array.from(result).map(a=>normalizeYakutCommand(a.transcript));
+   if(alternatives.some(isYakutStopCommand)){
+    clearTimeout(timer);finalText='';interimText='';releaseYakutMic();stopYakutAnswer();queueListen(0);return;
+   }
+  }
   if(speaking||processingSpeech){
    finalText='';interimText='';hasInterim=false;
    // Accept real interruptions while speaking; ignore text recognized from
