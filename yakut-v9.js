@@ -26,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=emel-flow-20261126',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=emel-continuous-20261126',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -204,7 +204,7 @@ async function speak(text,deferPlayback=true,isHoldNotice=false,walkingIntro=fal
    yakutCurrentPrompt=prompt;
   }
   const ok=await voice.speak(prompt,{
-   chunkSize:450,
+   chunkSize:2000,
    beforePlayback:!greeting&&model?()=>new Promise(resolve=>{
     const check=()=>{
      if(turn!==yakutVoiceGeneration||hidden||phase!=='walking'){
@@ -869,7 +869,7 @@ function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=!/Android|iPhone|iPad/i.test(navigator.userAgent);rec.maxAlternatives=1;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
@@ -918,7 +918,7 @@ function startSpeech(){
    for(const result of results.slice(e.resultIndex)){
     const raw=result[0]?.transcript||'';
     const heard=normalizeYakutCommand(raw);
-    if(isYakutStopCommand(heard)){
+    if(isYakutStopCommand(heard)||(/(?:^|\s)(?:sus|dur)(?:\s|$)/.test(heard)&&!isYakutOwnVoice(raw))){
      releaseYakutMic();stopYakutAnswer();queueListen(100);return;
     }
     if(!result.isFinal||!heard||isYakutOwnVoice(raw))continue;
@@ -940,14 +940,14 @@ function startSpeech(){
   // Preserve the heard question instead of silently discarding it.
   waitForSentenceEnd();
  };
- rec.onerror=e=>{if(recognition!==rec)return;clearTimeout(timer);releaseYakutMic();micLastError=e.error||'unknown';if((speaking||processingSpeech)&&micLastError==='no-speech'){queueListen(80);return;}speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180)};
+ rec.onerror=e=>{if(recognition!==rec)return;clearTimeout(timer);releaseYakutMic();micLastError=e.error||'unknown';if((speaking||processingSpeech)&&micLastError==='no-speech'){micRestartAt=0;queueListen(0);return;}speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180)};
  rec.onend=()=>{
   if(recognition!==rec)return;
   clearTimeout(timer);
   if((finalText.trim()||interimText.trim())&&submit())return;
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
-    if(speaking||processingSpeech){queueListen(80);return;}
+    if(speaking||processingSpeech){micRestartAt=0;queueListen(0);return;}
     if(!acceptedInput){
      emptyRecognitionCount++;
      micRestartAt=Date.now()+Math.min(850,180*emptyRecognitionCount);
