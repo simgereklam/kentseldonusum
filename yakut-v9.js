@@ -160,7 +160,7 @@ document.addEventListener('keydown',handleYakutActivation,true);
 function finishYakutSpeech(restartAfterGreeting=false){
  yakutAudioPlaying=false;
  speaking=false;processingSpeech=false;yakutSpeechEndedAt=Date.now();
- releaseYakutMic();micRestartAt=0;
+ micRestartAt=0;
  if(yakutGreetingInProgress){
   yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();
   moveTo(yakutRightX());
@@ -168,7 +168,6 @@ function finishYakutSpeech(restartAfterGreeting=false){
  // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden){
   if(restartAfterGreeting){
-   releaseYakutMic();
    micRestartAt=0;
    talk.textContent='🎤 Mikrofon açılıyor';
   }else if(recognition&&!micStarting)talk.textContent='🟢 Dinliyorum';
