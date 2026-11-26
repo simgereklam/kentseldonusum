@@ -27,7 +27,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=welcome-mp3-20261126',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=audio-restore-20261126',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -69,6 +69,7 @@ const ui=document.createElement('div');ui.id='yakut-v9-ui';
 ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Yakut sesini etkinleştir">🔊 Sesi Aç</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
 document.body.append(stage,ui);
 const talk=ui.querySelector('#yakut-talk'),close=ui.querySelector('#yakut-close');
+ talk.style.setProperty('display','none','important');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
 let openingGreeted=false,openingSpoken=false,characterRendered=false;
 let micFailureCount=0,micLastError='',micRestartAt=0;
@@ -913,8 +914,7 @@ function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||document.hidden)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
- if(prepareYakutMicStream())return;
- const micTrack=yakutMicStream?.getAudioTracks()[0];
+ const micTrack=null; // Native microphone avoids simultaneous capture streams on mobile.
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
@@ -1050,7 +1050,7 @@ talk.onclick=()=>{
 close.onclick=()=>{
 hidden=!hidden;stage.style.display=hidden?'none':'block';
 if(hidden){stopListening();cancelYakutSpeech()}
-close.textContent=hidden?'Göster':'✕';talk.style.display=hidden?'none':'';if(!hidden){positionStage();resumeYakutSound()}
+close.textContent=hidden?'Göster':'✕';talk.style.setProperty('display','none','important');if(!hidden){positionStage();resumeYakutSound()}
 };
 window.addEventListener('resize',()=>{posX=Math.max(-stage.offsetWidth,Math.min(posX,innerWidth-stage.offsetWidth));targetX=Math.max(0,Math.min(targetX,innerWidth-stage.offsetWidth));positionStage()});
 function addYakutChestLogo() {
