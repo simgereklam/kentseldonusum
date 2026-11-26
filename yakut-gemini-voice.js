@@ -62,9 +62,9 @@ class YakutGeminiVoice{
   for(let c=0;c<channels.length;c++){let from=0,to=0;const dest=out.getChannelData(c);for(const [a,b] of cuts){dest.set(channels[c].subarray(from,a),to);to+=a-from;from=b;}dest.set(channels[c].subarray(from),to);}
   return out;
  }
- async speak(text,{beforePlayback,chunkSize=180}={}){
+ async speak(text,{beforePlayback,chunkSize=180,intro=""}={}){
   this.stop();
-  const token=this.generation,parts=this.split(text,chunkSize);
+  const token=this.generation,parts=[...(intro?[intro]:[]),...this.split(text,chunkSize)];
   if(!parts.length)return false;
   if(!this.ready){this.onError(new Error('AUDIO_LOCKED'));return false;}
   const controller=new AbortController();this.controller=controller;
@@ -107,7 +107,7 @@ class YakutGeminiVoice{
     const played=new Promise(resolve=>{finish=resolve;});
     const entry={source,finish};this.sources.add(entry);
     source.onended=()=>{this.sources.delete(entry);finish();};
-    if(!started&&beforePlayback){
+    if(beforePlayback&&i===(intro?1:0)){
      await beforePlayback();
      if(token!==this.generation||controller.signal.aborted)return false;
     }
