@@ -53,8 +53,8 @@ async def sorgula_bagcilar(body):
         try:
             page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
             page.set_default_timeout(12000)
-            await page.goto(MUNICIPAL_URLS["bağcılar"], wait_until="domcontentloaded", timeout=25000)
-            await page.get_by_role("tab", name="Ada/Parsel", exact=True).click()
+            await page.goto(MUNICIPAL_URLS["bağcılar"], wait_until="commit", timeout=40000)
+            await page.get_by_role("tab", name="Ada/Parsel", exact=True).click(timeout=40000)
             await page.locator("#txtAda").fill(ada)
             await page.locator("#txtParsel").fill(parsel)
             await page.locator("#btnAdaParselSearch").click()
