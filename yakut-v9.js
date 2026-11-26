@@ -69,6 +69,10 @@ const ui=document.createElement('div');ui.id='yakut-v9-ui';
 ui.innerHTML='<button id="yakut-talk" type="button" aria-label="Yakut sesini etkinleştir">🔊 Sesi Aç</button><button id="yakut-close" type="button" aria-label="YAKUT’u gizle">✕</button>';
 document.body.append(stage,ui);
 const talk=ui.querySelector('#yakut-talk'),close=ui.querySelector('#yakut-close');
+ const micDebug=new URLSearchParams(location.search).has('yakutdebug');
+ const micLog=micDebug?document.createElement('pre'):null;
+ if(micLog){micLog.style.cssText='position:fixed;top:8px;left:8px;right:8px;z-index:2147483647;background:#fff;color:#111;font:12px monospace;white-space:pre-wrap;max-height:30vh;overflow:auto;pointer-events:none';document.body.append(micLog);}
+ function traceMic(message){if(micLog){micLog.textContent=(new Date().toLocaleTimeString()+' '+message+'\n'+micLog.textContent).slice(0,1800);}}
  talk.style.setProperty('display','none','important');
 let THREE,model,mixer,face,clips={},current=null,ready=false,hidden=false,speaking=false,recognition=null,listenEnabled=true,micStarting=false,listenRetry=null;
 let openingGreeted=false,openingSpoken=false,characterRendered=false;
@@ -675,6 +679,8 @@ function rememberYakutTurn(question,answer){
 }
 let yakutChatController=null;
 function beginYakutAudioPlayback(){
+ traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
+ if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
  if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
   pendingSpeechGesture=null;phase='reacting';
@@ -917,7 +923,7 @@ function startSpeech(){
  const micTrack=null; // Native microphone avoids simultaneous capture streams on mobile.
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
- rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
+ rec.onstart=()=>{traceMic('Mikrofon başladı');if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
  let recognizedResults=[];
@@ -970,6 +976,7 @@ function startSpeech(){
  };
  rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
  rec.onresult=e=>{
+  if(micDebug)traceMic('Algılanan: '+Array.from(e.results).slice(e.resultIndex).map(r=>r[0]?.transcript).join(' | '));
   if(recognition!==rec||!listenEnabled||hidden)return;
   micFailureCount=0;emptyRecognitionCount=0;
   clearTimeout(timer);
@@ -981,6 +988,7 @@ function startSpeech(){
   const changed=results.slice(answerInProgress?e.resultIndex:Math.max(e.resultIndex,nextResultIndex));
   if(changed.some(result=>isYakutStopResult(result,answerInProgress))){
    consumeResults();
+   traceMic('Durdurma komutu algılandı');
    stopYakutAnswer();
    return;
   }
@@ -1003,6 +1011,7 @@ function startSpeech(){
   waitForSentenceEnd();
  };
  rec.onerror=e=>{
+  traceMic('Mikrofon hatası: '+e.error);
   if(recognition!==rec)return;
   clearTimeout(timer);releaseYakutMic();
   micLastError=e.error||'unknown';
@@ -1013,6 +1022,7 @@ function startSpeech(){
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
  };
  rec.onend=()=>{
+  traceMic('Mikrofon oturumu bitti');
   if(recognition!==rec)return;
   clearTimeout(timer);
   if(finalText.trim()||interimText.trim())submit();
