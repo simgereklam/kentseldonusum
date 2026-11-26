@@ -45,19 +45,37 @@ async def health():
     return {"ok": True, "service": "imar", "supported": ["kadikoy", "bagcilar", "fatih", "tkgm"]}
 
 
-def bagcilar_baglanti_kontrolu():
-    host = "bbgis.bagcilar.bel.tr"
+def tls_baglanti_kontrolu(host, version):
     stage = "DNS"
+    started = time.monotonic()
     try:
         addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
-        logger.info("Bağcılar bağlantı kontrolü: DNS başarılı, %s adres", len(addresses))
         stage = "TCP"
-        with socket.create_connection((host, 443), timeout=4) as conn:
+        family, socktype, protocol, _, address = addresses[0]
+        with socket.socket(family, socktype, protocol) as conn:
+            conn.settimeout(4)
+            conn.connect(address)
             stage = "TLS"
-            with ssl.create_default_context().wrap_socket(conn, server_hostname=host) as tls:
-                logger.info("Bağcılar bağlantı kontrolü: TCP ve TLS başarılı (%s)", tls.version())
+            context = ssl.create_default_context()
+            context.minimum_version = version
+            context.maximum_version = version
+            with context.wrap_socket(conn, server_hostname=host) as tls:
+                logger.info("e-İmar TLS kontrolü | %s | %s | başarılı | %.2fs",
+                            host, tls.version(), time.monotonic() - started)
     except OSError as exc:
-        logger.warning("Bağcılar bağlantı kontrolü: %s | %s", stage, exc)
+        logger.warning("e-İmar TLS kontrolü | %s | %s | %s | %s | %.2fs",
+                       host, version.name, stage, exc, time.monotonic() - started)
+
+
+async def tls_surumu_karsilastir(host):
+    probes = [
+        asyncio.to_thread(tls_baglanti_kontrolu, host, version)
+        for version in (ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3)
+    ]
+    try:
+        await asyncio.wait_for(asyncio.gather(*probes), timeout=9)
+    except TimeoutError:
+        logger.warning("e-İmar TLS kontrolü | %s | 9 saniyede tamamlanmadı", host)
 
 
 async def sorgula_bagcilar(body):
@@ -125,10 +143,7 @@ async def sorgula_bagcilar(body):
         except PlaywrightError as exc:
             logger.error("Bağcılar e-İmar aşaması: %s | %s: %.1000s", phase, type(exc).__name__, str(exc))
             if phase == "belediye adresine bağlantı":
-                try:
-                    await asyncio.wait_for(asyncio.to_thread(bagcilar_baglanti_kontrolu), timeout=9)
-                except TimeoutError:
-                    logger.warning("Bağcılar bağlantı kontrolü 9 saniyede tamamlanmadı")
+                await tls_surumu_karsilastir("bbgis.bagcilar.bel.tr")
             return JSONResponse({"detail": f"Bağcılar e-İmar işlemi şu aşamada durdu: {phase}."}, status_code=502)
         finally:
             await browser.close()
@@ -181,7 +196,11 @@ async def sorgula_ibb(body, district):
         try:
             page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
             page.set_default_timeout(15000)
-            response = await page.goto("https://eplan.ibb.istanbul/sorgu/plansorgu", wait_until="commit", timeout=25000)
+            try:
+                response = await page.goto("https://eplan.ibb.istanbul/sorgu/plansorgu", wait_until="commit", timeout=25000)
+            except PlaywrightError:
+                await tls_surumu_karsilastir("eplan.ibb.istanbul")
+                raise
             if response is None or not response.ok:
                 return JSONResponse({"detail": "İBB e-Plan sorgu ekranı açılmadı."}, status_code=502)
             notice = page.get_by_role("button", name="Kabul ediyorum", exact=True)
