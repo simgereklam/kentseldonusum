@@ -92,10 +92,10 @@ class YakutGeminiVoice{
   let started=false,success=false;
   try{
    const load=async phrase=>{
-    const local=await this.preloadRecording(phrase);
+    const local=await Promise.race([this.preloadRecording(phrase,1200),new Promise(resolve=>setTimeout(()=>resolve(null),1500))]);
     if(token!==this.generation||controller.signal.aborted)return null;
     if(local)return local;
-    if(recordedOnly)throw new Error('EMEL_RECORDING_MISSING');
+    // Missing or unavailable recording: use the existing Emel live service.
     const response=await fetch(new URL('/live',this.endpoint),{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({readAloud:phrase}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(65000)])
