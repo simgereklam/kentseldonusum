@@ -12,7 +12,7 @@
 <label>İlçe<select id="district"></select></label>
 <label>Mahalle<input id="mahalle" value="Erenköy"></label><label>Ada<input id="ada" value="1402" inputmode="numeric"></label><label>Parsel<input id="parsel" value="34" inputmode="numeric"></label>
 <label style="grid-column:1/-1">Python API adresi (canlı sitede HTTPS gerekir)<input id="api" type="url" value="https://kumtas-imar-gateway.simgereklam.workers.dev" placeholder="https://.../sorgula servisini sunan adres"></label>
-</div><div class="actions"><button id="run">Sorgula</button><button id="mic" class="secondary">🎙 Sesli Komut</button><button id="stop" class="secondary">Durdur</button></div>
+</div><div class="actions"><button id="run">Sorgula</button><a id="municipal-site" class="btn secondary" target="_blank" rel="noopener noreferrer" style="display:none">Belediye E-İmar’ı Aç</a><button id="mic" class="secondary">🎙 Sesli Komut</button><button id="stop" class="secondary">Durdur</button></div>
 <p id="heard" class="note"></p><div id="status" class="status">Hazır. Önce ilçe ve ada/parsel bilgilerini kontrol edin.</div>
 </section><section class="panel"><h2>İmar Bilgileri ve Görseller</h2><p id="summary"></p><div id="links" class="actions"></div><div id="cards" class="cards"></div></section>
 </main><script>
@@ -31,8 +31,19 @@ if(source==='belediye'&&!['Kadıköy','Bağcılar'].includes(district)){status(d
 if(!/^https:\/\//.test(base)){status('Canlı sitede sorgu için herkese erişilebilir HTTPS Python API adresi gerekli. 127.0.0.1 yalnızca kendi bilgisayarınızda çalışır. Python ve Yakut kodları değiştirilmedi.',true);return}
 status('Sorgu gönderildi...');el('run').disabled=true;
 try{let resp=await fetch(base+'/sorgula',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kaynak:source,il:'İstanbul',ilce:district,mahalle,ada,parsel,url:null})});let data=await resp.json();if(!resp.ok)throw Error(data.detail||'HTTP '+resp.status);el('summary').textContent=(data.yorum||data.metin_ozeti||'').replace(/Parsel ve harita görünümü ekrana aktarıldı\.?/g,'').trim();const safe=p=>typeof p==='string'&&/^\/(?!\/)/.test(p)?base+p:null;let a=safe(data.ekran_goruntusu_parca_1||data.ekran_goruntusu_url),b=safe(data.ekran_goruntusu_parca_2);if(a)addShot(source==='tkgm'?'TKGM Parsel Görüntüsü':'1. İmar Planı',a);if(source==='belediye'&&b)addShot('2. Kadastro ve Yapılaşma Bilgileri',b);if(safe(data.goruntu_sayfasi))addLink('Görüntüleri Aç',safe(data.goruntu_sayfasi));status('Sorgu yanıtı alındı.')}catch(e){status('Sorgu tamamlanamadı: '+e.message,true)}finally{el('run').disabled=false}}
+function updateMunicipalLink() {
+  const link = el('municipal-site');
+  const url = sites[el('district').value];
+  const visible = el('source').value === 'belediye' && !!url;
+  link.style.display = visible ? '' : 'none';
+  if (visible) link.href = url;
+  else link.removeAttribute('href');
+}
+el('district').addEventListener('change', updateMunicipalLink);
+el('source').addEventListener('change', updateMunicipalLink);
+updateMunicipalLink();
 el('run').onclick=run;
 let recognition;const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
-el('mic').onclick=()=>{if(!Speech){status('Tarayıcı ses tanımayı desteklemiyor. Chrome/Edge deneyin.',true);return}recognition=new Speech();recognition.lang='tr-TR';recognition.onstart=()=>status('Dinliyorum...');recognition.onresult=e=>{let s=e.results[0][0].transcript;el('heard').textContent='Duyulan: '+s;let d=names.find(x=>fold(s).includes(fold(x)));if(d)el('district').value=d;const a=s.match(/(\d+)\s+ada\s+(\d+)\s+parsel/i);if(a){el('ada').value=a[1];el('parsel').value=a[2]}let m=s.match(/mahalle(?:si)?\s+([a-zçğıöşü]+)/i);if(m)el('mahalle').value=m[1];status('Sesli bilgileri doldurdum. İsterseniz Sorgula düğmesine basın.');if(/sorgula|ara|göster/i.test(s))run()};recognition.onerror=e=>status('Mikrofon hatası: '+e.error,true);recognition.start()};
+el('mic').onclick=()=>{if(!Speech){status('Tarayıcı ses tanımayı desteklemiyor. Chrome/Edge deneyin.',true);return}recognition=new Speech();recognition.lang='tr-TR';recognition.onstart=()=>status('Dinliyorum...');recognition.onresult=e=>{let s=e.results[0][0].transcript;el('heard').textContent='Duyulan: '+s;let d=names.find(x=>fold(s).includes(fold(x)));if(d){el('district').value=d;updateMunicipalLink()}const a=s.match(/(\d+)\s+ada\s+(\d+)\s+parsel/i);if(a){el('ada').value=a[1];el('parsel').value=a[2]}let m=s.match(/mahalle(?:si)?\s+([a-zçğıöşü]+)/i);if(m)el('mahalle').value=m[1];status('Sesli bilgileri doldurdum. İsterseniz Sorgula düğmesine basın.');if(/sorgula|ara|göster/i.test(s))run()};recognition.onerror=e=>status('Mikrofon hatası: '+e.error,true);recognition.start()};
 el('stop').onclick=()=>recognition&&recognition.stop();
 </script></body></html>
