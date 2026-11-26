@@ -3,13 +3,15 @@ import asyncio
 import logging
 import os
 import time
+import uuid
 from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from app_sadece_tkgm_duzeltildi import app
+from playwright.async_api import Error as PlaywrightError, async_playwright
+from app_sadece_tkgm_duzeltildi import SHOT_DIR, app, tr_normalize
 
 MUNICIPAL_URLS = {
     "kadıköy": "https://webgis.kadikoy.bel.tr/imardurumu/",
@@ -38,6 +40,59 @@ async def log_automation_failure(request: Request, exc: StarletteHTTPException):
 @app.get("/health")
 async def health():
     return {"ok": True, "service": "imar", "supported": ["kadikoy", "bagcilar", "tkgm"]}
+
+
+async def sorgula_bagcilar(body):
+    ada, parsel = str(body["ada"]), str(body["parsel"])
+    mahalle = tr_normalize(str(body.get("mahalle") or ""))
+    rapor_basligi = "KADASTRO PARSEL KONUM BİLGİSİ"
+    kayit_id = uuid.uuid4().hex[:8]
+
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        try:
+            page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
+            page.set_default_timeout(12000)
+            await page.goto(MUNICIPAL_URLS["bağcılar"], wait_until="domcontentloaded", timeout=25000)
+            await page.get_by_role("tab", name="Ada/Parsel", exact=True).click()
+            await page.locator("#txtAda").fill(ada)
+            await page.locator("#txtParsel").fill(parsel)
+            await page.locator("#btnAdaParselSearch").click()
+
+            await page.locator("[role=status]").wait_for(state="visible")
+            rows = page.locator(".result-item")
+            if not await rows.count():
+                return JSONResponse({"detail": "Bağcılar e-İmar bu ada ve parsel için sonuç döndürmedi."}, status_code=404)
+            matches = []
+            for row in await rows.all():
+                lines = (await row.inner_text()).splitlines()
+                if lines and lines[0].strip() == f"{ada}/{parsel}" and (
+                    not mahalle or any(tr_normalize(line) == mahalle for line in lines[1:])
+                ):
+                    matches.append(row)
+            if len(matches) != 1:
+                return JSONResponse({"detail": "Bağcılar e-İmar sonucunda mahalle ve parsel eşleşmesi tekil değil. Mahalle adını kontrol edin."}, status_code=422)
+
+            await matches[0].click()
+            await page.get_by_role("button", name="İmar Durumu", exact=True).click()
+            await page.wait_for_url("**/imardurumu/imar.aspx?**", wait_until="domcontentloaded")
+            heading = page.get_by_text(rapor_basligi, exact=True)
+            await heading.wait_for(state="visible")
+            first, second = f"{kayit_id}_1.png", f"{kayit_id}_2.png"
+            await page.screenshot(path=str(SHOT_DIR / first))
+            await heading.evaluate("(el) => el.scrollIntoView({block: 'start'})")
+            await page.screenshot(path=str(SHOT_DIR / second))
+            return JSONResponse({
+                "id": kayit_id,
+                "url": page.url,
+                "ekran_goruntusu_url": f"/shots/{first}",
+                "ekran_goruntusu_parca_1": f"/shots/{first}",
+                "ekran_goruntusu_parca_2": f"/shots/{second}",
+                "yorum": f"Bağcılar / {body.get('mahalle') or ''} — {ada} ada {parsel} parsel. Belediye imar raporu açıldı.",
+            })
+        finally:
+            await browser.close()
+
 
 @app.middleware("http")
 async def protection(request: Request, call_next):
@@ -82,4 +137,10 @@ async def protection(request: Request, call_next):
     request._body = __import__("json").dumps(body,ensure_ascii=False).encode("utf-8")
     bucket.append(now)
     async with _gate:
+        if source == "belediye" and district == "bağcılar":
+            try:
+                return await sorgula_bagcilar(body)
+            except PlaywrightError as exc:
+                logger.error("Bağcılar e-İmar otomasyonu başarısız: %.1500s", str(exc))
+                return JSONResponse({"detail": "Bağcılar e-İmar raporu açılırken tarayıcı hatası oluştu."}, status_code=502)
         return await call_next(request)
