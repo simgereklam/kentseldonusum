@@ -18,6 +18,7 @@ from app_sadece_tkgm_duzeltildi import SHOT_DIR, app, tr_normalize
 MUNICIPAL_URLS = {
     "kadıköy": "https://webgis.kadikoy.bel.tr/imardurumu/",
     "bağcılar": "https://bbgis.bagcilar.bel.tr/imardurumu/",
+    "fatih": "https://kentrehberi.fatih.bel.tr/webgis/",
 }
 
 ORIGINS = {
@@ -41,7 +42,7 @@ async def log_automation_failure(request: Request, exc: StarletteHTTPException):
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "service": "imar", "supported": ["kadikoy", "bagcilar", "tkgm"]}
+    return {"ok": True, "service": "imar", "supported": ["kadikoy", "bagcilar", "fatih", "tkgm"]}
 
 
 def bagcilar_baglanti_kontrolu():
@@ -133,6 +134,40 @@ async def sorgula_bagcilar(body):
             await browser.close()
 
 
+async def sorgula_fatih(body):
+    ada, parsel = str(body["ada"]), str(body["parsel"])
+    kayit_id = uuid.uuid4().hex[:8]
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        try:
+            page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
+            page.set_default_timeout(15000)
+            await page.goto(MUNICIPAL_URLS["fatih"], wait_until="commit", timeout=35000)
+            await page.get_by_text("İmar Planı", exact=True).click()
+            await page.get_by_role("tab", name="Parsel Sorgu").click()
+            await page.locator("#txtAda").fill(ada)
+            await page.locator("#txtParsel").fill(parsel)
+            secim = page.locator('svg path[fill="rgb(60, 110, 234)"][stroke="rgb(181, 18, 24)"]')
+            await secim.wait_for(state="hidden")
+            await page.get_by_text("Bul", exact=True).click()
+            await secim.wait_for(state="visible")
+            await page.wait_for_function("""() => [...document.images].some(img =>
+                img.src.includes('/ImarPlaniV1/MapServer/tile/') &&
+                img.complete && img.naturalWidth > 0 && img.getBoundingClientRect().width > 0
+            )""")
+            dosya = f"{kayit_id}_1.png"
+            await page.screenshot(path=str(SHOT_DIR / dosya))
+            return JSONResponse({
+                "id": kayit_id,
+                "url": page.url,
+                "ekran_goruntusu_url": f"/shots/{dosya}",
+                "ekran_goruntusu_parca_1": f"/shots/{dosya}",
+                "yorum": f"Fatih {ada} ada {parsel} parseli Kent Rehberi imar planında işaretlendi.",
+            })
+        finally:
+            await browser.close()
+
+
 @app.middleware("http")
 async def protection(request: Request, call_next):
     if request.method == "OPTIONS" or (request.method == "GET" and request.url.path == "/health"):
@@ -168,7 +203,7 @@ async def protection(request: Request, call_next):
     if source not in ("belediye", "tkgm"):
         return JSONResponse(status_code=400, content={"detail": "Bilinmeyen sorgu kaynağı"})
     if source == "belediye" and district not in MUNICIPAL_URLS:
-        return JSONResponse(status_code=422, content={"detail": "Otomatik e-İmar şu anda Kadıköy ve Bağcılar için hazır"})
+        return JSONResponse(status_code=422, content={"detail": "Otomatik e-İmar şu anda Kadıköy, Bağcılar ve Fatih için hazır"})
     if not all(str(body.get(k,"")).isdigit() and len(str(body[k])) <= 10 for k in ("ada", "parsel")):
         return JSONResponse(status_code=422, content={"detail": "Ada ve parsel numaraları geçersiz"})
     # Crucial: forbid arbitrary URL navigation (SSRF via Playwright).
@@ -176,6 +211,12 @@ async def protection(request: Request, call_next):
     request._body = __import__("json").dumps(body,ensure_ascii=False).encode("utf-8")
     bucket.append(now)
     async with _gate:
+        if source == "belediye" and district == "fatih":
+            try:
+                return await sorgula_fatih(body)
+            except PlaywrightError as exc:
+                logger.error("Fatih Kent Rehberi sorgusu başarısız: %.1200s", str(exc))
+                return JSONResponse({"detail": "Fatih imar planında parsel görüntüsü alınamadı."}, status_code=502)
         if source == "belediye" and district == "bağcılar":
             try:
                 return await sorgula_bagcilar(body)
