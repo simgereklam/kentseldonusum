@@ -662,6 +662,7 @@ let yakutSocialLast={};
 function yakutSocialReply(command){
  const t=command.replace(/^yakut\s+/,'').replace(/\s+yakut$/,'').trim();
  const rules=[
+ [/^(?:merhaba(?:lar)?|selam(?:lar)?)(?:\s+(?:yakut|merhaba|selam|hoş bulduk))*$/,['Merhaba, sizi dinliyorum.']],
  [/^(?:(?:çok|çok çok) )?(?:teşekkür(?:ler| ederim| ediyoruz)?|sağ ?ol(?:un)?|çok sağ ?ol(?:un)?|eyvallah)$/,['Rica ederim, ne demek.','Her zaman yardımcı olmaktan mutluluk duyarım.','Rica ederim, her zaman buradayım.']],
  [/^(?:nasılsın|nasılsınız|ne haber|naber)$/,['İyiyim, teşekkür ederim. Siz nasılsınız?']],
  [/^(?:günaydın|hayırlı sabahlar)$/,['Günaydın, güzel bir gün geçirmenizi dilerim.']],
