@@ -105,6 +105,10 @@ async def sorgula_bagcilar(body):
             heading = page.get_by_text(rapor_basligi, exact=True)
             await heading.wait_for(state="visible")
             phase = "rapor görselleri"
+            sohbet_kapat = page.get_by_role("button", name="×", exact=True).first
+            if await sohbet_kapat.is_visible():
+                await sohbet_kapat.click(timeout=3500)
+                await sohbet_kapat.wait_for(state="hidden", timeout=3500)
             first, second = f"{kayit_id}_1.png", f"{kayit_id}_2.png"
             await page.screenshot(path=str(SHOT_DIR / first))
             await heading.evaluate("(el) => el.scrollIntoView({block: 'start'})")
