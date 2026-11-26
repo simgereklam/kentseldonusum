@@ -19,6 +19,8 @@ jobs:
           import asyncio, edge_tts, pathlib, re, json, hashlib
           s=pathlib.Path('yakut-v9.js').read_text()
           phrases=set()
+          site=pathlib.Path('yakut-site-voice.js').read_text()
+          phrases.update(json.loads(site.split('Object.freeze(',1)[1].split(');',1)[0]).values())
           phrases.update(json.loads(re.search(r'const yakutApprovedPageSpeech=Object.freeze\((\{.*?\})\);',s).group(1)).values())
           phrases.add(re.search(r"const welcome='([^']+)'",s).group(1))
           phrases.add('Tabii ki, size yardımcı olayım.')
