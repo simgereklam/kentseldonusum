@@ -66,14 +66,17 @@ class YakutGeminiVoice{
     if(token!==this.generation)return null;
     return this.context.decodeAudioData(bytes);
    };
-   let next=load(parts[0]).then(buffer=>({buffer}),error=>({error}));
+   const pending=new Map();
+   const prefetch=i=>{if(i<parts.length&&!pending.has(i))pending.set(i,load(parts[i]).then(buffer=>({buffer}),error=>({error})));};
+   prefetch(0);prefetch(1);
    for(let i=0;i<parts.length;i++){
     if(token!==this.generation)return false;
-    const result=await next;
+    const result=await pending.get(i);
+    pending.delete(i);
     if(result.error)throw result.error;
     const buffer=result.buffer;
     if(token!==this.generation||!buffer)return false;
-    if(i+1<parts.length)next=load(parts[i+1]).then(buffer=>({buffer}),error=>({error}));
+    prefetch(i+1);prefetch(i+2);
     if(!this.analyser){
       this.analyser=this.context.createAnalyser();
       this.analyser.fftSize=512;
@@ -100,6 +103,7 @@ class YakutGeminiVoice{
    return false;
   }finally{
    clearTimeout(timeout);
+   controller.abort();
    if(token===this.generation){
     if(!success){
      for(const item of this.sources){try{item.source.stop()}catch(_){}item.finish();}
