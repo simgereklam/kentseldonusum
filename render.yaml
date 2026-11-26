@@ -10,11 +10,3 @@ services:
     envVars:
       - key: YAKUT_SPEECH_TOKEN
         generateValue: true
-  - type: web
-    name: kumtas-imar-sorgu
-    runtime: docker
-    plan: free
-    dockerfilePath: ./imar-api/Dockerfile
-    dockerContext: ./imar-api
-    healthCheckPath: /health
-    autoDeployTrigger: off
