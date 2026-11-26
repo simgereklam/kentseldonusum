@@ -36,7 +36,28 @@ jobs:
           python -m pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
+      - name: Run Fatih Playwright directly
+        run: |
+          python - <<'PY'
+          import asyncio
+          import json
+          from pathlib import Path
+
+          from web_app import sorgula_fatih
+
+          response = asyncio.run(sorgula_fatih({"ada": "2460", "parsel": "57"}))
+          assert response.status_code == 200, response.body.decode()
+          result = json.loads(response.body)
+          image = Path("screenshots") / Path(result["ekran_goruntusu_parca_1"]).name
+          assert image.stat().st_size > 10000, image
+          output = Path("test-outputs")
+          output.mkdir(exist_ok=True)
+          (output / ("fatih-" + image.name)).write_bytes(image.read_bytes())
+          print("Fatih 2460/57: plan image saved")
+          PY
+
       - name: Run Kadıköy automation and capture images
+        if: ${{ !cancelled() }}
         run: python actions_smoke_test.py
 
       - name: Run Bağcılar Python Playwright directly
