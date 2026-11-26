@@ -77,7 +77,7 @@ function sanitize(body) {
   const mahalle = typeof body.mahalle === "string" ? body.mahalle.trim().slice(0, 80) : "";
   const ada = String(body.ada ?? ""), parsel = String(body.parsel ?? "");
   if (!kaynak || !/^\d{1,10}$/.test(ada) || !/^\d{1,10}$/.test(parsel)) return null;
-  if (kaynak === "belediye" && !["kadıköy", "bağcılar"].includes(ilce.toLocaleLowerCase("tr"))) return {unsupported:true};
+  if (kaynak === "belediye" && !["kadıköy", "bağcılar", "fatih"].includes(ilce.toLocaleLowerCase("tr"))) return {unsupported:true};
   return {kaynak, il:"İstanbul", ilce, mahalle, ada, parsel, url:null};
 }
 function rewritePath(raw, provider) {
@@ -107,7 +107,7 @@ export default {
       catch { return json({detail:"Geçersiz JSON"},400,ch); }
       const params = sanitize(parsed);
       if (!params) return json({detail:"Geçersiz sorgu"},400,ch);
-      if (params.unsupported) return json({detail:"Otomatik e-İmar şu anda Kadıköy ve Bağcılar için kurulu"},422,ch);
+      if (params.unsupported) return json({detail:"Otomatik e-İmar şu anda Kadıköy, Bağcılar ve Fatih için kurulu"},422,ch);
       const available = SOURCES.filter(name => !!upstreamUrl(env,name));
       if (!available.length) return json({detail:"Henüz çalışan bir bulut servisi bağlanmadı"},503,ch);
       const first = nextIndex++ % available.length;
