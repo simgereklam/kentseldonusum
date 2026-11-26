@@ -313,7 +313,9 @@ function isYakutStopResult(result,answerInProgress){
  const primary=normalizeYakutCommand(result[0]?.transcript);
  if(Array.from(result).some(a=>isYakutStopCommand(normalizeYakutCommand(a.transcript))))return true;
  if(answerInProgress&&/^(?:yakut )?(?:sus|dur)(?: |$)/.test(primary))return true;
- if(!answerInProgress||!primary)return false;
+ if(!primary)return false;
+ if(Array.from(result).some(a=>/^(?:(?:yakut|lütfen) )?(?:süs|suss|suz|şus|durr|dur ya)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))return true;
+ if(!answerInProgress)return false;
  const ownWords=normalizeYakutCommand(yakutCurrentPrompt).split(' ');
  // A real stop word may appear alongside an echo of the answer in the transcript.
  if(primary.split(' ').some(word=>/^(?:sus|dur)$/.test(word)&&!ownWords.includes(word)))return true;
@@ -963,7 +965,7 @@ function startSpeech(){
    consumedInterim=false;
   }
   speechStartedAt=Date.now();utteranceEnded=false;clearTimeout(timer);
-  if(yakutAudioPlaying)yakutVoice?.duck();
+  // Keep playback volume stable: recognition may hear Yakut's own greeting.
  };
  rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
  rec.onresult=e=>{
