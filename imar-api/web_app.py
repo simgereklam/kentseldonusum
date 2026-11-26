@@ -50,15 +50,23 @@ async def sorgula_bagcilar(body):
 
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch()
+        phase = "sayfa oluşturma"
         try:
             page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
             page.set_default_timeout(12000)
-            await page.goto(MUNICIPAL_URLS["bağcılar"], wait_until="commit", timeout=40000)
+            phase = "belediye adresine bağlantı"
+            response = await page.goto(MUNICIPAL_URLS["bağcılar"], wait_until="commit", timeout=40000)
+            if response is None or not response.ok:
+                upstream_status = response.status if response is not None else "yanıt yok"
+                logger.error("Bağcılar e-İmar belediye adresi HTTP: %s", upstream_status)
+                return JSONResponse({"detail": "Bağcılar Belediyesi e-İmar ekranı açılmadı."}, status_code=502)
+            phase = "Ada/Parsel formu"
             await page.get_by_role("tab", name="Ada/Parsel", exact=True).click(timeout=40000)
             await page.locator("#txtAda").fill(ada)
             await page.locator("#txtParsel").fill(parsel)
             await page.locator("#btnAdaParselSearch").click()
 
+            phase = "parsel sonuç listesi"
             await page.locator("[role=status]").wait_for(state="visible")
             rows = page.locator(".result-item")
             if not await rows.count():
@@ -73,11 +81,13 @@ async def sorgula_bagcilar(body):
             if len(matches) != 1:
                 return JSONResponse({"detail": "Bağcılar e-İmar sonucunda mahalle ve parsel eşleşmesi tekil değil. Mahalle adını kontrol edin."}, status_code=422)
 
+            phase = "seçilen parselin imar raporu"
             await matches[0].click()
             await page.get_by_role("button", name="İmar Durumu", exact=True).click()
             await page.wait_for_url("**/imardurumu/imar.aspx?**", wait_until="domcontentloaded")
             heading = page.get_by_text(rapor_basligi, exact=True)
             await heading.wait_for(state="visible")
+            phase = "rapor görselleri"
             first, second = f"{kayit_id}_1.png", f"{kayit_id}_2.png"
             await page.screenshot(path=str(SHOT_DIR / first))
             await heading.evaluate("(el) => el.scrollIntoView({block: 'start'})")
@@ -90,6 +100,9 @@ async def sorgula_bagcilar(body):
                 "ekran_goruntusu_parca_2": f"/shots/{second}",
                 "yorum": f"Bağcılar / {body.get('mahalle') or ''} — {ada} ada {parsel} parsel. Belediye imar raporu açıldı.",
             })
+        except PlaywrightError as exc:
+            logger.error("Bağcılar e-İmar aşaması: %s | %s: %.1000s", phase, type(exc).__name__, str(exc))
+            return JSONResponse({"detail": f"Bağcılar e-İmar işlemi şu aşamada durdu: {phase}."}, status_code=502)
         finally:
             await browser.close()
 
