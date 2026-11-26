@@ -160,7 +160,7 @@ document.addEventListener('keydown',handleYakutActivation,true);
 function finishYakutSpeech(restartAfterGreeting=false){
  yakutAudioPlaying=false;
  speaking=false;processingSpeech=false;yakutSpeechEndedAt=Date.now();
- releaseYakutMic();micRestartAt=0;
+ micRestartAt=0;
  if(yakutGreetingInProgress){
   yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();
   moveTo(yakutRightX());
@@ -168,7 +168,6 @@ function finishYakutSpeech(restartAfterGreeting=false){
  // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden){
   if(restartAfterGreeting){
-   releaseYakutMic();
    micRestartAt=0;
    talk.textContent='🎤 Mikrofon açılıyor';
   }else if(recognition&&!micStarting)talk.textContent='🟢 Dinliyorum';
@@ -875,6 +874,7 @@ function startSpeech(){
  let interimText='';
  let hasInterim=false;
  let ignoredResults=0;
+ let recognizedResults=[];
  let acceptedInput=false;
  let utteranceEnded=false;
  let timer;
@@ -890,7 +890,7 @@ function startSpeech(){
   if(speaking||processingSpeech)return false;
   if(Date.now()-yakutSpeechEndedAt<3500&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
-  releaseYakutMic();
+  ignoredResults=Array.from(recognizedResults).filter(result=>result.isFinal).length;
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
    processingSpeech=false;
@@ -911,6 +911,7 @@ function startSpeech(){
   micFailureCount=0;emptyRecognitionCount=0;
   clearTimeout(timer);
   const results=Array.from(e.results);
+  recognizedResults=results;
   // Interrupt on interim or final recognition, before ordinary reply routing.
   for(const result of results.slice(e.resultIndex)){
    for(const alternative of Array.from(result)){
@@ -954,7 +955,7 @@ function startSpeech(){
  rec.onend=()=>{
   if(recognition!==rec)return;
   clearTimeout(timer);
-  if((finalText.trim()||interimText.trim())&&submit())return;
+  if(finalText.trim()||interimText.trim())submit();
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
     if(speaking||processingSpeech){micRestartAt=0;queueListen(0);return;}
