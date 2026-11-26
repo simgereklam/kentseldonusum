@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/imar-playwright-test.yml'
+      - 'imar-api/web_app.py'
   workflow_dispatch:
 
 permissions:
