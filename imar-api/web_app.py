@@ -181,13 +181,15 @@ async def sorgula_ibb(body, district):
         try:
             page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
             page.set_default_timeout(15000)
-            response = await page.goto("https://eplan.ibb.istanbul/sorgu/", wait_until="domcontentloaded", timeout=25000)
+            response = await page.goto("https://eplan.ibb.istanbul/sorgu/plansorgu", wait_until="commit", timeout=25000)
             if response is None or not response.ok:
                 return JSONResponse({"detail": "İBB e-Plan sorgu ekranı açılmadı."}, status_code=502)
             notice = page.get_by_role("button", name="Kabul ediyorum", exact=True)
             if await notice.is_visible():
                 await notice.click()
-            await page.locator("#cbTownAdaParsel").select_option(label=ilce)
+            await page.locator("#cbTownAdaParsel").select_option(label=ilce, timeout=25000)
+            if await notice.is_visible():
+                await notice.click()
             await page.locator("#txtAda").fill(ada)
             await page.locator("#txtParsel").fill(parsel)
             await page.locator("#btnFindByAdaParsel").click()
@@ -205,7 +207,7 @@ async def sorgula_ibb(body, district):
                 return JSONResponse({"detail": "İBB e-Plan’da tek bir mahalle ve ada/parsel eşleşmesi bulunamadı."}, status_code=422)
             await page.get_by_role("listbox").select_option(label=matches[0])
             await page.get_by_role("button", name="Plan Durumu", exact=True).click()
-            await page.wait_for_url("https://eplan.ibb.istanbul/sorgu/plandurumu?**")
+            await page.wait_for_url("https://eplan.ibb.istanbul/sorgu/plandurumu?**", wait_until="commit")
             await page.get_by_text("PARSEL BİLGİLERİ", exact=True).wait_for(state="visible")
             kayit_id = uuid.uuid4().hex[:8]
             dosya = f"{kayit_id}_1.png"
