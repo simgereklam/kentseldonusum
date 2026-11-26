@@ -953,7 +953,7 @@ function startSpeech(){
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
   if(finalText&&!interimText)timer=setTimeout(submit,utteranceEnded?0:180);
-  else if(utteranceEnded&&interimText)timer=setTimeout(submit,300);
+  else if(utteranceEnded&&interimText)timer=setTimeout(submit,/^(?:yakut )?devam et(?: lütfen)?$/.test(normalizeYakutCommand(interimText))?0:300);
  };
  rec.onspeechstart=()=>{
   if(recognition!==rec)return;
