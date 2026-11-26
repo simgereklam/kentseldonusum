@@ -26,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=emel-parallel-20261126',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=emel-mp3-20261126c',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -281,7 +281,7 @@ function yakutPageCommand(command){
  const removeWords=['sayfasını','sayfasına','sayfası','sayfayı','sayfaya','sayfa','sayfalarına','sayfalara','sayfalar','açar mısınız','açar mısın','açabilir misiniz','açabilir misin','açar','aç','gösterir misin','göster','gidelim','git','geç','götür','yönlendir','lütfen','istiyorum'];
  let words=' '+raw.replace(/^(?:(?:yakut|asistan|lütfen|hadi|hemen|beni|bizi|bana|bize) )+/,'')+' ';
  for(const phrase of removeWords)words=words.split(' '+phrase+' ').join(' ');
- words=words.replace(/\s+/g,' ').trim();
+ words=words.replace(/\b(?:misin|mısın|misiniz|mısınız|bakalım|açsana|açın)\b/g,' ').replace(/\s+/g,' ').trim();
  if(!words)return null;
  // Exact page names also work, but incidental business questions never navigate.
  if(!hasAction&&!Object.values(yakutPages).some(names=>names.some(n=>normalizeYakutCommand(n)===words)))return null;
@@ -346,6 +346,7 @@ function stopYakutAnswer(){
   yakutScenario=null;yakutWeatherPending='';
  }
  yakutPageOfferPending=false;
+ yakutPendingPageSpeech=false;
  cancelYakutSpeech();
  if(phase==='reacting'||phase==='walking'){targetX=posX;phase='idle';if(model)model.rotation.y=0;play('wait');walkTimer=0;}
  finishYakutSpeech();
@@ -914,6 +915,13 @@ function startSpeech(){
    const alternatives=Array.from(result).map(a=>normalizeYakutCommand(a.transcript));
    if(alternatives.some(t=>isYakutStopCommand(t)||/^(?:yakut )?(?:sus|dur)(?: |$)/.test(t))){
     clearTimeout(timer);finalText='';interimText='';releaseYakutMic();stopYakutAnswer();queueListen(0);return;
+   }
+  }
+  for(const result of results.slice(e.resultIndex)){
+   if(!result.isFinal)continue;
+   for(const alternative of Array.from(result)){
+    const raw=alternative.transcript||'';
+    if(!isYakutOwnVoice(raw)&&navigateFromRecognition(raw))return;
    }
   }
   if(speaking||processingSpeech){
