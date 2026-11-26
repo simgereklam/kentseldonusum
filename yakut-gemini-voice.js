@@ -7,6 +7,7 @@ class YakutGeminiVoice{
   this.endpoint=endpoint;
   this.onStart=onStart;this.onEnd=onEnd;this.onError=onError;
   this.context=null;this.analyser=null;this.samples=null;
+  this.cache=new Map();
   this.generation=0;this.controller=null;this.sources=new Set();this.playing=false;
  }
  unlock(){
@@ -46,6 +47,21 @@ class YakutGeminiVoice{
   this.sources.clear();
   this.playing=false;this.onEnd(false);
  }
+ compactPauses(buffer){
+  const rate=buffer.sampleRate,step=Math.max(1,Math.floor(rate*.01)),channels=Array.from({length:buffer.numberOfChannels},(_,i)=>buffer.getChannelData(i));
+  const cuts=[];let quiet=-1;
+  for(let p=0;p<buffer.length;p+=step){
+   let peak=0;for(const ch of channels)for(let j=p;j<Math.min(p+step,buffer.length);j++)peak=Math.max(peak,Math.abs(ch[j]));
+   if(peak<0.003){if(quiet<0)quiet=p;}else if(quiet>=0){
+    if(quiet>0&&p-quiet>rate*.45)cuts.push([quiet+Math.floor(rate*.12),p-Math.floor(rate*.12)]);
+    quiet=-1;
+   }
+  }
+  if(!cuts.length)return buffer;
+  const out=this.context.createBuffer(buffer.numberOfChannels,buffer.length-cuts.reduce((n,[a,b])=>n+b-a,0),rate);
+  for(let c=0;c<channels.length;c++){let from=0,to=0;const dest=out.getChannelData(c);for(const [a,b] of cuts){dest.set(channels[c].subarray(from,a),to);to+=a-from;from=b;}dest.set(channels[c].subarray(from),to);}
+  return out;
+ }
  async speak(text,{beforePlayback,chunkSize=180}={}){
   this.stop();
   const token=this.generation,parts=this.split(text,chunkSize);
@@ -56,6 +72,7 @@ class YakutGeminiVoice{
   let timeout=null;
   try{
    const load=async phrase=>{
+    if(this.cache.has(phrase))return this.cache.get(phrase);
     const response=await fetch(new URL('/live',this.endpoint),{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({readAloud:phrase}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(65000)])
@@ -64,7 +81,9 @@ class YakutGeminiVoice{
     if(!response.headers.get('Content-Type')?.includes('audio/mpeg'))throw new Error('EMEL_AUDIO_FORMAT');
     const bytes=await response.arrayBuffer();
     if(token!==this.generation)return null;
-    return this.context.decodeAudioData(bytes);
+    const buffer=this.compactPauses(await this.context.decodeAudioData(bytes));
+    if(this.cache.size>=12)this.cache.delete(this.cache.keys().next().value);
+    this.cache.set(phrase,buffer);return buffer;
    };
    const pending=new Map();
    const prefetch=i=>{if(i<parts.length&&!pending.has(i))pending.set(i,load(parts[i]).then(buffer=>({buffer}),error=>({error})));};
