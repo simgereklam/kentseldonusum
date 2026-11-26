@@ -915,7 +915,7 @@ function startSpeech(){
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const micTrack=null; // Use the browser's native recognition microphone as in the earlier build.
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=!/Android|iPhone|iPad/i.test(navigator.userAgent);rec.maxAlternatives=3;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
@@ -1008,7 +1008,7 @@ function startSpeech(){
   if(micTrack&&/^(?:audio-capture|network|not-allowed|service-not-allowed)$/.test(micLastError)){
    yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;
   }
-  if((speaking||processingSpeech)&&micLastError==='no-speech'){micRestartAt=0;queueListen(0);return;}
+  if((speaking||processingSpeech)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(150);return;}
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
  };
  rec.onend=()=>{
