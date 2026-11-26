@@ -346,9 +346,8 @@ function isYakutHomeCommand(message){
 }
 function yakutWantsCompanyInfo(command){
  const topic=command.replace(/^(?:(?:yakut|asistan|lütfen) )+/, '');
- if(/^(?:kumtaş|kum taş|kuntaş|kun taş|taşı|taş|montaj) inşaat(?: lütfen)?$/.test(topic))return true;
  if(/(?:sayfasını|sayfasına|sayfayı|sayfaya) (?:aç|göster|git|geç)|internette|webde|araştır|hakkındaki yorum/.test(topic))return false;
- if(/(?:ku[mn] ?taş|(?:taşı|taş|montaj) inşaat|şirket|firmamız|firmanız|hakkımızda)/.test(topic)&&
+ if(/(?:ku[mn] ?taş|şirket|firmamız|firmanız|hakkımızda)/.test(topic)&&
     /(?:hakkında|bilgi|anlat|tanıt|ne iş|neler yap|kimdir|nedir)/.test(topic))return true;
  return /^(?:hakkımızda|şirket bilgileri(?:ni)?|firma bilgileri(?:ni)?)(?: (?:ver|anlat|istiyorum|verir misin|verebilir misin|almak istiyorum|lütfen))*$/.test(topic);
 }
