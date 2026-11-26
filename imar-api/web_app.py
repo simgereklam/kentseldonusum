@@ -55,13 +55,18 @@ def tls_baglanti_kontrolu(host, version):
         with socket.socket(family, socktype, protocol) as conn:
             conn.settimeout(4)
             conn.connect(address)
+            tcp_elapsed = time.monotonic() - started
+            logger.info("e-İmar TLS kontrolü | %s | %s | DNS ve TCP başarılı | %.2fs",
+                        host, version.name, tcp_elapsed)
             stage = "TLS"
+            conn.settimeout(15)
+            tls_started = time.monotonic()
             context = ssl.create_default_context()
             context.minimum_version = version
             context.maximum_version = version
             with context.wrap_socket(conn, server_hostname=host) as tls:
                 logger.info("e-İmar TLS kontrolü | %s | %s | başarılı | %.2fs",
-                            host, tls.version(), time.monotonic() - started)
+                            host, tls.version(), time.monotonic() - tls_started)
     except OSError as exc:
         logger.warning("e-İmar TLS kontrolü | %s | %s | %s | %s | %.2fs",
                        host, version.name, stage, exc, time.monotonic() - started)
@@ -73,9 +78,9 @@ async def tls_surumu_karsilastir(host):
         for version in (ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3)
     ]
     try:
-        await asyncio.wait_for(asyncio.gather(*probes), timeout=9)
+        await asyncio.wait_for(asyncio.gather(*probes), timeout=22)
     except TimeoutError:
-        logger.warning("e-İmar TLS kontrolü | %s | 9 saniyede tamamlanmadı", host)
+        logger.warning("e-İmar TLS kontrolü | %s | 22 saniyede tamamlanmadı", host)
 
 
 async def sorgula_bagcilar(body):
