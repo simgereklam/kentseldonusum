@@ -8,6 +8,8 @@ class YakutGeminiVoice{
   this.onStart=onStart;this.onEnd=onEnd;this.onError=onError;
   this.context=null;this.analyser=null;this.output=null;this.samples=null;
   this.cache=new Map();this.recordingLoads=new Map();
+  this.welcomePhrase=window.yakutSiteVoice?.welcome;
+  this.welcomeBytes=fetch(new URL('yakut-sesler/37b32e64c7aed32e0b71fe66.mp3',location.origin+'/'),{signal:AbortSignal.timeout(15000)}).then(r=>r.ok?r.arrayBuffer():null).catch(()=>null);
   this.manifest=fetch(new URL('yakut-sesler/manifest.json?v=emel-kayitlar-20261126',location.origin+'/'),{
    signal:AbortSignal.timeout(8000)
   }).then(response=>response.ok?response.json():{}).catch(()=>({}));
@@ -92,6 +94,14 @@ class YakutGeminiVoice{
   let started=false,success=false;
   try{
    const load=async phrase=>{
+    if(phrase===this.welcomePhrase){
+     if(this.cache.has(phrase))return this.cache.get(phrase);
+     const bytes=await this.welcomeBytes;
+     if(token!==this.generation||controller.signal.aborted)return null;
+     const buffer=bytes?await this.context.decodeAudioData(bytes.slice(0)):await this.preloadRecording(phrase,15000);
+     if(!buffer)throw new Error('WELCOME_MP3_UNAVAILABLE');
+     this.cache.set(phrase,buffer);return buffer;
+    }
     const local=await Promise.race([this.preloadRecording(phrase,1200),new Promise(resolve=>setTimeout(()=>resolve(null),1500))]);
     if(token!==this.generation||controller.signal.aborted)return null;
     if(local)return local;
