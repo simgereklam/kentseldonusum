@@ -913,7 +913,7 @@ function startSpeech(){
   lastFinalCount=results.filter(result=>result.isFinal).length;
   for(const result of results.slice(e.resultIndex)){
    const alternatives=Array.from(result).map(a=>normalizeYakutCommand(a.transcript));
-   if(alternatives.some(isYakutStopCommand)){
+   if(alternatives.some(t=>isYakutStopCommand(t)||/^(?:yakut )?(?:sus|dur)(?: |$)/.test(t))){
     clearTimeout(timer);finalText='';interimText='';releaseYakutMic();stopYakutAnswer();queueListen(0);return;
    }
   }
