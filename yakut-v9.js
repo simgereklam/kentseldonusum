@@ -324,6 +324,29 @@ function isYakutOwnVoice(text){
 function isYakutStopCommand(command){
  return /^(?:(?:yakut|asistan|lütfen) )*(?:dur(?:un)?|sus(?:un)?|konuşma|kes|yeter|bekle|bir saniye|bi saniye)(?: (?:lütfen|yakut|artık))*$/.test(command);
 }
+function isYakutStopResult(result,answerInProgress){
+ const primary=normalizeYakutCommand(result[0]?.transcript);
+ if(isYakutStopCommand(primary))return true;
+ if(!answerInProgress||!primary)return false;
+ if(/(?:^| )(?:sus|dur)(?: |$)/.test(primary)&&!isYakutOwnVoice(primary))return true;
+ const shortCommand=primary.replace(/^(?:(?:yakut|asistan|lütfen) )+/,'').replace(/(?: (?:lütfen|yakut|artık))+$/,'');
+ // Turkish recognition sometimes loses the last sound of “sus”.
+ if(/^(?:su|suz|suss|şus)$/.test(shortCommand)&&
+    !normalizeYakutCommand(yakutCurrentPrompt).split(' ').includes(shortCommand))return true;
+ return !shortCommand.includes(' ')&&Array.from(result).slice(1).some(alternative=>
+  isYakutStopCommand(normalizeYakutCommand(alternative.transcript)));
+}
+function isYakutRepeatedUtterance(text,speechStartedAt){
+ const command=normalizeYakutCommand(text)
+  .replace(/^(?:(?:yakut|asistan|lütfen) )+/,'').replace(/ lütfen$/,'');
+ const now=Date.now();
+ // A late recognition result is still the same turn, even in a new session.
+ if(command===lastUserUtterance&&(
+    speechStartedAt<=Math.max(lastUserUtteranceAt,yakutSpeechEndedAt)||
+    now-lastUserUtteranceAt<7000||now-yakutSpeechEndedAt<2500))return true;
+ lastUserUtterance=command;lastUserUtteranceAt=now;
+ return false;
+}
 function getYakutCurrentPage(){
  const path=location.pathname.split('/').filter(Boolean).pop()||'index.html';
  try{return decodeURIComponent(path).toLowerCase()}catch(_){return path.toLowerCase()}
@@ -687,12 +710,6 @@ async function handle(message){
 const q=String(message||'').trim();if(!q||!ready)return;
 const command=normalizeYakutCommand(q);
 if(isYakutStopCommand(command)){stopYakutAnswer();return}
-// Browser speech recognition may resend the same phrase when restarted.
-// Do not generate a second reply for a single utterance.
-const now=Date.now();
-if(command===lastUserUtterance &&
- (now-lastUserUtteranceAt<7000||now-yakutSpeechEndedAt<2500))return;
-lastUserUtterance=command;lastUserUtteranceAt=now;
  yakutAddressPending=false;
  try{sessionStorage.removeItem('yakutAddressPending')}catch(_){}
 const motionCommand=command.replace(/^yakut\s+/,'').replace(/\s+lütfen$/,'');
@@ -872,25 +889,29 @@ function startSpeech(){
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
- let hasInterim=false;
- let ignoredResults=0;
  let recognizedResults=[];
+ let nextResultIndex=0;
+ let consumedInterim=false;
  let acceptedInput=false;
  let utteranceEnded=false;
+ let speechStartedAt=0;
  let timer;
+ const consumeResults=()=>{
+  finalText='';interimText='';
+  nextResultIndex=recognizedResults.length;
+  consumedInterim=recognizedResults.some(result=>!result.isFinal);
+ };
  const submit=()=>{
   clearTimeout(timer);
-  // Web Speech may finalize only part of a sentence; keep the interim tail.
   const candidate=[finalText,interimText].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
-  finalText='';
-  interimText='';
-  hasInterim=false;
+  consumeResults();
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
-  if(!isYakutOwnVoice(candidate)&&navigateFromRecognition(candidate))return true;
   if(speaking||processingSpeech)return false;
-  if(Date.now()-yakutSpeechEndedAt<3500&&isYakutOwnVoice(candidate))return false;
+  const possibleEcho=speechStartedAt?speechStartedAt<=yakutSpeechEndedAt:Date.now()-yakutSpeechEndedAt<3500;
+  if(possibleEcho&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
-  ignoredResults=Array.from(recognizedResults).filter(result=>result.isFinal).length;
+  if(isYakutRepeatedUtterance(candidate,speechStartedAt))return false;
+  if(navigateFromRecognition(candidate))return true;
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
    processingSpeech=false;
@@ -901,10 +922,17 @@ function startSpeech(){
  };
  const waitForSentenceEnd=()=>{
   clearTimeout(timer);
-  if(utteranceEnded&&(finalText||interimText))timer=setTimeout(submit,10);
-  else if(finalText&&!hasInterim)timer=setTimeout(submit,10);
+  if(finalText&&!interimText)timer=setTimeout(submit,10);
+  else if(utteranceEnded&&interimText)timer=setTimeout(submit,350);
  };
- rec.onspeechstart=()=>{utteranceEnded=false;clearTimeout(timer);};
+ rec.onspeechstart=()=>{
+  // A new utterance can reuse a slot when the browser dropped an interim result.
+  if(consumedInterim){
+   nextResultIndex=recognizedResults.filter(result=>result.isFinal).length;
+   consumedInterim=false;
+  }
+  speechStartedAt=Date.now();utteranceEnded=false;clearTimeout(timer);
+ };
  rec.onspeechend=()=>{utteranceEnded=true;waitForSentenceEnd();};
  rec.onresult=e=>{
   if(recognition!==rec||!listenEnabled||hidden)return;
@@ -912,41 +940,29 @@ function startSpeech(){
   clearTimeout(timer);
   const results=Array.from(e.results);
   recognizedResults=results;
-  // Interrupt on interim or final recognition, before ordinary reply routing.
-  for(const result of results.slice(e.resultIndex)){
-   for(const alternative of Array.from(result)){
-    const heard=normalizeYakutCommand(alternative.transcript);
-    if(isYakutStopCommand(heard)){
-     clearTimeout(timer);finalText='';interimText='';hasInterim=false;
-     releaseYakutMic();stopYakutAnswer();micRestartAt=0;queueListen(0);return;
-    }
-   }
-  }
-  if(speaking||processingSpeech){
-   finalText='';interimText='';hasInterim=false;
-   // Accept real interruptions while speaking; ignore text recognized from
-   // Yakut's own Aoede speaker output to avoid a voice feedback loop.
-   for(const result of results.slice(e.resultIndex)){
-    const raw=result[0]?.transcript||'';
-    const heard=normalizeYakutCommand(raw);
-    if(isYakutStopCommand(heard)||(/(?:^|\s)(?:sus|dur)(?:\s|$)/.test(heard)&&!isYakutOwnVoice(raw))){
-     releaseYakutMic();stopYakutAnswer();queueListen(100);return;
-    }
-    if(!result.isFinal||!heard||isYakutOwnVoice(raw))continue;
-    if(navigateFromRecognition(raw))return;
-   }
-   ignoredResults=results.filter(result=>result.isFinal).length;
+  nextResultIndex=Math.min(nextResultIndex,results.length);
+  const answerInProgress=speaking||processingSpeech||Boolean(yakutDeferredSpeech);
+  // An interim result can grow into a stop or navigation command at the same index.
+  const changed=results.slice(answerInProgress?e.resultIndex:Math.max(e.resultIndex,nextResultIndex));
+  if(changed.some(result=>isYakutStopResult(result,answerInProgress))){
+   consumeResults();
+   stopYakutAnswer();
    return;
   }
-  const freshResults=results.slice(Math.max(e.resultIndex,ignoredResults));
-  const latestFinal=freshResults.filter(result=>result.isFinal)
-   .map(result=>result[0]?.transcript||'').join(' ').trim();
-  if(latestFinal&&navigateFromRecognition(latestFinal))return;
-  finalText=results.slice(ignoredResults).filter(result=>result.isFinal)
+  if(speaking||processingSpeech){
+   consumeResults();
+   for(const result of changed){
+    const raw=result[0]?.transcript||'';
+    if(!result.isFinal||!raw.trim()||isYakutOwnVoice(raw))continue;
+    if(navigateFromRecognition(raw))return;
+   }
+   return;
+  }
+  const freshResults=results.slice(nextResultIndex);
+  finalText=freshResults.filter(result=>result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ').trim();
-  interimText=results.slice(ignoredResults).filter(result=>!result.isFinal)
+  interimText=freshResults.filter(result=>!result.isFinal)
    .map(result=>result[0].transcript.trim()).join(' ').trim();
-  hasInterim=Boolean(interimText);
   // Some browsers end recognition with only an interim result.
   // Preserve the heard question instead of silently discarding it.
   waitForSentenceEnd();
