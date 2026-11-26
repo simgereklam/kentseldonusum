@@ -8,7 +8,6 @@ class YakutGeminiVoice{
   this.onStart=onStart;this.onEnd=onEnd;this.onError=onError;
   this.context=null;this.analyser=null;this.samples=null;
   this.cache=new Map();
-  this.manifest=fetch(new URL('yakut-sesler/manifest.json',location.origin+'/'),{signal:AbortSignal.timeout(2500)}).then(r=>r.ok?r.json():{}).catch(()=>({}));
   this.generation=0;this.controller=null;this.sources=new Set();this.playing=false;
  }
  unlock(){
@@ -63,9 +62,9 @@ class YakutGeminiVoice{
   for(let c=0;c<channels.length;c++){let from=0,to=0;const dest=out.getChannelData(c);for(const [a,b] of cuts){dest.set(channels[c].subarray(from,a),to);to+=a-from;from=b;}dest.set(channels[c].subarray(from),to);}
   return out;
  }
- async speak(text,{beforePlayback,chunkSize=180,intro=""}={}){
+ async speak(text,{beforePlayback,chunkSize=180}={}){
   this.stop();
-  const token=this.generation,parts=[...(intro?[intro]:[]),...this.split(text,chunkSize)];
+  const token=this.generation,parts=this.split(text,chunkSize);
   if(!parts.length)return false;
   if(!this.ready){this.onError(new Error('AUDIO_LOCKED'));return false;}
   const controller=new AbortController();this.controller=controller;
@@ -74,11 +73,6 @@ class YakutGeminiVoice{
   try{
    const load=async phrase=>{
     if(this.cache.has(phrase))return this.cache.get(phrase);
-    const manifest=await this.manifest;
-    let local=null;
-    if(manifest[phrase])local=await fetch(new URL('yakut-sesler/'+manifest[phrase],location.origin+'/'),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(3000)])}).catch(()=>null);
-    if(local?.ok){try{const b=await this.context.decodeAudioData(await local.arrayBuffer());if(token!==this.generation)return null;this.cache.set(phrase,b);return b;}catch(_){local=null;}}
-    if(controller.signal.aborted)return null;
     const response=await fetch(new URL('/live',this.endpoint),{
      method:'POST',headers:{'Content-Type':'application/json'},
      body:JSON.stringify({readAloud:phrase}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(65000)])
@@ -113,7 +107,7 @@ class YakutGeminiVoice{
     const played=new Promise(resolve=>{finish=resolve;});
     const entry={source,finish};this.sources.add(entry);
     source.onended=()=>{this.sources.delete(entry);finish();};
-    if(beforePlayback&&i===(intro?1:0)){
+    if(!started&&beforePlayback){
      await beforePlayback();
      if(token!==this.generation||controller.signal.aborted)return false;
     }
