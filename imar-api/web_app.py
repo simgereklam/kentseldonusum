@@ -142,8 +142,11 @@ async def sorgula_fatih(body):
         try:
             page = await browser.new_page(viewport={"width": 1440, "height": 960}, locale="tr-TR")
             page.set_default_timeout(15000)
-            await page.goto(MUNICIPAL_URLS["fatih"], wait_until="commit", timeout=35000)
-            await page.get_by_text("İmar Planı", exact=True).click()
+            response = await page.goto(MUNICIPAL_URLS["fatih"], wait_until="commit", timeout=35000)
+            if response is None or not response.ok:
+                logger.error("Fatih Kent Rehberi HTTP: %s", response.status if response else "yanıt yok")
+                return JSONResponse({"detail": "Fatih Kent Rehberi açılmadı."}, status_code=502)
+            await page.locator("#liImar").click(timeout=25000)
             await page.get_by_role("tab", name="Parsel Sorgu").click()
             await page.locator("#txtAda").fill(ada)
             await page.locator("#txtParsel").fill(parsel)
