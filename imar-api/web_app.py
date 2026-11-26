@@ -2,6 +2,8 @@
 import asyncio
 import logging
 import os
+import socket
+import ssl
 import time
 import uuid
 from collections import defaultdict, deque
@@ -40,6 +42,21 @@ async def log_automation_failure(request: Request, exc: StarletteHTTPException):
 @app.get("/health")
 async def health():
     return {"ok": True, "service": "imar", "supported": ["kadikoy", "bagcilar", "tkgm"]}
+
+
+def bagcilar_baglanti_kontrolu():
+    host = "bbgis.bagcilar.bel.tr"
+    stage = "DNS"
+    try:
+        addresses = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+        logger.info("Bağcılar bağlantı kontrolü: DNS başarılı, %s adres", len(addresses))
+        stage = "TCP"
+        with socket.create_connection((host, 443), timeout=4) as conn:
+            stage = "TLS"
+            with ssl.create_default_context().wrap_socket(conn, server_hostname=host) as tls:
+                logger.info("Bağcılar bağlantı kontrolü: TCP ve TLS başarılı (%s)", tls.version())
+    except OSError as exc:
+        logger.warning("Bağcılar bağlantı kontrolü: %s | %s", stage, exc)
 
 
 async def sorgula_bagcilar(body):
@@ -102,6 +119,11 @@ async def sorgula_bagcilar(body):
             })
         except PlaywrightError as exc:
             logger.error("Bağcılar e-İmar aşaması: %s | %s: %.1000s", phase, type(exc).__name__, str(exc))
+            if phase == "belediye adresine bağlantı":
+                try:
+                    await asyncio.wait_for(asyncio.to_thread(bagcilar_baglanti_kontrolu), timeout=9)
+                except TimeoutError:
+                    logger.warning("Bağcılar bağlantı kontrolü 9 saniyede tamamlanmadı")
             return JSONResponse({"detail": f"Bağcılar e-İmar işlemi şu aşamada durdu: {phase}."}, status_code=502)
         finally:
             await browser.close()
