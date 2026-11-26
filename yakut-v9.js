@@ -823,6 +823,7 @@ processingSpeech=true;
   if(generation!==yakutVoiceGeneration||hidden)return;
   if(typeof result?.answer==='string'&&result.answer.trim()&&result.answer.trim()!=='WEB_ARAMASI_GEREKLI'){
    answer=result.answer.trim().replace(/\*\*/g,'');
+   if(/(?:api\s*(?:key|anahtar)|access token|hesap (?:aç|oluştur|girin)|sign up|unauthorized|rate limit|invalid api)/i.test(answer)) answer=siteSpeech['dis-yanit-hatasi'];
    externalAnswer=true;
    rememberYakutTurn(q,answer);
   }else if(needsSearch)answer=siteSpeech['dis-arama-hatasi'];
