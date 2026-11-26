@@ -22,12 +22,15 @@ jobs:
           site=pathlib.Path('yakut-site-voice.js').read_text()
           phrases.update(json.loads(site.split('Object.freeze(',1)[1].split(');',1)[0]).values())
           phrases.update(json.loads(re.search(r'const yakutApprovedPageSpeech=Object.freeze\((\{.*?\})\);',s).group(1)).values())
-          phrases.add(re.search(r"const welcome='([^']+)'",s).group(1))
-          phrases.add('Tabii ki, size yardımcı olayım.')
+          phrases.add(re.search(r"const yakutMalikIntro='([^']+)'",s).group(1))
+          pages=s.split('const yakutPages={',1)[1].split('function yakutPageName',1)[0]
+          phrases.update(name+' sayfasındayız.' for name in re.findall(r"'[^']+\.html':\['([^']+)'",pages) if name!='Ana Sayfa')
+          districts=s.split('const yakutDistrictPages={',1)[1].split('};',1)[0]
+          phrases.update(name+' Kentsel Dönüşüm sayfasındayız.' for name in re.findall(r"'([^']+)':'[^']+'",districts))
+          phrases.add('Ana sayfadayız.')
           social=s.split('function yakutSocialReply(command)')[1].split('for(let i=0;i<rules.length;i++)')[0]
           for group in re.findall(r",\[([^\[\]]+)\]\]",social):
               phrases.update(re.findall(r"'([^']+)'",group))
-          phrases.update(re.findall(r"(?:address|email):'([^']+)'",s))
           out=pathlib.Path('yakut-sesler');out.mkdir(exist_ok=True)
           manifest={}
           async def main():
