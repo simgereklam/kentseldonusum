@@ -869,7 +869,7 @@ function startSpeech(){
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=1;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
@@ -911,6 +911,16 @@ function startSpeech(){
   micFailureCount=0;emptyRecognitionCount=0;
   clearTimeout(timer);
   const results=Array.from(e.results);
+  // Interrupt on interim or final recognition, before ordinary reply routing.
+  for(const result of results.slice(e.resultIndex)){
+   for(const alternative of Array.from(result)){
+    const heard=normalizeYakutCommand(alternative.transcript);
+    if(isYakutStopCommand(heard)){
+     clearTimeout(timer);finalText='';interimText='';hasInterim=false;
+     releaseYakutMic();stopYakutAnswer();micRestartAt=0;queueListen(0);return;
+    }
+   }
+  }
   if(speaking||processingSpeech){
    finalText='';interimText='';hasInterim=false;
    // Accept real interruptions while speaking; ignore text recognized from
