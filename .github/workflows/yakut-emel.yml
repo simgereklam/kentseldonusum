@@ -1,0 +1,44 @@
+name: Yakut Emel recordings
+on:
+  push:
+    paths:
+      - '.github/workflows/yakut-emel.yml'
+      - 'yakut-v9.js'
+      - 'yakut-site-voice.js'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  recordings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install edge-tts
+      - run: |
+          python - <<'PY'
+          import asyncio, edge_tts, pathlib, re, json, hashlib
+          s=pathlib.Path('yakut-v9.js').read_text()
+          phrases=set()
+          phrases.update(json.loads(re.search(r'const yakutApprovedPageSpeech=Object.freeze\((\{.*?\})\);',s).group(1)).values())
+          phrases.add(re.search(r"const welcome='([^']+)'",s).group(1))
+          phrases.add('Tabii ki, size yardımcı olayım.')
+          social=s.split('function yakutSocialReply(command)')[1].split('for(let i=0;i<rules.length;i++)')[0]
+          for group in re.findall(r",\[([^\[\]]+)\]\]",social):
+              phrases.update(re.findall(r"'([^']+)'",group))
+          phrases.update(re.findall(r"(?:address|email):'([^']+)'",s))
+          out=pathlib.Path('yakut-sesler');out.mkdir(exist_ok=True)
+          manifest={}
+          async def main():
+              for phrase in sorted(phrases):
+                  name=hashlib.sha256(phrase.encode()).hexdigest()[:24]+'.mp3'
+                  if not (out/name).exists():
+                      await edge_tts.Communicate(phrase,'tr-TR-EmelNeural').save(str(out/name))
+                  manifest[phrase]=name
+              (out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
+          asyncio.run(main())
+          PY
+      - run: |
+          git config user.name "Yakut audio"
+          git config user.email "actions@users.noreply.github.com"
+          git add yakut-sesler
+          git diff --cached --quiet || (git commit -m "Generate Emel MP3 recordings" && git push)
