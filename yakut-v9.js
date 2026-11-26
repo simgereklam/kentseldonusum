@@ -26,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=restore-20261126',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=mp3-direct-20261126',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
