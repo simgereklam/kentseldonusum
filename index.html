@@ -156,6 +156,13 @@
             .footer-grid{grid-template-columns:1fr}
             .form{grid-template-columns:1fr}
         }
+        .brand-company{align-items:center;gap:9px;min-width:270px;position:relative;overflow:hidden}
+        .brand-emblem{display:block;width:76px;height:48px;flex:none;overflow:hidden;border-radius:5px}
+        .brand-emblem img{width:100%;height:100%;object-fit:cover;display:block}
+        .brand-company .brand-text strong{background:linear-gradient(110deg,#b88a36 10%,#fff0b7 35%,#c79b49 55%,#fff2c8 75%,#b88a36 95%);background-size:240% 100%;color:transparent;-webkit-background-clip:text;background-clip:text;animation:kumtasGold 7s ease-in-out infinite}
+        @keyframes kumtasGold{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+        @media(prefers-reduced-motion:reduce){.brand-company .brand-text strong{animation:none}}
+        @media(max-width:980px){.brand-company{display:flex!important;min-width:0;justify-content:center;width:100%}.navwrap{height:auto;min-height:54px;flex-wrap:wrap;justify-content:center;padding-top:6px}.menu{flex-basis:100%}.brand-emblem{width:62px;height:38px}}
     </style>
 </head>
 <body>
@@ -175,6 +182,7 @@
 <header class="header">
     <div class="container navwrap">
         <div class="brand-company">
+            <span class="brand-emblem"><img src="kumtas-banner-parlak-altin.webp" alt="" width="76" height="48"></span>
             <div class="brand-text">
                 <strong>KUMTAŞ İNŞAAT</strong>
                 <em>Güvenle Yükselen Yaşam Alanları</em>
@@ -320,7 +328,7 @@
         window.location.href = `https://wa.me/905431813485?text=${encodeURIComponent(text)}`;
     });
 </script>
-<script defer src="yakut-site-voice.js?v=site-sesi-20261122"></script><script defer src="yakut-v9.js?v=selam-edd5355"></script>
+<script defer src="yakut-site-voice.js?v=site-sesi-20261122"></script><script defer src="yakut-v9.js?v=kurumsal22-20261126"></script>
 
 </body>
 </html>
