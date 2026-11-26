@@ -26,7 +26,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=emel-arrival-20261125',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=emel-flow-20261126',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -99,7 +99,7 @@ function resumeYakutSound(){
  const engine=yakutVoice;
  if(!engine){
   yakutVoiceReady.then(v=>{
-   if(v&&ready&&!hidden){
+   if(v&&!hidden){
     v.unlock().then(ok=>{if(ok)onYakutSoundReady();else{talk.hidden=false;talk.textContent='🔊 Sesi Aç';}});
    }
   });
@@ -111,8 +111,8 @@ function resumeYakutSound(){
  });
 }
 function onYakutSoundReady(){
- if(!ready||hidden)return;
  audioUnlocked=true;
+ if(!ready||hidden)return;
  talk.hidden=false;
  if(yakutDeferredSpeech){
   const answer=yakutDeferredSpeech;yakutDeferredSpeech=null;
@@ -145,8 +145,11 @@ function beginYakutVisit(){
  if(yakutPageOfferPending&&audioUnlocked&&!yakutOfferSpoken){offerYakutPage();return}
  if(!speaking&&!processingSpeech)queueListen(50);
 }
+function rememberYakutActivation(){try{sessionStorage.setItem('yakutActivated','1')}catch(_){}}
+function restoreYakutActivation(){try{return sessionStorage.getItem('yakutActivated')==='1'}catch(_){return false}}
 function handleYakutActivation(event){
  if(!event.isTrusted||navigator.userActivation?.isActive===false||hidden||talk.contains(event.target))return;
+ rememberYakutActivation();
  micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  listenEnabled=true;
  startSpeech();
@@ -201,7 +204,7 @@ async function speak(text,deferPlayback=true,isHoldNotice=false,walkingIntro=fal
    yakutCurrentPrompt=prompt;
   }
   const ok=await voice.speak(prompt,{
-   chunkSize:/telefon numaramız/i.test(prompt)?450:180,
+   chunkSize:450,
    beforePlayback:!greeting&&model?()=>new Promise(resolve=>{
     const check=()=>{
      if(turn!==yakutVoiceGeneration||hidden||phase!=='walking'){
@@ -964,6 +967,7 @@ function startSpeech(){
  }
 }
 talk.onclick=()=>{
+ rememberYakutActivation();
  // A real click is required by some browsers to unlock Web Audio playback.
  listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;micRestartAt=0;
  startSpeech();
@@ -1050,7 +1054,7 @@ function startYakutSession(){
  }catch(e){}
  // Start Aoede as early as the browser allows, without pausing recognition.
  resumeYakutSound();
- if(audioUnlocked)queueListen(0);
+ if(audioUnlocked||restoreYakutActivation())queueListen(0);
 }
 window.addEventListener('pagehide',()=>{
  stopListening();
