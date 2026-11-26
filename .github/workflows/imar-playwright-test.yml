@@ -38,6 +38,28 @@ jobs:
       - name: Run Kadıköy automation and capture images
         run: python actions_smoke_test.py
 
+      - name: Run Bağcılar Python Playwright directly
+        if: ${{ !cancelled() }}
+        run: |
+          python - <<'PY'
+          import asyncio
+          import json
+          from pathlib import Path
+
+          from web_app import sorgula_bagcilar
+
+          response = asyncio.run(sorgula_bagcilar({
+              "ada": "0", "parsel": "2135", "mahalle": "Kirazlı",
+          }))
+          result = json.loads(response.body)
+          assert response.status_code == 200, result
+          for key in ("ekran_goruntusu_parca_1", "ekran_goruntusu_parca_2"):
+              image = Path("screenshots") / Path(result[key]).name
+              assert image.stat().st_size > 10000, image
+              (Path("test-outputs") / image.name).write_bytes(image.read_bytes())
+          print("Bağcılar Python Playwright: verified two images")
+          PY
+
       - name: Upload test results even if query fails
         if: always()
         uses: actions/upload-artifact@v4
