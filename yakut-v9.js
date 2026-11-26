@@ -867,7 +867,7 @@ function releaseYakutMicStream(){
 function prepareYakutMicStream(){
  // SpeechRecognition.start(track) is supported on desktop Chromium.
  const chromeVersion=Number(navigator.userAgent.match(/\bChrom(?:e|ium)\/(\d+)/)?.[1]);
- if(yakutUseDefaultMic||!(chromeVersion>=135)||/Android/i.test(navigator.userAgent)||!navigator.mediaDevices?.getUserMedia)return false;
+ if(yakutUseDefaultMic||!(chromeVersion>=135)||!navigator.mediaDevices?.getUserMedia)return false;
  if(yakutMicStream?.getAudioTracks()[0]?.readyState==='live')return false;
  if(yakutMicRequest)return true;
  const request=navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
@@ -913,9 +913,10 @@ function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||document.hidden)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
- const micTrack=null; // Use the browser's native recognition microphone as in the earlier build.
+ if(prepareYakutMicStream())return;
+ const micTrack=yakutMicStream?.getAudioTracks()[0];
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=!/Android|iPhone|iPad/i.test(navigator.userAgent);rec.maxAlternatives=3;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
