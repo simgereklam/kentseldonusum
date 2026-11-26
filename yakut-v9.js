@@ -307,11 +307,12 @@ function isYakutOwnVoice(text){
  return words.filter(word=>ownWords.has(word)).length/words.length>=0.75;
 }
 function isYakutStopCommand(command){
- return /^(?:(?:yakut|asistan|lütfen) )*(?:dur(?:un)?|sus(?:un)?|konuşma|kes|yeter|bekle|bir saniye|bi saniye)(?: (?:lütfen|yakut|artık))*$/.test(command);
+ return /^(?:(?:yakut|asistan|lütfen|hey|ya) )*(?:dur(?:un|sana)?|sus(?:un|sana)?|konuşma|konuşmayı (?:kes|durdur)|kes|yeter|bu kadar yeter|bekle|bir dakika(?: bekle)?|bi dakika|bir saniye(?: bekle)?|bi saniye|beni dinle|sessiz ol)(?: (?:lütfen|yakut|artık|ya))*$/.test(command);
 }
 function isYakutStopResult(result,answerInProgress){
  const primary=normalizeYakutCommand(result[0]?.transcript);
- if(isYakutStopCommand(primary))return true;
+ if(Array.from(result).some(a=>isYakutStopCommand(normalizeYakutCommand(a.transcript))))return true;
+ if(answerInProgress&&/^(?:yakut )?(?:sus|dur)(?: |$)/.test(primary))return true;
  if(!answerInProgress||!primary)return false;
  const ownWords=normalizeYakutCommand(yakutCurrentPrompt).split(' ');
  // A real stop word may appear alongside an echo of the answer in the transcript.
@@ -909,8 +910,7 @@ function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||document.hidden)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
- if(prepareYakutMicStream())return;
- const micTrack=yakutMicStream?.getAudioTracks()[0];
+ const micTrack=null; // Use the browser's native recognition microphone as in the earlier build.
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
  rec.onstart=()=>{if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
