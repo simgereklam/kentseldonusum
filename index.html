@@ -167,8 +167,7 @@
         .brand-emblem svg{display:block;width:100%;height:100%}
         .brand-company .brand-text strong{font-family:Arial,Helvetica,sans-serif;font-weight:800;letter-spacing:0!important;font-size:22px!important;-webkit-text-fill-color:transparent}
         @media(max-width:980px){.brand-emblem{width:27px;height:38px}}
-        .hero-company-logo{animation:kumtasHeroGlow 8s ease-in-out infinite}
-        @keyframes kumtasHeroGlow{0%,100%{filter:url(#kumtas-blue-background) brightness(1)}50%{filter:url(#kumtas-blue-background) brightness(1.13)}}
+        .hero-company-logo{filter:none}
         @media(prefers-reduced-motion:reduce){.hero-company-logo{animation:none}}
     </style>
 </head>
@@ -211,7 +210,7 @@
 
 <section class="hero">
     <div class="hero-banner">
-        <img class="hero-company-logo" src="kumtas-banner-parlak-altin.webp" width="1672" height="941" alt="Kumtaş İnşaat" fetchpriority="high">
+        <svg class="hero-company-logo" viewBox="0 0 1672 941" width="1672" height="941" role="img" aria-label="Kumtaş İnşaat" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="heroGold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b88a36"/><stop offset=".35" stop-color="#fff0b7"/><stop offset=".55" stop-color="#c79b49"/><stop offset=".75" stop-color="#fff2c8"/><stop offset="1" stop-color="#b88a36"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0;-1 0" dur="7s" repeatCount="indefinite"/></linearGradient></defs><g transform="translate(712 105) scale(2)" fill="#d5ad60"><path d="M0 68 29 49V175H0ZM37 27 75 0V99L84 92V42L124 68 75 109V140L105 175H37ZM92 124 123 99V161Z"/></g><g fill="url(#heroGold)" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="150"><text x="836" y="625">KUMTAŞ</text><text x="836" y="800">İNŞAAT</text></g></svg>
     </div>
     <div class="container">
         <div class="hero-bottom-area">
