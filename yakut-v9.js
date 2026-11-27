@@ -242,12 +242,8 @@ function findYakutGesture(preferred){
 function react(clip,text,placement='left',options){
  if(!ready)return;
  if(model){
-  const longAnswer=(Array.isArray(text)?text.join(' '):String(text||'')).trim().split(/\s+/).length>=35;
-  if(longAnswer){
-   if(phase!=='walking'||Math.abs(targetX-centerAnswerX())>1)moveTo(centerAnswerX());
-  }else if(phase==='walking'){
-   targetX=posX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
-  }
+  if(phase==='walking'){targetX=posX;phase='idle';play('wait');walkTimer=0;}
+  model.rotation.y=0;
  }
  phaseTime=0;
  pendingSpeechGesture=null;
@@ -710,7 +706,7 @@ async function startStopCapture(){
    chunks.push(new Float32Array(a));samples+=a.length;quiet=voiced?0:quiet+a.length;
    if(samples<ctx.sampleRate*0.28|| (quiet<ctx.sampleRate*0.22&&samples<ctx.sampleRate*1.25))return;
    const parts=chunks;const count=samples;chunks=[];samples=0;quiet=0;
-   if(Date.now()-last<4000)return;
+   if(Date.now()-last<1000)return;
    last=Date.now();busy=true;
    try{
     const all=new Float32Array(count);let offset=0;for(const p of parts){all.set(p,offset);offset+=p.length;}
@@ -720,17 +716,18 @@ async function startStopCapture(){
     for(let i=0;i<n;i++)v.setInt16(44+i*2,Math.max(-1,Math.min(1,all[Math.floor(i*ctx.sampleRate/16000)]))*32767,true);
     const bytes=new Uint8Array(buf);let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
     const res=await fetch('https://kumtas-yakut-chat.simgereklam.workers.dev/stop-stt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio:btoa(raw)}),signal:c.abort.signal});
-    if(!res.ok)return;
+    if(!res.ok){traceMic('Whisper HTTP '+res.status);return;}
     const data=await res.json(),t=normalizeYakutCommand(data.text||'').replace(/[.!?,]/g,'').trim();
-    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&!isYakutOwnVoice(t)&&(isYakutStopCommand(t)||/^(?:yakut )?(?:süs|suss|suz|şus|durr)$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
+    traceMic('Whisper duydu: '+t);
+    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&(isYakutStopCommand(t)||/^(?:yakut )?(?:süs|suss|suz|şus|durr)$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
    }catch{}finally{busy=false;}
   };
- }catch{if(epoch===stopCaptureEpoch)endStopCapture();}
+ }catch(e){traceMic('Whisper mikrofon: '+e.name);if(epoch===stopCaptureEpoch){endStopCapture();micRestartAt=0;queueListen(0);}}
 }
 
 function beginYakutAudioPlayback(){
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
- if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
+ if(listenEnabled){clearTimeout(listenRetry);releaseYakutMic();}
  yakutGestureClock=0;
  if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
   pendingSpeechGesture=null;phase='reacting';
@@ -969,7 +966,7 @@ function speechProblem(err){
  }
 }
 function startSpeech(){
- if(!ready||!listenEnabled||hidden||recognition||document.hidden)return;
+ if(!ready||!listenEnabled||hidden||recognition||document.hidden||yakutAudioPlaying)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
  const micTrack=null; // Native microphone avoids simultaneous capture streams on mobile.
