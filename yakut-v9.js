@@ -27,7 +27,7 @@ try{
 
 const yakutVoiceReady=new Promise(resolve=>{
  const script=document.createElement('script');
- script.src=new URL('yakut-gemini-voice.js?v=audio-restore-20261126',document.currentScript.src).href;
+ script.src=new URL('yakut-gemini-voice.js?v=pause-resume-20261127',document.currentScript.src).href;
  script.onload=()=>resolve(window.YakutGeminiVoice?new window.YakutGeminiVoice({
   endpoint:document.querySelector('meta[name="yakut-chat-endpoint"]')?.content||
   'https://kumtas-yakut-chat.simgereklam.workers.dev/chat',
@@ -362,6 +362,11 @@ function cancelYakutSpeech(){
  ++yakutVoiceGeneration;yakutAudioPlaying=false;yakutDeferredSpeech=null;
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
+function pauseYakutAnswer(){
+ if(yakutVoice?.pause()){endStopCapture();yakutAudioPlaying=false;speaking=false;processingSpeech=false;micRestartAt=0;queueListen(0);return;}
+ if(!yakutVoice?.paused)stopYakutAnswer();
+}
+function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;yakutVoice.resume();return true;}
 function stopYakutAnswer(){
  yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
@@ -719,7 +724,7 @@ async function startStopCapture(){
     if(!res.ok){traceMic('Whisper HTTP '+res.status);return;}
     const data=await res.json(),t=normalizeYakutCommand(data.text||'').replace(/[.!?,]/g,'').trim();
     traceMic('Whisper duydu: '+t);
-    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&(isYakutStopCommand(t)||/^(?:(?:yakut|tamam|lütfen|hey|ya) )*(?:sus|dur|süs|suss|suz|şus|durr|kes|yeter)(?: (?:bakalım|artık|lütfen|yakut|ya))?$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
+    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&(isYakutStopCommand(t)||/^(?:(?:yakut|tamam|lütfen|hey|ya) )*(?:sus|dur|süs|suss|suz|şus|durr|kes|yeter)(?: (?:bakalım|artık|lütfen|yakut|ya))?$/.test(t))){traceMic('Whisper: '+t);pauseYakutAnswer();}
     else if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&t&&!isYakutOwnVoice(t)){navigateFromRecognition(t);}
    }catch{}finally{busy=false;}
   };
@@ -998,6 +1003,7 @@ function startSpeech(){
   if(possibleEcho&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
   if(isYakutRepeatedUtterance(candidate,speechStartedAt))return false;
+  if(yakutVoice?.paused)stopYakutAnswer();
   if(navigateFromRecognition(candidate))return true;
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
@@ -1039,15 +1045,18 @@ function startSpeech(){
   if(changed.some(result=>isYakutStopResult(result,answerInProgress))){
    consumeResults();
    traceMic('Durdurma komutu algılandı');
-   stopYakutAnswer();
+   pauseYakutAnswer();
    releaseYakutMic();micRestartAt=0;queueListen(100);
    return;
+  }
+  if(changed.some(result=>Array.from(result).some(a=>/^(?:yakut )?(?:devam et|devam|kaldığın yerden devam et)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))){
+   consumeResults();if(yakutVoice?.paused)resumeYakutAnswer();return;
   }
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
     const raw=result[0]?.transcript?.trim()||'';
-    return raw&&normalizeYakutCommand(raw).split(' ').length>=2&&!isYakutOwnVoice(raw);
+    return result.isFinal&&raw&&normalizeYakutCommand(raw).split(' ').length>=2&&!isYakutOwnVoice(raw)&&Boolean(yakutPageCommand(normalizeYakutCommand(raw))||isYakutHomeCommand(raw));
    });
    if(!userResult){consumeResults();return;}
    traceMic('Araya girme: '+userResult[0].transcript);
