@@ -177,6 +177,7 @@ function finishYakutSpeech(restartAfterGreeting=false){
  // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden){
   if(restartAfterGreeting){
+   if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){listenEnabled=true;micFailureCount=0;emptyRecognitionCount=0;}
    // Keep the mobile recognition session alive after the greeting.
    micRestartAt=0;
    talk.textContent='🎤 Mikrofon açılıyor';
@@ -970,7 +971,7 @@ function speechProblem(err){
   }
  micFailureCount++;
  if(err==='network'){
-    if(micFailureCount>=4){stopListening();talk.textContent='🎤 Tekrar dene';return;}
+    if(micFailureCount>=4){if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){micFailureCount=1;}else{stopListening();talk.textContent='🎤 Tekrar dene';return;}}
     micRestartAt=Date.now()+Math.min(15000,1500*micFailureCount);
  }else if(err==='language-not-supported'||err==='language-unavailable'){
   stopListening();return;
@@ -981,6 +982,7 @@ function speechProblem(err){
 }
 function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||document.hidden||stopCapture)return;
+ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&yakutGreetingInProgress)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){if(yakutAudioPlaying)startStopCapture();return}
  if(prepareYakutMicStream())return;
