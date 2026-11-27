@@ -171,7 +171,8 @@ function finishYakutSpeech(restartAfterGreeting=false){
  micRestartAt=0;
  if(yakutGreetingInProgress){
   yakutGreetingInProgress=false;yakutGreetingEndAt=Date.now();
-  moveTo(yakutRightX());
+  targetX=posX;phase='idle';play('wait');
+  listenEnabled=true;
  }
  // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden){
@@ -363,7 +364,7 @@ function cancelYakutSpeech(){
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
 function pauseYakutAnswer(){
- if(yakutVoice?.pause()){endStopCapture();yakutAudioPlaying=false;speaking=false;processingSpeech=false;micRestartAt=0;queueListen(0);return;}
+ if(yakutVoice?.pause()){endStopCapture();yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
 function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;yakutVoice.resume();return true;}
@@ -1041,12 +1042,12 @@ function startSpeech(){
   nextResultIndex=Math.min(nextResultIndex,results.length);
   const answerInProgress=speaking||processingSpeech||Boolean(yakutDeferredSpeech);
   // An interim result can grow into a stop or navigation command at the same index.
-  const changed=results.slice(answerInProgress?e.resultIndex:Math.max(e.resultIndex,nextResultIndex));
-  if(changed.some(result=>isYakutStopResult(result,answerInProgress))){
+  const changed=results.slice(e.resultIndex);
+  if((answerInProgress||yakutVoice?.paused)&&changed.some(result=>isYakutStopResult(result,answerInProgress))){
    consumeResults();
    traceMic('Durdurma komutu algılandı');
    pauseYakutAnswer();
-   releaseYakutMic();micRestartAt=0;queueListen(100);
+   micRestartAt=0;queueListen(0);
    return;
   }
   if(changed.some(result=>Array.from(result).some(a=>/^(?:yakut )?(?:devam et|devam|kaldığın yerden devam et)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))){
