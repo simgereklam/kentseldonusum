@@ -53,7 +53,15 @@ class YakutGeminiVoice{
   let sum=0;for(const sample of this.samples){const n=(sample-128)/128;sum+=n*n;}
   return Math.min(1,Math.sqrt(sum/this.samples.length)*6);
  }
+ pause(){
+  if(!this.playing||this.paused)return false;
+  this.paused=true;this.playing=false;
+  for(const item of this.sources){item.paused=true;item.pausedAt=this.context.currentTime;try{item.source.stop()}catch(_){} }
+  return true;
+ }
+ resume(){if(!this.paused)return false;this.paused=false;this.resumeWaiter?.();this.resumeWaiter=null;return true;}
  stop(){
+  this.resume();
   ++this.generation;
   this.controller?.abort();this.controller=null;
   for(const item of this.sources){
@@ -127,15 +135,24 @@ class YakutGeminiVoice{
       this.analyser.connect(this.output);
       this.output.connect(this.context.destination);
     }
-    const source=this.context.createBufferSource();
-    source.buffer=buffer;source.connect(this.analyser);
-    let finish;
-    const played=new Promise(resolve=>{finish=resolve;});
-    const entry={source,finish};this.sources.add(entry);
-    source.onended=()=>{this.sources.delete(entry);finish();};
-    source.start();
-    if(!started){started=true;this.playing=true;this.onStart();}
-    await played;
+    let offset=0;
+    while(offset<buffer.duration&&token===this.generation){
+     if(this.paused)await new Promise(resolve=>{this.resumeWaiter=resolve;});
+     if(token!==this.generation)return false;
+     const source=this.context.createBufferSource();
+     source.buffer=buffer;source.connect(this.analyser);
+     let finish;
+     const played=new Promise(resolve=>{finish=resolve;});
+     const entry={source,finish,paused:false};this.sources.add(entry);
+     source.onended=()=>{this.sources.delete(entry);finish();};
+     const began=this.context.currentTime;
+     source.start(0,offset);
+     if(!this.playing){started=true;this.playing=true;this.onStart();}
+     await played;
+     if(token!==this.generation)return false;
+     if(!entry.paused)break;
+     offset=Math.min(buffer.duration,offset+Math.max(0,(entry.pausedAt??this.context.currentTime)-began));
+    }
    }
    success=token===this.generation&&started;
    return success;
