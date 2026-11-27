@@ -323,6 +323,41 @@ function isYakutStopResult(result,answerInProgress){
   return /^(?:(?:yakut|asistan|tamam|lütfen|hey|ya|bir|bi) )*(?:su[sş]+|sü[sş]+|suz|şus|dur+|susar mısın|susabilir misin)(?: (?:artık|lütfen|yakut|ya))*$/.test(t);
  });
 }
+// Android only: the recognition transcript often starts with Yakut's own audio
+// and ends with a short user command. Desktop control handling stays unchanged.
+const yakutAndroidBargeIn=/Android/i.test(navigator.userAgent);
+let yakutAndroidLastControl='',yakutAndroidLastControlAt=0;
+function dispatchYakutAndroidBargeIn(results){
+ if(!yakutAndroidBargeIn||!yakutVoice||!results.length)return false;
+ const paused=Boolean(yakutVoice.paused);
+ const active=paused||Boolean(yakutAudioPlaying||yakutVoice.playing);
+ if(!active)return false;
+ for(const result of results){
+  for(const alt of Array.from(result)){
+   const heard=normalizeYakutCommand(alt.transcript);
+   if(!heard)continue;
+   const words=heard.split(' ');
+   const tail=words.slice(-3).join(' ');
+   const stop=/^(?:sus|dur|bekle|sus lütfen|dur lütfen|yakut sus|yakut dur)$/.test(tail)
+     || /(?:^| )(?:sus|dur)$/.test(heard);
+   const resume=/(?:^| )devam et$/.test(heard);
+   if(!stop&&!resume)continue;
+   const command=stop?'stop':'resume';
+   if(command==='stop'&&paused)return true;
+   if(command==='resume'&&!paused)return true;
+   // Avoid the assistant triggering itself when its scripted speech contains
+   // the same command. Exact full echo is not a user interruption.
+   if(isYakutOwnVoice(heard))continue;
+   const now=Date.now();
+   if(yakutAndroidLastControl===command&&now-yakutAndroidLastControlAt<900)return true;
+   yakutAndroidLastControl=command;yakutAndroidLastControlAt=now;
+   if(stop)pauseYakutAnswer();else resumeYakutAnswer();
+   traceMic('Android araya girme: '+command);
+   return true;
+  }
+ }
+ return false;
+}
 function dispatchYakutControl(results){
  if(results.some(r=>isYakutStopResult(r,true))){
   if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing))pauseYakutAnswer();
@@ -1056,7 +1091,7 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
-  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(/Android/i.test(navigator.userAgent)){acceptedInput=true;traceMic('Android: tek-komut oturumu tamamlanıyor');try{rec.stop()}catch(_){}}return;}
+  if((yakutAndroidBargeIn&&dispatchYakutAndroidBargeIn(changed))||dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(/Android/i.test(navigator.userAgent)){acceptedInput=true;traceMic('Android: tek-komut oturumu tamamlanıyor');try{rec.stop()}catch(_){}}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
