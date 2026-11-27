@@ -736,6 +736,7 @@ async function startStopCapture(){
 }
 
 function beginYakutAudioPlayback(){
+ if(model&&phase==='walking'&&!yakutIsGreetingWalking){targetX=posX;phase='idle';walkTimer=0;model.rotation.y=0;play('wait');}
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
@@ -1288,12 +1289,6 @@ if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;pl
  if(yakutIsGreetingWalking)finishYakutGreetingWalk();
 }else{posX+=Math.sign(targetX-posX)*step;}
 positionStage();
-}else if(phase==='idle'&&!reduced){
-walkTimer+=dt;
-if(walkTimer>=22&&!speaking&&!processingSpeech&&(getYakutCurrentPage()!=='index.html'||yakutGreetingRequested)){
- walkTimer=0;
- moveTo(posX>centerAnswerX()?leftGreetingX():yakutRightX());
-}
 }
 if(face&&current!==clips.YAKUT_Yuz_Goz_Dudak&&current!==clips.YAKUT_Tam_Canli_Akis){
 blinkTime+=dt;
