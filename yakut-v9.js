@@ -740,6 +740,7 @@ function beginYakutAudioPlayback(){
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
+ if(!yakutGreetingInProgress)pendingSpeechGesture=null;
  if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
   pendingSpeechGesture=null;phase='reacting';
  }
@@ -1242,17 +1243,7 @@ model.traverse(o=>{if(o.isSkinnedMesh)o.frustumCulled=false;
  if(o.morphTargetDictionary&&!face&&Object.keys(o.morphTargetDictionary).some(n=>/jawOpen|viseme|blink/i.test(n)))face=o;
 });
 scene.add(model);mixer=new THREE.AnimationMixer(model);
-gltf.animations.forEach(c=>{
- if(c.name==='wait'){
-  const still=c.clone();
-  for(const track of still.tracks){
-   if(!/(?:shoulder|forearm|upperarm|arm|hand|finger|thumb|index|middle|ring|pinky|little)/i.test(track.name))continue;
-   const stride=track.getValueSize();
-   for(let i=stride;i<track.values.length;i++)track.values[i]=track.values[i%stride];
-  }
-  clips[c.name]=mixer.clipAction(still);
- }else clips[c.name]=mixer.clipAction(c);
-});
+gltf.animations.forEach(c=>clips[c.name]=mixer.clipAction(c));
 mixer.addEventListener('finished',event=>{if(event.action!==current)return;if(yakutOpeningBow){completeYakutOpening();return}if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait');walkTimer=0}});
 let greetedBefore=false;
 try{greetedBefore=sessionStorage.getItem('yakutGreeted')==='1'}catch(_){}
@@ -1266,7 +1257,13 @@ if(audioUnlocked)queueListen(0);
 const clock=new THREE.Clock();
 let lastCanvasWidth=0,lastCanvasHeight=0;
 let blinkTime=0,blinkAt=2.5,blinkPhase=0;
-let gestureTime=0;
+const speakingArms=[];
+model.traverse(bone=>{
+ if(bone.isBone&&/(?:Left|Right)(?:ForeArm|Hand)$/.test(bone.name))
+  speakingArms.push({bone,pose:bone.quaternion.clone(),side:bone.name.includes('Left')?1:-1});
+});
+const gestureAxis=new THREE.Vector3(0,0,1),gestureTurn=new THREE.Quaternion();
+let gestureTime=0,gestureLevel=0;
 function frame(){
 if(!stage.isConnected)return;requestAnimationFrame(frame);
 const dt=Math.min(clock.getDelta(),.06),rect=stage.getBoundingClientRect();
@@ -1279,6 +1276,12 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 if(!hidden){
 mixer.update(dt);
 gestureTime+=dt;
+gestureLevel=0;
+for(const {bone,pose,side} of speakingArms){
+ pose.copy(bone.quaternion);
+ const angle=side*gestureLevel*.11*Math.sin(gestureTime*3+side);
+ bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
+}
 // Keep the authored wait pose during speech; opening greeting remains explicit.
 if(phase==='walking'){
 const step=(innerWidth<650?65:105)*dt;
@@ -1309,7 +1312,7 @@ if(!characterRendered&&!hidden){
  characterRendered=true;
  requestAnimationFrame(()=>{if(audioUnlocked)onYakutSoundReady();});
 }
-
+if(!hidden)for(const {bone,pose} of speakingArms)bone.quaternion.copy(pose);
 }frame();
 }catch(err){
 console.error('YAKUT V9 modeli yüklenemedi:',err);stage.remove();
