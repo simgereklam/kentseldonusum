@@ -29,7 +29,7 @@
         .hero-clean-logo {
             position: relative;
             height: 220px;
-            background: #030a14 url('kumtas-logo.jpg') center/cover no-repeat;
+            background: #0c1d30; display:flex; align-items:center; justify-content:center;
             border-bottom: 4px solid var(--orange, #ff6b00);
         }
 
@@ -79,6 +79,7 @@
 .brand-emblem svg path{fill:url(#headerGoldShine)}
 @media(prefers-reduced-motion:reduce){.brand-company .brand-text strong{animation:none}}
 </style>
+<style>.hero-clean-logo svg{display:block;width:min(92%,850px);height:90%;max-height:100%;filter:drop-shadow(0 0 7px rgba(255,218,135,.25))}</style>
 </head>
 <body>
     <header class="header">
@@ -106,7 +107,7 @@
     </header>
 
     <!-- LOGONUN ÜSTÜ %100 TERTEMİZ BANNER ALANI -->
-    <section class="hero-clean-logo"></section>
+    <section class="hero-clean-logo"><svg viewBox="0 0 900 240" role="img" aria-label="Kumtaş İnşaat" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="projectGold" x1="0" y1="0" x2="1" y2=".35" spreadMethod="reflect"><stop offset="0" stop-color="#9b5b0b"/><stop offset=".22" stop-color="#e8b74d"/><stop offset=".42" stop-color="#fff5c6"/><stop offset=".49" stop-color="#ffffff"/><stop offset=".57" stop-color="#ffe18a"/><stop offset=".78" stop-color="#c48722"/><stop offset="1" stop-color="#f8d575"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0" dur="3.8s" repeatCount="indefinite"/></linearGradient></defs><g fill="url(#projectGold)" stroke="#ffe6a0" stroke-width=".6"><g transform="translate(90 32)"><path d="M0 68 29 49V175H0ZM37 27 75 0V99L84 92V42L124 68 75 109V140L105 175H37ZM92 124 123 99V161Z"/></g><g font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="77"><text x="245" y="106">KUMTAŞ</text><text x="245" y="187">İNŞAAT</text></g></g></svg></section>
 
     <!-- PROJE BAŞLIĞI VE DİNAMİK GALERİ BÖLÜMÜ -->
     <section class="section white">
