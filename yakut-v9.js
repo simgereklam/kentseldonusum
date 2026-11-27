@@ -746,7 +746,8 @@ function beginYakutAudioPlayback(){
   pendingSpeechGesture=null;phase='reacting';
  }
  yakutAudioPlaying=true;
- if(!(window.SpeechRecognition||window.webkitSpeechRecognition)&&listenEnabled)startStopCapture();
+ if(listenEnabled&&/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&navigator.mediaDevices?.getUserMedia){releaseYakutMic();startStopCapture();}
+ else if(!(window.SpeechRecognition||window.webkitSpeechRecognition)&&listenEnabled)startStopCapture();
 }
 let yakutSocialLast={};
 function yakutSocialReply(command){
