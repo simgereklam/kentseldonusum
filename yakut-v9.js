@@ -720,6 +720,7 @@ async function startStopCapture(){
     const data=await res.json(),t=normalizeYakutCommand(data.text||'').replace(/[.!?,]/g,'').trim();
     traceMic('Whisper duydu: '+t);
     if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&(isYakutStopCommand(t)||/^(?:yakut )?(?:süs|suss|suz|şus|durr)$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
+    else if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&t&&!isYakutOwnVoice(t)){navigateFromRecognition(t);}
    }catch{}finally{busy=false;}
   };
  }catch(e){traceMic('Whisper mikrofon: '+e.name);if(epoch===stopCaptureEpoch){endStopCapture();micRestartAt=0;queueListen(0);}}
