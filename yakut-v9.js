@@ -713,10 +713,10 @@ async function startStopCapture(){
   node.onaudioprocess=async e=>{
    if(epoch!==stopCaptureEpoch||(!yakutAudioPlaying&&!yakutVoice?.paused)||busy)return;
    const a=e.inputBuffer.getChannelData(0);let energy=0;for(const x of a)energy+=x*x;
-   const voiced=Math.sqrt(energy/a.length)>0.025;
+   const voiced=Math.sqrt(energy/a.length)>(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)?0.012:0.025);
    if(!samples&&!voiced)return;
    chunks.push(new Float32Array(a));samples+=a.length;quiet=voiced?0:quiet+a.length;
-   if(samples<ctx.sampleRate*0.28|| (quiet<ctx.sampleRate*0.22&&samples<ctx.sampleRate*1.25))return;
+   if(samples<ctx.sampleRate*0.28|| (quiet<ctx.sampleRate*0.22&&samples<ctx.sampleRate*(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)?2:1.25)))return;
    const parts=chunks;const count=samples;chunks=[];samples=0;quiet=0;
    if(Date.now()-last<1000)return;
    last=Date.now();busy=true;
@@ -748,7 +748,7 @@ function beginYakutAudioPlayback(){
   pendingSpeechGesture=null;phase='reacting';
  }
  yakutAudioPlaying=true;
- if(!(window.SpeechRecognition||window.webkitSpeechRecognition)&&listenEnabled)startStopCapture();
+ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&listenEnabled&&!yakutGreetingInProgress&&navigator.mediaDevices?.getUserMedia){clearTimeout(listenRetry);releaseYakutMic();traceMic('Mobil: yankı engellemeli komut dinleme');startStopCapture();}else if(!(window.SpeechRecognition||window.webkitSpeechRecognition)&&listenEnabled&&!yakutGreetingInProgress)startStopCapture();
 }
 let yakutSocialLast={};
 function yakutSocialReply(command){
