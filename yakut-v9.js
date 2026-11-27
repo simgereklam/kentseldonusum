@@ -1132,6 +1132,14 @@ function startSpeech(){
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
     if(speaking||processingSpeech){micRestartAt=0;queueListen(0);return;}
+    if(yakutAndroidBargeIn&&(yakutAudioPlaying||yakutVoice?.paused)){
+     // Android recognition ends naturally between short utterances. During
+     // playback, reopen promptly instead of applying idle/no-speech backoff.
+     emptyRecognitionCount=0;micRestartAt=0;
+     traceMic('Android: konuşma sırasında mikrofon yeniden açılıyor');
+     queueListen(30);
+     return;
+    }
     if(!acceptedInput){
      emptyRecognitionCount++;
      micRestartAt=Date.now()+Math.min(850,180*emptyRecognitionCount);
