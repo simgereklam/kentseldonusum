@@ -165,6 +165,7 @@ function handleYakutActivation(event){
 document.addEventListener('click',handleYakutActivation,true);
 document.addEventListener('keydown',handleYakutActivation,true);
 function finishYakutSpeech(restartAfterGreeting=false){
+ endStopCapture();
  yakutAudioPlaying=false;
  speaking=false;processingSpeech=false;yakutSpeechEndedAt=Date.now();
  micRestartAt=0;
@@ -358,6 +359,7 @@ function yakutWantsCompanyInfo(command){
 }
 function stopYakutAudioOutput(){yakutVoice?.stop();}
 function cancelYakutSpeech(){
+ endStopCapture();
  stopYakutAudioOutput();
  yakutChatController?.abort();
  yakutChatController=null;
@@ -678,6 +680,54 @@ function rememberYakutTurn(question,answer){
  try{sessionStorage.setItem('yakutChatHistory',JSON.stringify(yakutChatHistory))}catch(_){}
 }
 let yakutChatController=null;
+
+// Independent, short-utterance stop detector; never submits a chat question.
+let stopCapture=null,stopCaptureEpoch=0;
+function endStopCapture(){
+ ++stopCaptureEpoch;
+ const c=stopCapture;stopCapture=null;
+ if(c){c.abort.abort();c.stream?.getTracks().forEach(t=>t.stop());c.context?.close().catch(()=>{});}
+}
+async function startStopCapture(){
+ if(stopCapture||!listenEnabled||hidden||!navigator.mediaDevices?.getUserMedia)return;
+ const epoch=++stopCaptureEpoch;
+ const c={abort:new AbortController()};stopCapture=c;
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}});
+  if(epoch!==stopCaptureEpoch){stream.getTracks().forEach(t=>t.stop());return;}
+  c.stream=stream;
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();c.context=ctx;
+  await ctx.resume();
+  if(epoch!==stopCaptureEpoch)return;
+  const input=ctx.createMediaStreamSource(stream),node=ctx.createScriptProcessor(2048,1,1),mute=ctx.createGain();mute.gain.value=0;
+  input.connect(node);node.connect(mute);mute.connect(ctx.destination);
+  let chunks=[],samples=0,quiet=0,busy=false,last=0;
+  node.onaudioprocess=async e=>{
+   if(epoch!==stopCaptureEpoch||!yakutAudioPlaying||busy)return;
+   const a=e.inputBuffer.getChannelData(0);let energy=0;for(const x of a)energy+=x*x;
+   const voiced=Math.sqrt(energy/a.length)>0.025;
+   if(!samples&&!voiced)return;
+   chunks.push(new Float32Array(a));samples+=a.length;quiet=voiced?0:quiet+a.length;
+   if(samples<ctx.sampleRate*0.28|| (quiet<ctx.sampleRate*0.22&&samples<ctx.sampleRate*1.25))return;
+   const parts=chunks;const count=samples;chunks=[];samples=0;quiet=0;
+   if(Date.now()-last<4000)return;
+   last=Date.now();busy=true;
+   try{
+    const all=new Float32Array(count);let offset=0;for(const p of parts){all.set(p,offset);offset+=p.length;}
+    const n=Math.floor(count*16000/ctx.sampleRate),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+    const tag=(o,t)=>{for(let i=0;i<t.length;i++)v.setUint8(o+i,t.charCodeAt(i));};
+    tag(0,'RIFF');v.setUint32(4,36+n*2,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);tag(36,'data');v.setUint32(40,n*2,true);
+    for(let i=0;i<n;i++)v.setInt16(44+i*2,Math.max(-1,Math.min(1,all[Math.floor(i*ctx.sampleRate/16000)]))*32767,true);
+    const bytes=new Uint8Array(buf);let raw='';for(const b of bytes)raw+=String.fromCharCode(b);
+    const res=await fetch('https://kumtas-yakut-chat.simgereklam.workers.dev/stop-stt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audio:btoa(raw)}),signal:c.abort.signal});
+    if(!res.ok)return;
+    const data=await res.json(),t=normalizeYakutCommand(data.text||'').replace(/[.!?,]/g,'').trim();
+    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&!isYakutOwnVoice(t)&&(isYakutStopCommand(t)||/^(?:yakut )?(?:süs|suss|suz|şus|durr)$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
+   }catch{}finally{busy=false;}
+  };
+ }catch{if(epoch===stopCaptureEpoch)endStopCapture();}
+}
+
 function beginYakutAudioPlayback(){
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
@@ -686,6 +736,7 @@ function beginYakutAudioPlayback(){
   pendingSpeechGesture=null;phase='reacting';
  }
  yakutAudioPlaying=true;
+ startStopCapture();
 }
 let yakutSocialLast={};
 function yakutSocialReply(command){
@@ -861,6 +912,7 @@ function releaseYakutMic(){
  try{rec?.abort()}catch(_){}
 }
 function stopListening(){
+ endStopCapture();
  listenEnabled=false;clearTimeout(listenRetry);releaseYakutMic();
  releaseYakutMicStream();
  talk.hidden=false;
