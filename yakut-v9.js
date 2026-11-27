@@ -130,6 +130,7 @@ function onYakutSoundReady(){
   yakutGreetingRequested=true;
   if(model&&Math.abs(posX-leftGreetingX())>12)moveTo(leftGreetingX());
   yakutGreetingInProgress=true;
+  if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){clearTimeout(listenRetry);releaseYakutMic();endStopCapture();}
   pendingSpeechGesture=findYakutGesture('greet_01');
   speak(welcome);return;
  }
