@@ -371,7 +371,7 @@ function pauseYakutAnswer(){
  if(yakutVoice?.pause()){yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
-function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
+function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){yakutAudioPlaying=true;if(!stopCapture&&navigator.mediaDevices?.getUserMedia){releaseYakutMic();startStopCapture();}}yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
 function stopYakutAnswer(){
  yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
