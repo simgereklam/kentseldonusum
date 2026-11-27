@@ -370,7 +370,7 @@ function pauseYakutAnswer(){
  if(yakutVoice?.pause()){endStopCapture();yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
-function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;yakutVoice.resume();return true;}
+function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
 function stopYakutAnswer(){
  yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
@@ -979,7 +979,8 @@ function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||document.hidden||stopCapture)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){if(yakutAudioPlaying)startStopCapture();return}
- const micTrack=null; // Native microphone avoids simultaneous capture streams on mobile.
+ if(prepareYakutMicStream())return;
+ const micTrack=yakutMicStream?.getAudioTracks()[0]||null;
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
  rec.onstart=()=>{traceMic('Mikrofon başladı');if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
@@ -1047,12 +1048,12 @@ function startSpeech(){
   const answerInProgress=speaking||processingSpeech||Boolean(yakutDeferredSpeech);
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
-  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');return;}
+  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');releaseYakutMic();micRestartAt=0;queueListen(120);return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
     const raw=result[0]?.transcript?.trim()||'';
-    return result.isFinal&&raw&&normalizeYakutCommand(raw).split(' ').length>=2&&!isYakutOwnVoice(raw)&&Boolean(yakutPageCommand(normalizeYakutCommand(raw))||isYakutHomeCommand(raw));
+    return result.isFinal&&raw&&normalizeYakutCommand(raw).split(' ').length>=2&&!isYakutOwnVoice(raw)&&Boolean(yakutPageCommand(normalizeYakutCommand(raw))||isYakutHomeCommand(raw)||/^(?:yakut |peki |şimdi |bir de )/.test(normalizeYakutCommand(raw)));
    });
    if(!userResult){consumeResults();return;}
    traceMic('Araya girme: '+userResult[0].transcript);
