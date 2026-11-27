@@ -1055,7 +1055,8 @@ function startSpeech(){
   const answerInProgress=speaking||processingSpeech||Boolean(yakutDeferredSpeech);
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
-  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}return;}
+  const wasPaused=Boolean(yakutVoice?.paused);
+  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(wasPaused!==Boolean(yakutVoice?.paused)){traceMic('Mobil: kontrol sonrası yeni dinleme oturumu');releaseYakutMic();micRestartAt=0;queueListen(30);}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
