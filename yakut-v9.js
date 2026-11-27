@@ -1140,6 +1140,13 @@ function startSpeech(){
      queueListen(30);
      return;
     }
+    if(yakutAndroidBargeIn&&document.visibilityState==='visible'){
+     // Android only: keep the next short recognition session ready during
+     // an active chat; never change voice, command handling or desktop.
+     emptyRecognitionCount=0;micRestartAt=0;
+     queueListen(30);
+     return;
+    }
     if(!acceptedInput){
      emptyRecognitionCount++;
      micRestartAt=Date.now()+Math.min(850,180*emptyRecognitionCount);
