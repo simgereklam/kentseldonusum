@@ -177,6 +177,7 @@ function finishYakutSpeech(restartAfterGreeting=false){
  // Do not automatically offer another narrated answer after finishing one reply.
  if(listenEnabled&&!hidden){
   if(restartAfterGreeting){
+   if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))releaseYakutMic();
    micRestartAt=0;
    talk.textContent='🎤 Mikrofon açılıyor';
   }else if(recognition&&!micStarting)talk.textContent='🟢 Dinliyorum';
@@ -935,6 +936,7 @@ function releaseYakutMicStream(){
 function prepareYakutMicStream(){
  // SpeechRecognition.start(track) is supported on desktop Chromium.
  const chromeVersion=Number(navigator.userAgent.match(/\bChrom(?:e|ium)\/(\d+)/)?.[1]);
+ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))return false;
  if(yakutUseDefaultMic||!(chromeVersion>=135)||!navigator.mediaDevices?.getUserMedia)return false;
  if(yakutMicStream?.getAudioTracks()[0]?.readyState==='live')return false;
  if(yakutMicRequest)return true;
