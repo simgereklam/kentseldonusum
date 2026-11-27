@@ -728,13 +728,13 @@ async function startStopCapture(){
 
 function beginYakutAudioPlayback(){
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
- if(listenEnabled){clearTimeout(listenRetry);releaseYakutMic();}
+ if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
  if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
   pendingSpeechGesture=null;phase='reacting';
  }
  yakutAudioPlaying=true;
- startStopCapture();
+ if(!(window.SpeechRecognition||window.webkitSpeechRecognition)&&listenEnabled)startStopCapture();
 }
 let yakutSocialLast={};
 function yakutSocialReply(command){
@@ -967,9 +967,9 @@ function speechProblem(err){
  }
 }
 function startSpeech(){
- if(!ready||!listenEnabled||hidden||recognition||document.hidden||yakutAudioPlaying)return;
+ if(!ready||!listenEnabled||hidden||recognition||document.hidden||stopCapture)return;
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
- if(!API){stopListening();talk.hidden=false;talk.textContent='🎤 Tarayıcı Mikrofonu';return}
+ if(!API){if(yakutAudioPlaying)startStopCapture();return}
  const micTrack=null; // Native microphone avoids simultaneous capture streams on mobile.
  const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
@@ -1071,6 +1071,7 @@ function startSpeech(){
   if(micTrack&&/^(?:audio-capture|network|not-allowed|service-not-allowed)$/.test(micLastError)){
    yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;
   }
+  if(yakutAudioPlaying&&/^(?:network|audio-capture|service-not-allowed|language-not-supported|language-unavailable)$/.test(micLastError)){clearTimeout(listenRetry);startStopCapture();return;}
   if((speaking||processingSpeech)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(150);return;}
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
  };
@@ -1094,6 +1095,7 @@ function startSpeech(){
   if(recognition!==rec||!micStarting)return;
   releaseYakutMic();
   if(micTrack){yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;}
+  if(yakutAudioPlaying){startStopCapture();return;}
   speechProblem('start-failed');queueListen(150);
  },4500);
  try{if(micTrack)rec.start(micTrack);else rec.start()}catch(e){
