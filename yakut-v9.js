@@ -989,7 +989,7 @@ function startSpeech(){
  if(prepareYakutMicStream())return;
  const micTrack=yakutMicStream?.getAudioTracks()[0]||null;
  const rec=new API();recognition=rec;micStarting=true;
- rec.lang='tr-TR';rec.interimResults=true;rec.continuous=true;rec.maxAlternatives=3;
+ rec.lang='tr-TR';rec.interimResults=true;rec.continuous=!/Android/i.test(navigator.userAgent);rec.maxAlternatives=3;
  rec.onstart=()=>{traceMic('Mikrofon başladı');if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
@@ -1056,7 +1056,7 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
-  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(wasPaused!==Boolean(yakutVoice?.paused)){traceMic('Mobil: kontrol algılandı; mevcut mikrofon oturumu korunuyor');}return;}
+  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(/Android/i.test(navigator.userAgent)){acceptedInput=true;traceMic('Android: tek-komut oturumu tamamlanıyor');try{rec.stop()}catch(_){}}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
@@ -1101,7 +1101,7 @@ function startSpeech(){
      emptyRecognitionCount++;
      micRestartAt=Date.now()+Math.min(850,180*emptyRecognitionCount);
     }
-    talk.textContent='🎤 Yeniden dinliyorum';queueListen(180);
+    talk.textContent='🎤 Yeniden dinliyorum';queueListen(/Android/i.test(navigator.userAgent)?90:180);
    }
   else if(!listenEnabled)talk.textContent='🎤 YAKUT';
  };
