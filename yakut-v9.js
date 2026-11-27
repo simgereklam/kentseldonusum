@@ -366,7 +366,7 @@ function pauseYakutAnswer(){
  if(yakutVoice?.pause()){endStopCapture();yakutAudioPlaying=false;speaking=false;processingSpeech=false;micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
-function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;yakutVoice.resume();return true;}
+function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;micRestartAt=0;yakutVoice.resume();queueListen(0);return true;}
 function stopYakutAnswer(){
  yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
@@ -733,7 +733,7 @@ async function startStopCapture(){
 
 function beginYakutAudioPlayback(){
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
- if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
+ if(listenEnabled&&!recognition){micRestartAt=0;queueListen(100);}
  yakutGestureClock=0;
  if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
   pendingSpeechGesture=null;phase='reacting';
@@ -1050,7 +1050,7 @@ function startSpeech(){
    return;
   }
   if(changed.some(result=>Array.from(result).some(a=>/^(?:yakut )?(?:devam et|devam|kaldığın yerden devam et)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))){
-   consumeResults();if(yakutVoice?.paused)resumeYakutAnswer();return;
+   consumeResults();if(yakutVoice?.paused){releaseYakutMic();micRestartAt=0;resumeYakutAnswer();queueListen(100);}return;
   }
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
