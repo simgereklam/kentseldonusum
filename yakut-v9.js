@@ -247,7 +247,8 @@ function react(clip,text,placement='left',options){
   model.rotation.y=0;
  }
  phaseTime=0;
- pendingSpeechGesture=null;
+ const words=(Array.isArray(text)?text.join(' '):String(text||'')).toLocaleLowerCase('tr-TR');
+ pendingSpeechGesture=/^(?:merhaba|günaydın|iyi akşamlar)/.test(words)?'greet_01':/^(?:görüşmek üzere|hoşça kal|kendinize iyi bak)/.test(words)?'wave_goodbye_02':/^(?:rica ederim|çok teşekkür|teşekkür ederim)/.test(words)?'bow':/^(?:üzgünüm|maalesef)/.test(words)?'frustrated_01':/^(?:evet|tabii|elbette|peki)/.test(words)?'agree':/^(?:haha|hahaha)/.test(words)?'laugh_02':null;
  speak(text,options);
 }
 const yakutDistrictPages={'bağcılar':'bagcilar','bahçelievler':'bahcelievler','bakırköy':'bakirkoy','güngören':'gungoren','avcılar':'avcilar','esenler':'esenler','küçükçekmece':'kucukcekmece','zeytinburnu':'zeytinburnu','yenibosna':'yenibosna'};
@@ -1275,7 +1276,7 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 if(!hidden){
 mixer.update(dt);
 gestureTime+=dt;
-gestureLevel=0;
+gestureLevel=yakutAudioPlaying&&phase==='idle'?Math.min(1,(yakutVoice?.getLevel()||0)*1.5):0;
 for(const {bone,pose,side} of speakingArms){
  pose.copy(bone.quaternion);
  const angle=side*gestureLevel*.11*Math.sin(gestureTime*3+side);
@@ -1300,6 +1301,8 @@ if(yakutAudioPlaying&&yakutVoice)amp=yakutVoice.getLevel();
 for(const [name,i] of Object.entries(face.morphTargetDictionary)){
 const isMouth=/jawOpen|viseme_/i.test(name);
 const isBlink=/eyeBlink|blinkLeft|blinkRight|eyesClosed|blink/i.test(name);
+const isSmile=/smile/i.test(name);
+if(isSmile&&phase==='idle'){face.morphTargetInfluences[i]=THREE.MathUtils.damp(face.morphTargetInfluences[i],yakutAudioPlaying?.12:.04,12,dt);continue;}
 if(!isMouth&&!isBlink)continue; // Keep authored facial expressions intact.
 const vowel=['A','O','U','E','MBP'][Math.floor(gestureTime*9)%5];
  const influence=isBlink?blink:/jawOpen/i.test(name)?amp*.65:name.toUpperCase()===('VISEME_'+vowel)?amp*.48:0;
