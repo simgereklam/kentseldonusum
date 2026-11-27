@@ -1091,7 +1091,7 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
-  if((yakutAndroidBargeIn&&dispatchYakutAndroidBargeIn(changed))||dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(/Android/i.test(navigator.userAgent)){acceptedInput=true;traceMic('Android: tek-komut oturumu tamamlanıyor');try{rec.stop()}catch(_){}}return;}
+  if((yakutAndroidBargeIn&&dispatchYakutAndroidBargeIn(changed))||dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(yakutAndroidBargeIn){acceptedInput=true;micRestartAt=0;traceMic('Android: komut işlendi; tanıma açık kalıyor, sonraki komut bekleniyor');}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
