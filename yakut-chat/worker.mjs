@@ -460,6 +460,34 @@ async function emelSpeech(request, env, headers) {
   } catch { return Response.json({error:'EMEL_UNAVAILABLE'},{status:502,headers}); }
 }
 
+async function stopTranscribe(request,env,headers){
+  let audio;
+  try {
+    const raw=await request.text();
+    if(raw.length>180000)return Response.json({error:'SIZE'},{status:413,headers});
+    const data=JSON.parse(raw);
+    if(typeof data.audio!=='string'||data.audio.length>170000)throw Error('audio');
+    audio=Uint8Array.from(atob(data.audio),c=>c.charCodeAt(0));
+    if(audio.length<44||audio.length>125000||String.fromCharCode(...audio.slice(0,4))!=='RIFF')throw Error('wav');
+  }catch{return Response.json({error:'INVALID_AUDIO'},{status:400,headers});}
+  if(env.AI&&(cooldowns.get('stop-cf')||0)<Date.now()){
+    try{
+      const result=await env.AI.run('@cf/openai/whisper-large-v3-turbo',{audio:btoa(Array.from(audio,c=>String.fromCharCode(c)).join('')),language:'tr',task:'transcribe'});
+      if(typeof result?.text==='string')return Response.json({text:result.text},{headers});
+    }catch{cooldowns.set('stop-cf',Date.now()+60000);}
+  }
+  if(env.GROQ_API_KEY)for(const model of ['whisper-large-v3-turbo','whisper-large-v3']){
+    if((cooldowns.get(model)||0)>Date.now())continue;
+    try{
+      const form=new FormData();form.append('file',new Blob([audio],{type:'audio/wav'}),'command.wav');form.append('model',model);form.append('language','tr');form.append('temperature','0');
+      const res=await fetch('https://api.groq.com/openai/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+env.GROQ_API_KEY},body:form,signal:AbortSignal.timeout(3500)});
+      if(res.ok){const result=await res.json();return Response.json({text:String(result.text||'')},{headers});}
+      if(res.status===429)cooldowns.set(model,Date.now()+60000);
+    }catch{}
+  }
+  return Response.json({error:'STT_UNAVAILABLE'},{status:503,headers});
+}
+
 export default {
   async fetch(request, env) {
     // Public health probe works for uptime monitors without an Origin header.
@@ -482,7 +510,7 @@ export default {
       'Access-Control-Max-Age':'600'
     } });
     const pathname = new URL(request.url).pathname;
-    if (!['/chat','/live','/live-token','/imar'].includes(pathname) || request.method !== 'POST')
+    if (!['/chat','/live','/live-token','/imar','/stop-stt'].includes(pathname) || request.method !== 'POST')
       return new Response(null, { status: 404, headers });
     if (!request.headers.get('Content-Type')?.startsWith('application/json')) return new Response(null, { status: 415, headers });
     // Preserve availability when the optional limiter binding is missing.
@@ -490,7 +518,9 @@ export default {
     let limited = false;
     // Voice playback is independent from chat quotas: each answer needs its
     // own /live call. Keep a separate per-isolate safety limit for TTS costs.
-    if (pathname === '/live') {
+    if (pathname === '/stop-stt') {
+      limited = !fallbackLimit('stop-stt:' + ip, 15);
+    } else if (pathname === '/live') {
       limited = !fallbackLimit('voice:' + ip, 24);
     } else if (pathname === '/imar') {
       limited = !fallbackLimit('imar:' + ip, 20);
@@ -507,6 +537,7 @@ export default {
     if (limited) return Response.json({error:'RATE_LIMIT',answer:'Çok fazla istek gönderildi. Lütfen kısa süre sonra yeniden deneyin.'},
       {status:429,headers:{...headers,'Retry-After':'60'}});
     if (pathname === '/live-token') return Response.json({error:'GEMINI_VOICE_DISABLED'},{status:410,headers});
+    if (pathname === '/stop-stt') return stopTranscribe(request,env,headers);
     if (pathname === '/live') return emelSpeech(request, env, headers);
 
     // Compatibility endpoint for the existing e-imar page. No official parcel
