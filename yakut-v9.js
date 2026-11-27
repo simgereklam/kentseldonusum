@@ -312,21 +312,24 @@ function isYakutOwnVoice(text){
 function isYakutStopCommand(command){
  return /^(?:(?:yakut|asistan|lütfen|hey|ya) )*(?:dur(?:un|sana)?|sus(?:un|sana)?|konuşma|konuşmayı (?:kes|durdur)|kes|yeter|bu kadar yeter|bekle|bir dakika(?: bekle)?|bi dakika|bir saniye(?: bekle)?|bi saniye|beni dinle|sessiz ol)(?: (?:lütfen|yakut|artık|ya))*$/.test(command);
 }
+function isYakutResumeCommand(t){return /^(?:(?:yakut|lütfen|hadi) )*(?:devam et|devam|kaldığın yerden devam et)(?: lütfen)?$/.test(t);}
 function isYakutStopResult(result,answerInProgress){
- const primary=normalizeYakutCommand(result[0]?.transcript);
- if(Array.from(result).some(a=>isYakutStopCommand(normalizeYakutCommand(a.transcript))))return true;
- if(answerInProgress&&Array.from(result).some(a=>{const t=normalizeYakutCommand(a.transcript);return /^(?:(?:yakut|tamam|lütfen|hey|ya) )*(?:sus|dur|süs|kes|yeter)(?: (?:bakalım|artık|lütfen|yakut|ya))?$/.test(t);}))return true;
- if(!primary)return false;
- if(Array.from(result).some(a=>/^(?:(?:yakut|lütfen) )?(?:süs|suss|suz|şus|durr|dur ya)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))return true;
- if(!answerInProgress)return false;
- const ownWords=normalizeYakutCommand(yakutCurrentPrompt).split(' ');
- // A real stop word may appear alongside an echo of the answer in the transcript.
- if(primary.split(' ').some(word=>/^(?:sus|dur)$/.test(word)&&!ownWords.includes(word)))return true;
- const shortCommand=primary.replace(/^(?:(?:yakut|asistan|lütfen) )+/,'').replace(/(?: (?:lütfen|yakut|artık))+$/,'');
- // Turkish recognition sometimes loses the last sound of “sus”.
- if(/^(?:su|suz|suss|süs|şu|şus|susar mısın|susabilir misin|sessiz ol)$/.test(shortCommand)&&!ownWords.includes(shortCommand))return true;
- return !shortCommand.includes(' ')&&Array.from(result).slice(1).some(alternative=>
-  isYakutStopCommand(normalizeYakutCommand(alternative.transcript)));
+ return Array.from(result).some(a=>{
+  const t=normalizeYakutCommand(a.transcript);
+  if(isYakutStopCommand(t))return true;
+  return /^(?:(?:yakut|asistan|tamam|lütfen|hey|ya|bir|bi) )*(?:su[sş]+|sü[sş]+|suz|şus|dur+|susar mısın|susabilir misin)(?: (?:artık|lütfen|yakut|ya))*$/.test(t);
+ });
+}
+function dispatchYakutControl(results){
+ if(results.some(r=>isYakutStopResult(r,true))){
+  if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying))pauseYakutAnswer();
+  return true;
+ }
+ if(results.some(r=>Array.from(r).some(a=>isYakutResumeCommand(normalizeYakutCommand(a.transcript))))){
+  if(yakutVoice?.paused)resumeYakutAnswer();
+  return true;
+ }
+ return false;
 }
 function isYakutRepeatedUtterance(text,speechStartedAt){
  const command=normalizeYakutCommand(text)
@@ -999,6 +1002,7 @@ function startSpeech(){
   const candidate=[finalText,interimText].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
   consumeResults();
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
+  if(dispatchYakutControl([[{transcript:candidate}]]))return true;
   if(speaking||processingSpeech)return false;
   const possibleEcho=speechStartedAt?speechStartedAt<=yakutSpeechEndedAt:Date.now()-yakutSpeechEndedAt<3500;
   if(possibleEcho&&isYakutOwnVoice(candidate))return false;
@@ -1043,16 +1047,7 @@ function startSpeech(){
   const answerInProgress=speaking||processingSpeech||Boolean(yakutDeferredSpeech);
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
-  if((answerInProgress||yakutVoice?.paused)&&changed.some(result=>isYakutStopResult(result,answerInProgress))){
-   consumeResults();
-   traceMic('Durdurma komutu algılandı');
-   pauseYakutAnswer();
-   micRestartAt=0;queueListen(0);
-   return;
-  }
-  if(changed.some(result=>Array.from(result).some(a=>/^(?:yakut )?(?:devam et|devam|kaldığın yerden devam et)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))){
-   consumeResults();if(yakutVoice?.paused)resumeYakutAnswer();return;
-  }
+  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
