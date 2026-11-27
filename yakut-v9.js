@@ -938,6 +938,7 @@ function releaseYakutMicStream(){
 function prepareYakutMicStream(){
  // SpeechRecognition.start(track) is supported on desktop Chromium.
  const chromeVersion=Number(navigator.userAgent.match(/\bChrom(?:e|ium)\/(\d+)/)?.[1]);
+ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))return false;
  if(yakutUseDefaultMic||!(chromeVersion>=135)||!navigator.mediaDevices?.getUserMedia)return false;
  if(yakutMicStream?.getAudioTracks()[0]?.readyState==='live')return false;
  if(yakutMicRequest)return true;
@@ -1111,7 +1112,7 @@ function startSpeech(){
   if(yakutAudioPlaying){startStopCapture();return;}
   speechProblem('start-failed');queueListen(150);
  },4500);
- try{if(micTrack){if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))traceMic('Mobil: yankı engellemeli ses akışı');rec.start(micTrack);}else rec.start()}catch(e){
+ try{if(micTrack)rec.start(micTrack);else rec.start()}catch(e){
   clearTimeout(micStartTimer);
   micStarting=false;if(recognition===rec)recognition=null;
   if(micTrack){yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;}
