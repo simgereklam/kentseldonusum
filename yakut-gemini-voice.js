@@ -11,7 +11,7 @@ class YakutGeminiVoice{
   this.manifest=fetch(new URL('yakut-sesler/manifest.json?v=emel-kayitlar-20261126',location.origin+'/'),{
    signal:AbortSignal.timeout(8000)
   }).then(response=>response.ok?response.json():{}).catch(()=>({}));
-  this.generation=0;this.controller=null;this.sources=new Set();this.playing=false;
+  this.generation=0;this.controller=null;this.sources=new Set();this.playing=false;this.paused=false;this.resumeWaiter=null;
  }
  unlock(){
   const Audio=window.AudioContext||window.webkitAudioContext;
@@ -54,14 +54,16 @@ class YakutGeminiVoice{
   return Math.min(1,Math.sqrt(sum/this.samples.length)*6);
  }
  pause(){
-  if(!this.playing||this.paused)return false;
+  if(this.paused)return true;
+  if(!this.playing&&!this.sources.size&&!this.controller)return false;
   this.paused=true;this.playing=false;
   for(const item of this.sources){item.paused=true;item.pausedAt=this.context.currentTime;try{item.source.stop()}catch(_){} }
   return true;
  }
  resume(){if(!this.paused)return false;this.paused=false;this.resumeWaiter?.();this.resumeWaiter=null;return true;}
  stop(){
-  this.resume();
+  this.paused=false;
+  const waiter=this.resumeWaiter;this.resumeWaiter=null;waiter?.();
   ++this.generation;
   this.controller?.abort();this.controller=null;
   for(const item of this.sources){
@@ -162,11 +164,11 @@ class YakutGeminiVoice{
   }finally{
    controller.abort();
    if(token===this.generation){
-    if(!success){
+    if(!success&&!this.paused){
      for(const item of this.sources){try{item.source.stop()}catch(_){}item.finish();}
      this.sources.clear();
     }
-    this.controller=null;this.playing=false;this.onEnd(success);
+    this.controller=null;this.paused=false;this.playing=false;this.onEnd(success);
    }
   }
  }
