@@ -314,7 +314,7 @@ function isYakutStopCommand(command){
 function isYakutStopResult(result,answerInProgress){
  const primary=normalizeYakutCommand(result[0]?.transcript);
  if(Array.from(result).some(a=>isYakutStopCommand(normalizeYakutCommand(a.transcript))))return true;
- if(answerInProgress&&/^(?:yakut )?(?:sus|dur)(?: |$)/.test(primary))return true;
+ if(answerInProgress&&Array.from(result).some(a=>{const t=normalizeYakutCommand(a.transcript);return /^(?:(?:yakut|tamam|lütfen|hey|ya) )*(?:sus|dur|süs|kes|yeter)(?: (?:bakalım|artık|lütfen|yakut|ya))?$/.test(t);}))return true;
  if(!primary)return false;
  if(Array.from(result).some(a=>/^(?:(?:yakut|lütfen) )?(?:süs|suss|suz|şus|durr|dur ya)(?: lütfen)?$/.test(normalizeYakutCommand(a.transcript))))return true;
  if(!answerInProgress)return false;
@@ -719,7 +719,7 @@ async function startStopCapture(){
     if(!res.ok){traceMic('Whisper HTTP '+res.status);return;}
     const data=await res.json(),t=normalizeYakutCommand(data.text||'').replace(/[.!?,]/g,'').trim();
     traceMic('Whisper duydu: '+t);
-    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&(isYakutStopCommand(t)||/^(?:yakut )?(?:süs|suss|suz|şus|durr)$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
+    if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&(isYakutStopCommand(t)||/^(?:(?:yakut|tamam|lütfen|hey|ya) )*(?:sus|dur|süs|suss|suz|şus|durr|kes|yeter)(?: (?:bakalım|artık|lütfen|yakut|ya))?$/.test(t))){traceMic('Whisper: '+t);stopYakutAnswer();}
     else if(epoch===stopCaptureEpoch&&yakutAudioPlaying&&t&&!isYakutOwnVoice(t)){navigateFromRecognition(t);}
    }catch{}finally{busy=false;}
   };
