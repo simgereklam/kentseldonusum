@@ -983,7 +983,7 @@ function speechProblem(err){
 }
 function startSpeech(){
  if(!ready||!listenEnabled||hidden||recognition||document.hidden||stopCapture)return;
- if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)&&yakutGreetingInProgress)return;
+ // Mobile must keep listening even during the greeting so 'sus' can interrupt it.
  const API=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!API){if(yakutAudioPlaying)startStopCapture();return}
  if(prepareYakutMicStream())return;
@@ -1056,7 +1056,7 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
-  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(wasPaused!==Boolean(yakutVoice?.paused)){traceMic('Mobil: kontrol sonrası yeni dinleme oturumu');releaseYakutMic();micRestartAt=0;queueListen(30);}return;}
+  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(wasPaused!==Boolean(yakutVoice?.paused)){traceMic('Mobil: kontrol algılandı; mevcut mikrofon oturumu korunuyor');}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
