@@ -990,16 +990,19 @@ function startSpeech(){
    consumeResults();
    traceMic('Durdurma komutu algılandı');
    stopYakutAnswer();
+   releaseYakutMic();micRestartAt=0;queueListen(100);
    return;
   }
   if(speaking||processingSpeech){
-   consumeResults();
-   for(const result of changed){
-    const raw=result[0]?.transcript||'';
-    if(!result.isFinal||!raw.trim()||isYakutOwnVoice(raw))continue;
-    if(navigateFromRecognition(raw))return;
-   }
-   return;
+   // Barge-in: accept a distinct user utterance, not the assistant's own echo.
+   const userResult=changed.find(result=>{
+    const raw=result[0]?.transcript?.trim()||'';
+    return raw&&normalizeYakutCommand(raw).split(' ').length>=2&&!isYakutOwnVoice(raw);
+   });
+   if(!userResult){consumeResults();return;}
+   traceMic('Araya girme: '+userResult[0].transcript);
+   stopYakutAnswer();
+   nextResultIndex=Math.max(e.resultIndex,results.indexOf(userResult));
   }
   const freshResults=results.slice(nextResultIndex);
   finalText=freshResults.filter(result=>result.isFinal)
