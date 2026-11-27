@@ -1056,7 +1056,7 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
-  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(wasPaused!==Boolean(yakutVoice?.paused)){traceMic('Mobil: kontrol algılandı; mevcut mikrofon oturumu korunuyor');}return;}
+  if(dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(wasPaused&& !yakutVoice?.paused){traceMic('Mobil: devam et sonrası dinleme oturumu yenileniyor');releaseYakutMic();micRestartAt=Date.now()+180;queueListen(220);}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
