@@ -908,7 +908,7 @@ processingSpeech=true;
  let answer=siteSpeech['dis-yanit-hatasi'];
  let externalAnswer=false;
  const url=new URL(yakutChatEndpoint());
- const research=Boolean(weather||webRequest||officialResearch);
+ const research=true; // All questions reaching this external branch use verified web research; site commands above remain local.
  // External lookup only: acknowledge the wait once, without repeating the question.
  // Keep all local commands, microphone and voice engine untouched.
  if(research&&yakutVoice?.ready){
