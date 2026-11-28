@@ -775,15 +775,25 @@ async function startStopCapture(){
  }catch(e){traceMic('Whisper mikrofon: '+e.name);if(epoch===stopCaptureEpoch){endStopCapture();micRestartAt=0;queueListen(0);}}
 }
 
+// Pick a single short gesture from the actual spoken reply; never animate in a loop.
+function yakutReplyGesture(text){
+ const t=normalizeYakutCommand(text);
+ if(!t)return null;
+ if(/(?:merhaba|hoş geldiniz|günaydın|iyi akşamlar|selam)/.test(t))return 'greet_01';
+ if(/(?:üzgünüm|maalesef|bulunamadı|doğrulanamadı|mümkün değil|hata oluştu)/.test(t))return 'frustrated_01';
+ if(/(?:teşekkür|rica ederim|memnuniyetle|elbette|tabii ki|harika|evet)/.test(t))return 'agree';
+ if(/(?:hemen bakıp cevap vereyim|araştırıyorum|kontrol ediyorum)/.test(t))return 'wait';
+ if(t.length>75)return 'agree';
+ return null;
+}
 function beginYakutAudioPlayback(){
  if(model&&phase==='walking'&&!yakutIsGreetingWalking){targetX=posX;phase='idle';walkTimer=0;model.rotation.y=0;play('wait');}
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
- if(!yakutGreetingInProgress)pendingSpeechGesture=null;
- if(pendingSpeechGesture&&phase!=='walking'&&play(pendingSpeechGesture,true)){
-  pendingSpeechGesture=null;phase='reacting';
- }
+ const gesture=pendingSpeechGesture||(!yakutGreetingInProgress?yakutReplyGesture(yakutCurrentPrompt):null);
+ pendingSpeechGesture=null;
+ if(gesture&&gesture!=='wait'&&phase!=='walking'&&clips[gesture]&&play(gesture,true))phase='reacting';
  yakutAudioPlaying=true;
  if(!(window.SpeechRecognition||window.webkitSpeechRecognition)&&listenEnabled)startStopCapture();
 }
