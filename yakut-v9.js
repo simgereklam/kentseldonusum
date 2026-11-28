@@ -911,9 +911,9 @@ processingSpeech=true;
  const research=true; // All questions reaching this external branch use verified web research; site commands above remain local.
  // External lookup only: acknowledge the wait once, without repeating the question.
  // Keep all local commands, microphone and voice engine untouched.
- if(research&&yakutVoice?.ready){
-  void speak('Hemen bakıp size bilgi vereyim.',{external:true});
- }
+ const acknowledgement=research&&yakutVoice?.ready
+  ?speak('Hemen bakıp cevap vereyim.',{external:true})
+  :Promise.resolve();
  const generation=yakutVoiceGeneration;
  const page=getYakutCurrentPage();
  const reference=(yakutPageSpeech(page.replace(/\.html$/,''))||yakutPageIntro(page)).slice(0,1500);
@@ -951,6 +951,7 @@ processingSpeech=true;
  }finally{
   if(yakutChatController===controller)yakutChatController=null;
  }
+ await acknowledgement;
  if(generation!==yakutVoiceGeneration||hidden)return;
  processingSpeech=false;
 react('agree',answer,'center',{external:externalAnswer});
