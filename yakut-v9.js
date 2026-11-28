@@ -329,7 +329,7 @@ let yakutAndroidLastControl='',yakutAndroidLastControlAt=0;
 function dispatchYakutAndroidBargeIn(results){
  if(!yakutAndroidBargeIn||!yakutVoice||!results.length)return false;
  const paused=Boolean(yakutVoice.paused);
- const active=paused||Boolean(yakutAudioPlaying||yakutVoice.playing||processingSpeech||yakutChatController);
+ const active=paused||Boolean(yakutAudioPlaying||yakutVoice.playing);
  if(!active)return false;
  for(const result of results){
   for(const alt of Array.from(result)){
@@ -404,8 +404,6 @@ function cancelYakutSpeech(){
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
 function pauseYakutAnswer(){
- // A stop command during a web lookup must cancel the pending answer too.
- if(processingSpeech||yakutChatController){stopYakutAnswer();return;}
  if(yakutVoice?.pause()){yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
@@ -913,11 +911,9 @@ processingSpeech=true;
  const research=true; // All questions reaching this external branch use verified web research; site commands above remain local.
  // External lookup only: acknowledge the wait once, without repeating the question.
  // Keep all local commands, microphone and voice engine untouched.
- // Let the short acknowledgement finish before playing the researched answer.
- // Both tasks still start together, so research is not delayed by speech.
- const acknowledgement=research&&yakutVoice?.ready
-  ?speak('Hemen bakıp size bilgi vereyim.',{external:true})
-  :Promise.resolve();
+ if(research&&yakutVoice?.ready){
+  void speak('Hemen bakıp size bilgi vereyim.',{external:true});
+ }
  const generation=yakutVoiceGeneration;
  const page=getYakutCurrentPage();
  const reference=(yakutPageSpeech(page.replace(/\.html$/,''))||yakutPageIntro(page)).slice(0,1500);
@@ -955,8 +951,6 @@ processingSpeech=true;
  }finally{
   if(yakutChatController===controller)yakutChatController=null;
  }
- if(generation!==yakutVoiceGeneration||hidden)return;
- await acknowledgement.catch(()=>{});
  if(generation!==yakutVoiceGeneration||hidden)return;
  processingSpeech=false;
 react('agree',answer,'center',{external:externalAnswer});
@@ -1329,6 +1323,10 @@ const clock=new THREE.Clock();
 let lastCanvasWidth=0,lastCanvasHeight=0;
 let blinkTime=0,blinkAt=2.5,blinkPhase=0;
 const speakingArms=[];
+model.traverse(bone=>{
+ if(bone.isBone&&/(?:Left|Right)(?:ForeArm|Hand)$/.test(bone.name))
+  speakingArms.push({bone,pose:bone.quaternion.clone(),side:bone.name.includes('Left')?1:-1});
+});
 const gestureAxis=new THREE.Vector3(0,0,1),gestureTurn=new THREE.Quaternion();
 let gestureTime=0,gestureLevel=0;
 function frame(){
@@ -1343,8 +1341,13 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 if(!hidden){
 mixer.update(dt);
 gestureTime+=dt;
-// No synthetic sway or arm oscillation: preserve the model's authored animations.
-model.rotation.z=0;
+gestureLevel=0;
+for(const {bone,pose,side} of speakingArms){
+ pose.copy(bone.quaternion);
+ const angle=side*gestureLevel*.11*Math.sin(gestureTime*3+side);
+ bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
+}
+// Keep the authored wait pose during speech; opening greeting remains explicit.
 if(phase==='walking'){
 const step=(innerWidth<650?65:105)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
