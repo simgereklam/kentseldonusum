@@ -359,7 +359,7 @@ function dispatchYakutAndroidBargeIn(results){
 }
 function dispatchYakutControl(results){
  if(results.some(r=>isYakutStopResult(r,true))){
-  if(phase==='walking'&&!speaking&&!processingSpeech&&!yakutAudioPlaying&&!yakutVoice?.playing)stopYakutAnswer();
+  if((phase==='walking'||phase==='reacting'||phase==='greeting')&&!speaking&&!processingSpeech&&!yakutAudioPlaying&&!yakutVoice?.playing)stopYakutAnswer();
   else if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing))pauseYakutAnswer();
   return true;
  }
@@ -418,7 +418,7 @@ function stopYakutAnswer(){
  }
  yakutPageOfferPending=false;
  cancelYakutSpeech();
- if(phase==='reacting'){phase='idle';play('wait')}
+ if(phase==='reacting'||phase==='greeting'){phase='idle';play('wait')}
  finishYakutSpeech();
 }
 function collectYakutPageSpeech(){
