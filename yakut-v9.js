@@ -1153,7 +1153,7 @@ function startSpeech(){
    yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;
   }
   if(yakutAudioPlaying&&/^(?:network|audio-capture|service-not-allowed|language-not-supported|language-unavailable)$/.test(micLastError)){clearTimeout(listenRetry);startStopCapture();return;}
-  if((speaking||processingSpeech)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(150);return;}
+  if((speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(0);return;}
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
  };
  rec.onend=()=>{
@@ -1163,7 +1163,7 @@ function startSpeech(){
   if(finalText.trim()||interimText.trim())submit();
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
-    if(speaking||processingSpeech){micRestartAt=0;queueListen(0);return;}
+    if(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing){emptyRecognitionCount=0;micRestartAt=0;queueListen(0);return;}
     if(yakutAndroidBargeIn&&(yakutAudioPlaying||yakutVoice?.paused)){
      // Android recognition ends naturally between short utterances. During
      // playback, reopen promptly instead of applying idle/no-speech backoff.
