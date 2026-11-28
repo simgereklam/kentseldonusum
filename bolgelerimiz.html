@@ -153,16 +153,7 @@ textarea{grid-column:1/-1;min-height:76px;resize:vertical}
  document.querySelectorAll('[data-whatsapp-form]').forEach(form=>{
    form.addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(form);const lines=['Merhaba, kentsel dönüşüm ön değerlendirmesi istiyorum.'];for(const [k,v] of fd.entries())if(String(v).trim())lines.push(k+': '+v);window.open('https://wa.me/905431813485?text='+encodeURIComponent(lines.join('\n')),'_blank');});
  });
- const items=[...document.querySelectorAll('.visual-card[data-title]')];
- if(items.length){
-  const lb=document.createElement('div');lb.className='lightbox';lb.innerHTML='<button class="lb-close">×</button><button class="lb-prev">‹</button><div class="lightbox-img"></div><button class="lb-next">›</button><div class="lb-caption"></div>';document.body.appendChild(lb);
-  const img=lb.querySelector('.lightbox-img'),cap=lb.querySelector('.lb-caption');let i=0,sx=0;
-  function show(n){i=(n+items.length)%items.length;img.style.setProperty('--img',items[i].style.getPropertyValue('--img'));cap.textContent=items[i].dataset.title||'';lb.classList.add('active');document.body.style.overflow='hidden';}
-  function close(){lb.classList.remove('active');document.body.style.overflow='';}
-  items.forEach((el,n)=>el.onclick=()=>show(n));lb.querySelector('.lb-close').onclick=close;lb.querySelector('.lb-prev').onclick=()=>show(i-1);lb.querySelector('.lb-next').onclick=()=>show(i+1);lb.onclick=e=>{if(e.target===lb)close();};
-  document.addEventListener('keydown',e=>{if(!lb.classList.contains('active'))return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')show(i-1);if(e.key==='ArrowRight')show(i+1);});
-  lb.addEventListener('touchstart',e=>sx=e.changedTouches[0].screenX,{passive:true});lb.addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-sx;if(Math.abs(dx)>45)show(dx>0?i-1:i+1);},{passive:true});
- }
+
 })();
 </script>
 <script defer src="yakut-site-voice.js?v=emel-kayitlar-20261126"></script><script defer src="yakut-v9.js?v=restored-f677fa1-20261128"></script>
