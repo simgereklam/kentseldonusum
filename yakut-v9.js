@@ -1123,6 +1123,13 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
+  // Contact recordings contain long addresses and numbers. Chromium may merge a
+  // short interruption into their transcript instead of returning just 'sus'.
+  // Only for these local contact replies, recognize an isolated stop word anywhere.
+  const contactPlayback=[siteSpeech.adres,siteSpeech.ofis,siteSpeech.whatsapp,siteSpeech['e-posta']].includes(yakutCurrentPrompt);
+  if(contactPlayback&&(speaking||yakutAudioPlaying||yakutVoice?.playing)&&changed.some(result=>Array.from(result).some(alt=>/(?:^| )(?:sus|dur)(?: |$)/.test(normalizeYakutCommand(alt.transcript))&&!isYakutOwnVoice(alt.transcript)))){
+   pauseYakutAnswer();consumeResults();traceMic('İletişim sesinde dur/sus');return;
+  }
   if((yakutAndroidBargeIn&&dispatchYakutAndroidBargeIn(changed))||dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(yakutAndroidBargeIn){acceptedInput=true;micRestartAt=0;traceMic('Android: komut işlendi; tanıma açık kalıyor, sonraki komut bekleniyor');}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
