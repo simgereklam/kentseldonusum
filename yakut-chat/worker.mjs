@@ -109,24 +109,31 @@ async function tinyfishResearch(question, env) {
 }
 
 async function externalResearch(question,env) {
-  // Compare independent search results instead of trusting the first excerpt.
-  const jobs=[];
-  if(env.TAVILY_API_KEY) jobs.push(tavilyResearch(question,env));
-  if(env.FIRECRAWL_API_KEY) jobs.push(firecrawlResearch(question,env));
-  if(env.TINYFISH_API_KEY) jobs.push(tinyfishResearch(question,env));
-  if(!jobs.length)return null;
-  const settled=await Promise.allSettled(jobs);
-  const seen=new Set(),sources=[];
-  for(const item of settled){
-    if(item.status!=='fulfilled'||!Array.isArray(item.value))continue;
-    for(const source of item.value){
-      if(!source?.content?.trim()||!source.url||seen.has(source.url))continue;
-      seen.add(source.url);sources.push(source);
-      if(sources.length>=10)break;
+  // Use one search quota at a time. Only fall back when the earlier provider
+  // is unconfigured, rate-limited, fails, or returns no usable sources.
+  const providers=[
+    {enabled:!!env.TAVILY_API_KEY,run:()=>tavilyResearch(question,env)},
+    {enabled:!!env.FIRECRAWL_API_KEY,run:()=>firecrawlResearch(question,env)},
+    {enabled:!!env.TINYFISH_API_KEY,run:()=>tinyfishResearch(question,env)}
+  ];
+  for(const provider of providers){
+    if(!provider.enabled)continue;
+    try{
+      const sources=await provider.run();
+      if(Array.isArray(sources)){
+        const seen=new Set();
+        const usable=sources.filter(source=>{
+          if(!source?.content?.trim()||!source.url||seen.has(source.url))return false;
+          seen.add(source.url);
+          return true;
+        }).slice(0,5);
+        if(usable.length)return usable;
+      }
+    }catch(error){
+      console.warn('Yakut search provider fallback:',String(error?.message||error));
     }
-    if(sources.length>=10)break;
   }
-  return sources.length?sources:null;
+  return null;
 }
 
 function chatModels(env) {
