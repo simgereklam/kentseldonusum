@@ -375,13 +375,19 @@ function dispatchYakutControl(results,baseResultIndex=0){
    const command=stop?'stop':'resume';
    const key=yakutContactControlSession+':'+(baseResultIndex+i)+':'+command;
    const now=Date.now();
-   if(key===yakutContactLastKey&&now-yakutContactLastAt<800)return true;
+   if(key===yakutContactLastKey&&now-yakutContactLastAt<800){traceMic('İletişim: aynı sonuç tekrarı '+key);return true;}
+   // A fresh slot or session is never blocked by the previous command.
    yakutContactLastKey=key;yakutContactLastAt=now;
    if(stop){
-    if(yakutVoice?.paused)return true;
-    if(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing){traceMic('İletişim kontrol: duraklatılıyor');pauseYakutAnswer();}
-    else if(phase==='walking'||phase==='reacting'||phase==='greeting')stopYakutAnswer();
-   }else if(yakutVoice?.paused)resumeYakutAnswer();
+    if(yakutVoice?.paused){traceMic('İletişim: ses zaten duraklatılmış');return true;}
+    if(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing){
+     traceMic('İletişim: sus/dur algılandı, ses duraklatılıyor');
+     pauseYakutAnswer();
+    }else if(phase==='walking'||phase==='reacting'||phase==='greeting')stopYakutAnswer();
+   }else if(yakutVoice?.paused){
+    traceMic('İletişim: devam et algılandı');
+    resumeYakutAnswer();
+   }
    return true;
   }
  }
@@ -1071,9 +1077,9 @@ function startSpeech(){
  if(!API){if(yakutAudioPlaying)startStopCapture();return}
  if(prepareYakutMicStream())return;
  const micTrack=yakutMicStream?.getAudioTracks()[0]||null;
- const rec=new API();recognition=rec;micStarting=true;yakutContactControlSession++;
+ const rec=new API();recognition=rec;micStarting=true;
  rec.lang='tr-TR';rec.interimResults=true;rec.continuous=!/Android/i.test(navigator.userAgent);rec.maxAlternatives=3;
- rec.onstart=()=>{traceMic('Mikrofon başladı');if(recognition!==rec)return;clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
+ rec.onstart=()=>{if(recognition!==rec)return;yakutContactControlSession++;traceMic('Mikrofon başladı, oturum '+yakutContactControlSession);clearTimeout(micStartTimer);micStarting=false;if(!speaking&&!processingSpeech)talk.textContent='🟢 Dinliyorum'};
  let finalText='';
  let interimText='';
  let recognizedResults=[];
