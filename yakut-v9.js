@@ -359,7 +359,8 @@ function dispatchYakutAndroidBargeIn(results){
 }
 function dispatchYakutControl(results){
  if(results.some(r=>isYakutStopResult(r,true))){
-  if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing))pauseYakutAnswer();
+  if(phase==='walking'&&!speaking&&!processingSpeech&&!yakutAudioPlaying&&!yakutVoice?.playing)stopYakutAnswer();
+  else if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing))pauseYakutAnswer();
   return true;
  }
  if(results.some(r=>Array.from(r).some(a=>isYakutResumeCommand(normalizeYakutCommand(a.transcript))))){
@@ -409,6 +410,8 @@ function pauseYakutAnswer(){
 }
 function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;if(yakutAndroidBargeIn||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))yakutAudioPlaying=true;yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
 function stopYakutAnswer(){
+ // "Dur" also stops walking, even when Yakut is not speaking.
+ if(phase==='walking'){targetX=posX;phase='idle';walkTimer=0;if(model)model.rotation.y=0;play('wait');}
  yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
   yakutScenario=null;yakutWeatherPending='';
