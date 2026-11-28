@@ -896,6 +896,12 @@ const recording=localPage?.replace(/\.html$/,'');
 if(recording&&yakutPageSpeech(recording)){
  react('agree',yakutPageSpeech(recording),'center');return;
 }
+// Current-page requests are local commands, never web research.
+if(/^(?:(?:yakut|asistan|lütfen|bana) )*(?:(?:bu|şu|bulunduğumuz|açık|mevcut) )?sayfa(?:mız|nın| hakkında| hakkında bilgi|daki bilgiler)?\s*(?:hakkında\s*)?(?:bilgi(?:leri)?\s*(?:ver|anlat|oku)|anlat|özetle|oku)(?:ir misin|abilir misin|ebilir misin|ır mısın|ar mısın| lütfen)?$/.test(spokenCommand)||/^(?:(?:bu|şu|bulunduğumuz|açık) )?sayfa hakkında bilgi (?:ver|istiyorum|alabilir miyim|verir misin|verebilir misin)$/.test(spokenCommand)){
+ yakutPageOfferPending=false;
+ yakutSpeakCurrentPage();
+ return;
+}
 const localContact=routeQuestion?null:yakutContactRequest(command);
 if(localContact){
  react('agree',localContact,'center');return;
