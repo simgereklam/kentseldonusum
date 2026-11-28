@@ -429,7 +429,7 @@ function cancelYakutSpeech(){
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
 function pauseYakutAnswer(){
- if(yakutVoice?.pause()){yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
+ if(yakutVoice?.pause()){yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;traceMic('İletişim: ses duraklatıldı, dinleme açık='+listenEnabled+' rec='+Boolean(recognition));queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
 function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;if(yakutAndroidBargeIn||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))yakutAudioPlaying=true;yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
@@ -1099,13 +1099,13 @@ function startSpeech(){
   const candidate=[finalText,interimText].filter(Boolean).join(' ').replace(/\s+/g,' ').trim();
   consumeResults();
   if(recognition!==rec||!candidate||!listenEnabled||hidden)return false;
-  if(dispatchYakutControl([[{transcript:candidate}]]))return true;
+  if(dispatchYakutControl([[{transcript:candidate}]],recognizedResults.length))return true;
   if(speaking||processingSpeech)return false;
   const possibleEcho=speechStartedAt?speechStartedAt<=yakutSpeechEndedAt:Date.now()-yakutSpeechEndedAt<3500;
   if(possibleEcho&&isYakutOwnVoice(candidate))return false;
   acceptedInput=true;
   if(isYakutRepeatedUtterance(candidate,speechStartedAt))return false;
-  if(yakutVoice?.paused)stopYakutAnswer();
+  if(yakutVoice?.paused){traceMic('İletişim: duraklatılmış ses korunuyor; yeni normal komut yok sayıldı');return false;}
   if(navigateFromRecognition(candidate))return true;
   Promise.resolve(handle(candidate)).catch(error=>{
    console.warn('Yakut komut hatası:',error);
