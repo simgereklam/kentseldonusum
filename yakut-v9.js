@@ -346,7 +346,15 @@ function dispatchYakutAndroidBargeIn(results){
    if(command==='resume'&&!paused)return true;
    // Avoid the assistant triggering itself when its scripted speech contains
    // the same command. Exact full echo is not a user interruption.
-   if(isYakutOwnVoice(heard))continue;
+   // A long page narration can be recognized together with the user's
+   // short interruption. Only reject a pure echo; keep a trailing stop
+   // command that was not part of Yakut's spoken prompt.
+   if(isYakutOwnVoice(heard)){
+    const prompt=normalizeYakutCommand(yakutCurrentPrompt);
+    const tailStop=stop&&/^(?:sus|dur|bekle)(?: lütfen)?$/.test(tail);
+    const promptEndsWithStop=/(?:^| )(?:sus|dur|bekle)(?: lütfen)?$/.test(prompt);
+    if(!tailStop||promptEndsWithStop)continue;
+   }
    const now=Date.now();
    if(yakutAndroidLastControl===command&&now-yakutAndroidLastControlAt<900)return true;
    yakutAndroidLastControl=command;yakutAndroidLastControlAt=now;
