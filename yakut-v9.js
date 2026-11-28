@@ -949,9 +949,10 @@ processingSpeech=true;
    answer=siteSpeech[research?'dis-arama-hatasi':'dis-yanit-hatasi'];
   }
  }finally{
+  // Keep this question locked until the complete Emel acknowledgement finishes.
+  await acknowledgement;
   if(yakutChatController===controller)yakutChatController=null;
  }
- await acknowledgement;
  if(generation!==yakutVoiceGeneration||hidden)return;
  processingSpeech=false;
 react('agree',answer,'center',{external:externalAnswer});
