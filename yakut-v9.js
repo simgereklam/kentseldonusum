@@ -1341,13 +1341,18 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 if(!hidden){
 mixer.update(dt);
 gestureTime+=dt;
-gestureLevel=0;
+// Small, varied conversational arm movements; keep authored walking and gestures.
+gestureLevel=yakutAudioPlaying&&phase==='idle'&&!yakutGreetingInProgress?1:0;
+const gestureCycle=gestureTime%9.6;
+const gestureEnvelope=gestureLevel*Math.pow(Math.sin(Math.PI*gestureCycle/9.6),2);
 for(const {bone,pose,side} of speakingArms){
  pose.copy(bone.quaternion);
- const angle=side*gestureLevel*.11*Math.sin(gestureTime*3+side);
+ const rhythm=Math.sin(gestureTime*(side>0?2.1:1.65)+side*.7);
+ const accent=Math.sin(gestureTime*.85+side*1.4);
+ const angle=side*gestureEnvelope*(.09*rhythm+.065*accent);
  bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
 }
-// Keep the authored wait pose during speech; opening greeting remains explicit.
+// Keep the authored wait pose as the base for subtle speech gestures.
 if(phase==='walking'){
 const step=(innerWidth<650?65:105)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
