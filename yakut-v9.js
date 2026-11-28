@@ -911,9 +911,11 @@ processingSpeech=true;
  const research=true; // All questions reaching this external branch use verified web research; site commands above remain local.
  // External lookup only: acknowledge the wait once, without repeating the question.
  // Keep all local commands, microphone and voice engine untouched.
- if(research&&yakutVoice?.ready){
-  void speak('Hemen bakıp size bilgi vereyim.',{external:true});
- }
+ // Let the short acknowledgement finish before playing the researched answer.
+ // Both tasks still start together, so research is not delayed by speech.
+ const acknowledgement=research&&yakutVoice?.ready
+  ?speak('Hemen bakıp size bilgi vereyim.',{external:true})
+  :Promise.resolve();
  const generation=yakutVoiceGeneration;
  const page=getYakutCurrentPage();
  const reference=(yakutPageSpeech(page.replace(/\.html$/,''))||yakutPageIntro(page)).slice(0,1500);
@@ -951,6 +953,8 @@ processingSpeech=true;
  }finally{
   if(yakutChatController===controller)yakutChatController=null;
  }
+ if(generation!==yakutVoiceGeneration||hidden)return;
+ await acknowledgement.catch(()=>{});
  if(generation!==yakutVoiceGeneration||hidden)return;
  processingSpeech=false;
 react('agree',answer,'center',{external:externalAnswer});
@@ -1345,8 +1349,8 @@ gestureTime+=dt;
 gestureLevel=yakutAudioPlaying&&phase==='idle'&&!yakutGreetingInProgress?1:0;
 // Visible upper-body conversational sway, even if the model has no matching arm bones.
 if(phase==='idle'&&!yakutGreetingInProgress){
- model.rotation.z=gestureLevel*(.035*Math.sin(gestureTime*1.4)+.018*Math.sin(gestureTime*2.6));
- model.rotation.y=gestureLevel*.045*Math.sin(gestureTime*.95);
+ model.rotation.z=gestureLevel*(.085*Math.sin(gestureTime*1.4)+.025*Math.sin(gestureTime*2.6));
+ model.rotation.y=gestureLevel*.10*Math.sin(gestureTime*.95);
 }else if(phase!=='walking'){
  model.rotation.z=0;
 }
@@ -1357,7 +1361,7 @@ for(const {bone,pose,side} of speakingArms){
  const rhythm=Math.sin(gestureTime*(side>0?1.9:1.45)+side*.7);
  const accent=Math.sin(gestureTime*.8+side*1.4);
  const isArm=/UpperArm|(?<!Fore)Arm$/.test(bone.name);
- const angle=side*gestureEnvelope*(isArm?.16:.23)*(rhythm*.75+accent*.25);
+ const angle=side*gestureEnvelope*(isArm?.30:.38)*(rhythm*.75+accent*.25);
  bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
 }
 // Keep the authored wait pose as the base for subtle speech gestures.
