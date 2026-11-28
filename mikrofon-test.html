@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>Bağımsız Mikrofon Testi</title>
+<style>body{font:16px system-ui,sans-serif;background:#101b30;color:#eef4ff;margin:0;padding:22px}main{max-width:760px;margin:auto}h1{font-size:25px}p{line-height:1.5}.panel{background:#1e304e;padding:16px;border-radius:12px;margin:14px 0}button{background:#3d88f5;color:white;border:0;border-radius:8px;padding:13px;margin:5px;font-weight:700;font-size:15px}button:disabled{opacity:.4}.status{font-size:18px;font-weight:700}#log{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 ui-monospace,monospace;max-height:370px;overflow:auto}small{color:#bed0e9}strong{color:#a7d2ff}</style></head><body><main>
+<h1>🎙️ Bağımsız mikrofon / konuşma testi</h1>
+<p>Bu sayfa Yakut kodlarını, Emel MP3 dosyalarını veya site API'lerini <strong>kullanmaz</strong>. Sadece tarayıcının mikrofon ve konuşma özelliklerini ölçer. Kulaklık takmadan deneyin.</p>
+<div class="panel"><div class="status" id="mic">Mikrofon: başlatılmadı</div><div class="status" id="voice">Ses: sessiz</div><div id="heard">Duyulan: —</div><div id="counts">Tanıma oturumu: 0 · Yeniden başlama: 0</div></div>
+<div class="panel">
+<button id="start">1. Mikrofonu başlat</button>
+<button id="talk" disabled>2. Bot konuşsun</button>
+<button id="halt" disabled>Testi durdur</button>
+<button id="clear">Kayıtları temizle</button>
+<p><small>Bot konuşmaya başladığında yüksek sesle <b>“sus”</b> deyin. Durursa <b>“devam et”</b> deyin. Bot konuşurken mikrofonun durumunu ve algılanan her kelimeyi aşağıda göreceksiniz.</small></p></div>
+<div class="panel"><b>Tanı kayıtları</b><div id="log" aria-live="polite"></div></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const API=window.SpeechRecognition||window.webkitSpeechRecognition;
+let enabled=false,rec=null,starting=false,restartTimer=null,session=0,restarts=0,paused=false,utter=null,spoken=false;
+let lastCommand='',lastCommandAt=0;
+const testText='Merhaba, ben bağımsız mikrofon test botuyum. Şimdi uzun bir konuşma yapacağım. Sizden istediğim, ben konuşurken sus demeniz. Eğer mikrofon sizi duyuyorsa konuşmayı durduracağım. Daha sonra devam et dediğinizde kaldığım yerden sürdürmeye çalışacağım. Bu test sayesinde konuşma sırasında mikrofonun açık kalıp kalmadığını, tarayıcının dinlemeyi kapatıp kapatmadığını ve komutların tanınıp tanınmadığını anlayabiliriz. Denemeyi birkaç kez tekrar edebilirsiniz. Bu test mevcut Yakut sistemini hiçbir şekilde değiştirmez.';
+function log(s){const line=document.createElement('div');line.textContent=new Date().toLocaleTimeString('tr-TR')+'  '+s;$('log').prepend(line);while($('log').children.length>120)$('log').lastChild.remove()}
+function mic(s){$('mic').textContent='Mikrofon: '+s}
+function voice(s){$('voice').textContent='Ses: '+s}
+function norm(s){return String(s||'').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zçğıöşü\s]/g,' ').replace(/\s+/g,' ').trim()}
+function command(t){const n=norm(t);if(/^(yakut |asistan |lutfen )*(sus|suss|dur|durun)( lutfen)?$/.test(n))return 'stop';if(/^(yakut |asistan |lutfen )*(devam|devam et|konus|konusmaya devam et)( lutfen)?$/.test(n))return 'resume';return ''}
+function handle(t,final){$('heard').textContent='Duyulan: '+t+(final?' (kesin)':' (ara)');log((final?'KESİN: ':'ARA: ')+t);const c=command(t);if(!c)return;const now=Date.now();if(c===lastCommand&&now-lastCommandAt<1200)return;lastCommand=c;lastCommandAt=now;log('KOMUT ALGILANDI: '+c);if(c==='stop'){if(speechSynthesis.speaking&&!speechSynthesis.paused){speechSynthesis.pause();paused=true;voice('“sus” algılandı → duraklatıldı');log('SONUÇ: Konuşurken komut duyuldu ve ses durdu')}else log('Komut duyuldu ama o anda konuşma yoktu')}else{if(speechSynthesis.paused){speechSynthesis.resume();paused=false;voice('“devam et” algılandı → devam ediyor');log('SONUÇ: Ses devam ettirildi')}else log('Komut duyuldu ama duraklatılmış ses yoktu')}}
+function schedule(delay=350){if(!enabled||restartTimer)return;restartTimer=setTimeout(()=>{restartTimer=null;begin()},delay)}
+function begin(){if(!enabled||!API||rec||starting)return;let r=new API();rec=r;starting=true;r.lang='tr-TR';r.continuous=true;r.interimResults=true;r.maxAlternatives=3;
+r.onstart=()=>{starting=false;session++;mic('DİNLİYOR (oturum '+session+')');$('counts').textContent='Tanıma oturumu: '+session+' · Yeniden başlama: '+restarts;log('MİKROFON AÇILDI'+(speechSynthesis.speaking?' (BOT KONUŞURKEN)':''))};
+r.onaudiostart=()=>log('Ses girişi başladı');r.onspeechstart=()=>log('Konuşma sinyali algılandı');
+r.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const item=e.results[i];const alternatives=Array.from(item).map(a=>a.transcript);log('ALTERNATİFLER: '+alternatives.join(' | '));const cmd=alternatives.find(x=>command(x));handle(cmd||alternatives[0],item.isFinal)}};
+r.onerror=e=>{log('TANIMA HATASI: '+e.error+(e.message?' '+e.message:''));mic('HATA: '+e.error);if(e.error==='not-allowed'||e.error==='service-not-allowed'){enabled=false;log('Mikrofon iznini ve tarayıcı ayarlarını kontrol edin')}};
+r.onend=()=>{const wasCurrent=rec===r;if(wasCurrent)rec=null;starting=false;log('MİKROFON KAPANDI'+(speechSynthesis.speaking?' — BOT HÂLÂ KONUŞUYOR':''));if(enabled){restarts++;mic('Yeniden başlatılıyor…');schedule(400)}else mic('kapalı')};
+try{r.start();log('Tanıma başlatma istendi')}catch(e){rec=null;starting=false;log('BAŞLATMA HATASI: '+e.message);schedule(700)}}
+$('start').onclick=async()=>{if(!API){log('Bu tarayıcı SpeechRecognition desteklemiyor. Chrome veya Edge deneyin.');mic('desteklenmiyor');return}if(!('speechSynthesis'in window)){log('Bu tarayıcı ses sentezini desteklemiyor');return}enabled=true;$('start').disabled=true;$('talk').disabled=false;$('halt').disabled=false;log('TEST BAŞLADI');try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});log('MİKROFON İZNİ VERİLDİ · echoCancellation='+stream.getAudioTracks()[0].getSettings().echoCancellation);stream.getTracks().forEach(t=>t.stop())}catch(e){log('MİKROFON İZNİ HATASI: '+e.name+' '+e.message);enabled=false;$('start').disabled=false;return}begin()};
+$('talk').onclick=()=>{if(!enabled)return;speechSynthesis.cancel();paused=false;utter=new SpeechSynthesisUtterance(testText);utter.lang='tr-TR';utter.rate=.85;utter.onstart=()=>{spoken=true;voice('KONUŞUYOR — şimdi “sus” deyin');log('BOT KONUŞMAYA BAŞLADI · mikrofon '+(rec?'nesnesi mevcut':'kapalı'))};utter.onend=()=>{spoken=false;paused=false;voice('konuşma bitti');log('BOT KONUŞMASI BİTTİ')};utter.onerror=e=>{voice('ses hatası: '+e.error);log('BOT SES HATASI: '+e.error)};speechSynthesis.speak(utter);log('BOT SESİ BAŞLATILDI (yalnızca test sesi)')};
+$('halt').onclick=()=>{enabled=false;clearTimeout(restartTimer);restartTimer=null;try{rec?.abort()}catch(e){}rec=null;starting=false;speechSynthesis.cancel();paused=false;spoken=false;mic('kapalı');voice('sessiz');$('start').disabled=false;$('talk').disabled=true;$('halt').disabled=true;log('TEST DURDURULDU')};
+$('clear').onclick=()=>{$('log').textContent='';log('Kayıt temizlendi')};
+window.addEventListener('pagehide',()=>{enabled=false;try{rec?.abort()}catch(e){}speechSynthesis.cancel()});
+log('Hazır. Sayfa Yakut dosyalarını yüklemiyor.');
+</script></main></body></html>
