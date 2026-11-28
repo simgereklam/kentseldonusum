@@ -323,9 +323,8 @@ function isYakutStopResult(result,answerInProgress){
   return /^(?:(?:yakut|asistan|tamam|lütfen|hey|ya|bir|bi) )*(?:su[sş]+|sü[sş]+|suz|şus|dur+|susar mısın|susabilir misin)(?: (?:artık|lütfen|yakut|ya))*$/.test(t);
  });
 }
-// Android only: the recognition transcript often starts with Yakut's own audio
-// and ends with a short user command. Desktop control handling stays unchanged.
-const yakutAndroidBargeIn=/Android/i.test(navigator.userAgent);
+// Android and desktop: recognize short commands at the end of an echo transcript.
+const yakutAndroidBargeIn=/Android/i.test(navigator.userAgent)||!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let yakutAndroidLastControl='',yakutAndroidLastControlAt=0;
 function dispatchYakutAndroidBargeIn(results){
  if(!yakutAndroidBargeIn||!yakutVoice||!results.length)return false;
@@ -408,7 +407,7 @@ function pauseYakutAnswer(){
  if(yakutVoice?.pause()){yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
-function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))yakutAudioPlaying=true;yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
+function resumeYakutAnswer(){if(!yakutVoice?.paused)return false;speaking=true;processingSpeech=false;if(yakutAndroidBargeIn||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent))yakutAudioPlaying=true;yakutVoice.resume();micRestartAt=0;queueListen(120);return true;}
 function stopYakutAnswer(){
  yakutAddressPending=false;
  if(!speaking&&!processingSpeech){
@@ -1091,7 +1090,7 @@ function startSpeech(){
   // An interim result can grow into a stop or navigation command at the same index.
   const changed=results.slice(e.resultIndex);
   const wasPaused=Boolean(yakutVoice?.paused);
-  if((yakutAndroidBargeIn&&dispatchYakutAndroidBargeIn(changed))||dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){releaseYakutMic();micRestartAt=0;queueListen(30);}else if(yakutAndroidBargeIn){acceptedInput=true;micRestartAt=0;traceMic('Android: komut işlendi; tanıma açık kalıyor, sonraki komut bekleniyor');}return;}
+  if((yakutAndroidBargeIn&&dispatchYakutAndroidBargeIn(changed))||dispatchYakutControl(changed)){consumeResults();traceMic('Ses kontrol komutu');if(yakutAndroidBargeIn){acceptedInput=true;micRestartAt=0;traceMic('Android: komut işlendi; tanıma açık kalıyor, sonraki komut bekleniyor');}return;}
   if(speaking||processingSpeech){
    // Barge-in: accept a distinct user utterance, not the assistant's own echo.
    const userResult=changed.find(result=>{
