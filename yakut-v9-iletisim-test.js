@@ -379,7 +379,7 @@ function dispatchYakutControl(results,baseResultIndex=0){
    yakutContactLastKey=key;yakutContactLastAt=now;
    if(stop){
     if(yakutVoice?.paused)return true;
-    if(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing)pauseYakutAnswer();
+    if(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing){traceMic('İletişim kontrol: duraklatılıyor');pauseYakutAnswer();}
     else if(phase==='walking'||phase==='reacting'||phase==='greeting')stopYakutAnswer();
    }else if(yakutVoice?.paused)resumeYakutAnswer();
    return true;
@@ -1169,7 +1169,7 @@ function startSpeech(){
    yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;
   }
   if(yakutAudioPlaying&&/^(?:network|audio-capture|service-not-allowed|language-not-supported|language-unavailable)$/.test(micLastError)){clearTimeout(listenRetry);startStopCapture();return;}
-  if((speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(0);return;}
+  if((speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing||yakutVoice?.paused)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(0);return;}
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
  };
  rec.onend=()=>{
@@ -1179,6 +1179,7 @@ function startSpeech(){
   if(finalText.trim()||interimText.trim())submit();
   if(recognition===rec){clearTimeout(micStartTimer);micStarting=false;recognition=null}
   if(listenEnabled&&!hidden){
+    traceMic('İletişim onend: paused='+Boolean(yakutVoice?.paused)+' speaking='+speaking+' audio='+yakutAudioPlaying+' voice='+Boolean(yakutVoice?.playing));
     if(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing){emptyRecognitionCount=0;micRestartAt=0;queueListen(0);return;}
     if(yakutAndroidBargeIn&&(yakutAudioPlaying||yakutVoice?.paused)){
      // Android recognition ends naturally between short utterances. During
