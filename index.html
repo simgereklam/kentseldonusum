@@ -175,6 +175,12 @@
 .brand-company .brand-text strong{background-image:linear-gradient(110deg,#b88a36 8%,#e7bc62 30%,#fff 48%,#fff5c6 52%,#d5ad60 65%,#b88a36 92%);background-size:280% 100%;animation:kumtasGold 3s linear infinite;filter:drop-shadow(0 0 2px rgba(255,218,135,.45))}
 .brand-emblem svg path{fill:url(#headerGoldShine)}
 @media(prefers-reduced-motion:reduce){.brand-company .brand-text strong{animation:none}}
+
+/* Mobile only: enlarge and raise the existing gold artwork; preserve banner dimensions. */
+@media(max-width:650px){
+ .hero-banner{position:relative;overflow:hidden;}
+ .hero-company-logo{position:absolute;top:2%;left:50%;width:165%;height:auto;max-width:none;max-height:none;transform:translateX(-50%);}
+}
 </style></head>
 <body>
 <svg width="0" height="0" aria-hidden="true" style="position:absolute">
