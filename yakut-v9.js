@@ -906,9 +906,14 @@ processingSpeech=true;
  if(weather){yakutWeatherPending='';yakutWeatherCity=weather.city;}
  let answer=siteSpeech['dis-yanit-hatasi'];
  let externalAnswer=false;
- const generation=yakutVoiceGeneration;
  const url=new URL(yakutChatEndpoint());
  const research=Boolean(weather||webRequest||officialResearch);
+ // External lookup only: acknowledge the wait once, without repeating the question.
+ // Keep all local commands, microphone and voice engine untouched.
+ if(research&&yakutVoice?.ready){
+  void speak('Hemen bakıp size bilgi vereyim.',{external:true});
+ }
+ const generation=yakutVoiceGeneration;
  const page=getYakutCurrentPage();
  const reference=(yakutPageSpeech(page.replace(/\.html$/,''))||yakutPageIntro(page)).slice(0,1500);
  const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
