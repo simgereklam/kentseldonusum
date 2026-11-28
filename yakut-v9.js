@@ -346,7 +346,11 @@ function dispatchYakutAndroidBargeIn(results){
    if(command==='resume'&&!paused)return true;
    // Avoid the assistant triggering itself when its scripted speech contains
    // the same command. Exact full echo is not a user interruption.
-   if(isYakutOwnVoice(heard))continue;
+   // On these two long-narration pages, a clear final "dur/sus" must not
+   // be discarded merely because the preceding words resemble Yakut's speech.
+   const longPageStop=stop&&/^(?:projelerimiz|iletisim)\.html$/.test(getYakutCurrentPage())
+     &&/^(?:sus|dur|yakut sus|yakut dur|sus lütfen|dur lütfen)$/.test(tail);
+   if(isYakutOwnVoice(heard)&&!longPageStop)continue;
    const now=Date.now();
    if(yakutAndroidLastControl===command&&now-yakutAndroidLastControlAt<900)return true;
    yakutAndroidLastControl=command;yakutAndroidLastControlAt=now;
