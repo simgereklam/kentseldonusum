@@ -789,6 +789,8 @@ function yakutReplyGesture(text){
 function beginYakutAudioPlayback(){
  if(model&&phase==='walking'&&!yakutIsGreetingWalking){targetX=posX;phase='idle';walkTimer=0;model.rotation.y=0;play('wait');}
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
+ // Keep the same interruption listener active on every page, including
+ // pages that begin speaking immediately after navigation.
  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
  const gesture=pendingSpeechGesture||(!yakutGreetingInProgress?yakutReplyGesture(yakutCurrentPrompt):null);
@@ -1144,6 +1146,8 @@ function startSpeech(){
   if(micTrack&&/^(?:audio-capture|network|not-allowed|service-not-allowed)$/.test(micLastError)){
    yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;
   }
+  // During playback, keep a microphone fallback available if browser
+  // speech recognition fails instead of losing the 'sus/dur' interruption.
   if(yakutAudioPlaying&&/^(?:network|audio-capture|service-not-allowed|language-not-supported|language-unavailable)$/.test(micLastError)){clearTimeout(listenRetry);startStopCapture();return;}
   if((speaking||processingSpeech)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(150);return;}
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
