@@ -501,6 +501,12 @@ function speakYakutPhone(number){
  return [digits.slice(0,4),digits.slice(4,7),digits.slice(7,9),digits.slice(9)].filter(Boolean).map(groupWords).join(', ');
 }
 function prepareYakutSpokenText(text){
+ // Pronunciation adjustments apply only to generated external speech, not recorded site MP3s.
+ text=text.replace(/\b(\d[\d.,]*)\s*cc\b/gi,'$1 si si')
+  .replace(/\b(\d[\d.,]*)\s*km\s*\/\s*h\b/gi,'saatte $1 kilometre')
+  .replace(/\b(\d[\d.,]*)\s*m(?:²|2)\b/gi,'$1 metrekare')
+  .replace(/\b(\d[\d.,]*)\s*hp\b/gi,'$1 beygir gücü')
+  .replace(/\b(\d[\d.,]*)\s*tl\b/gi,'$1 Türk lirası');
  text=text.replace(/\b245\s*\/\s*a\b/gi,'iki yüz kırk beş bölü A');
  for(const number of Object.values(yakutPhoneNumbers)){
   const separator='[ .()\\-]*';
@@ -921,7 +927,8 @@ processingSpeech=true;
  let answer=siteSpeech['dis-yanit-hatasi'];
  let externalAnswer=false;
  const url=new URL(yakutChatEndpoint());
- const research=true; // All questions reaching this external branch use verified web research; site commands above remain local.
+ // Search for current, local, changing or verifiable facts; ordinary conversation uses fast chat.
+ const research=!!weather||correctionRequest||/(?:bugün|yarın|şu an|güncel|son dakika|haber|hava durumu|maç|skor|fikstür|fiyat|ücret|kur|dolar|euro|altın|borsa|faiz|deprem|saat kaç|kaç derece|kim kazandı|ne zaman|nerede|hangi tarihte|araştır|internetten|webden|kaynak|202[5-9]|203\d)/i.test(q);
  // External lookup only: acknowledge the wait once, without repeating the question.
  // Keep all local commands, microphone and voice engine untouched.
  const acknowledgement=research&&yakutVoice?.ready
