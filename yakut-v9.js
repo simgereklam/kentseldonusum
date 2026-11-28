@@ -1343,6 +1343,13 @@ mixer.update(dt);
 gestureTime+=dt;
 // Small, varied conversational arm movements; keep authored walking and gestures.
 gestureLevel=yakutAudioPlaying&&phase==='idle'&&!yakutGreetingInProgress?1:0;
+// Visible upper-body conversational sway, even if the model has no matching arm bones.
+if(phase==='idle'&&!yakutGreetingInProgress){
+ model.rotation.z=gestureLevel*(.035*Math.sin(gestureTime*1.4)+.018*Math.sin(gestureTime*2.6));
+ model.rotation.y=gestureLevel*.045*Math.sin(gestureTime*.95);
+}else if(phase!=='walking'){
+ model.rotation.z=0;
+}
 const gestureCycle=gestureTime%7.2;
 const gestureEnvelope=gestureLevel*(.3+.7*Math.pow(Math.sin(Math.PI*gestureCycle/7.2),2));
 for(const {bone,pose,side} of speakingArms){
