@@ -329,7 +329,7 @@ let yakutAndroidLastControl='',yakutAndroidLastControlAt=0;
 function dispatchYakutAndroidBargeIn(results){
  if(!yakutAndroidBargeIn||!yakutVoice||!results.length)return false;
  const paused=Boolean(yakutVoice.paused);
- const active=paused||Boolean(yakutAudioPlaying||yakutVoice.playing);
+ const active=paused||Boolean(yakutAudioPlaying||yakutVoice.playing||processingSpeech||yakutChatController);
  if(!active)return false;
  for(const result of results){
   for(const alt of Array.from(result)){
@@ -404,6 +404,8 @@ function cancelYakutSpeech(){
  pendingSpeechGesture=null;speaking=false;processingSpeech=false;
 }
 function pauseYakutAnswer(){
+ // A stop command during a web lookup must cancel the pending answer too.
+ if(processingSpeech||yakutChatController){stopYakutAnswer();return;}
  if(yakutVoice?.pause()){yakutAudioPlaying=false;speaking=false;processingSpeech=false;targetX=posX;phase='idle';play('wait');micRestartAt=0;queueListen(0);return;}
  if(!yakutVoice?.paused)stopYakutAnswer();
 }
@@ -1327,10 +1329,6 @@ const clock=new THREE.Clock();
 let lastCanvasWidth=0,lastCanvasHeight=0;
 let blinkTime=0,blinkAt=2.5,blinkPhase=0;
 const speakingArms=[];
-model.traverse(bone=>{
- if(bone.isBone&&/(?:Left|Right)(?:UpperArm|Arm|ForeArm|Hand)$/.test(bone.name))
-  speakingArms.push({bone,pose:bone.quaternion.clone(),side:bone.name.includes('Left')?1:-1});
-});
 const gestureAxis=new THREE.Vector3(0,0,1),gestureTurn=new THREE.Quaternion();
 let gestureTime=0,gestureLevel=0;
 function frame(){
@@ -1345,26 +1343,8 @@ if(canvasW!==lastCanvasWidth||canvasH!==lastCanvasHeight){
 if(!hidden){
 mixer.update(dt);
 gestureTime+=dt;
-// Small, varied conversational arm movements; keep authored walking and gestures.
-gestureLevel=yakutAudioPlaying&&phase==='idle'&&!yakutGreetingInProgress?1:0;
-// Visible upper-body conversational sway, even if the model has no matching arm bones.
-if(phase==='idle'&&!yakutGreetingInProgress){
- model.rotation.z=gestureLevel*(.085*Math.sin(gestureTime*1.4)+.025*Math.sin(gestureTime*2.6));
- model.rotation.y=gestureLevel*.10*Math.sin(gestureTime*.95);
-}else if(phase!=='walking'){
- model.rotation.z=0;
-}
-const gestureCycle=gestureTime%7.2;
-const gestureEnvelope=gestureLevel*(.3+.7*Math.pow(Math.sin(Math.PI*gestureCycle/7.2),2));
-for(const {bone,pose,side} of speakingArms){
- pose.copy(bone.quaternion);
- const rhythm=Math.sin(gestureTime*(side>0?1.9:1.45)+side*.7);
- const accent=Math.sin(gestureTime*.8+side*1.4);
- const isArm=/UpperArm|(?<!Fore)Arm$/.test(bone.name);
- const angle=side*gestureEnvelope*(isArm?.30:.38)*(rhythm*.75+accent*.25);
- bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
-}
-// Keep the authored wait pose as the base for subtle speech gestures.
+// No synthetic sway or arm oscillation: preserve the model's authored animations.
+model.rotation.z=0;
 if(phase==='walking'){
 const step=(innerWidth<650?65:105)*dt;
 if(Math.abs(targetX-posX)<=step){posX=targetX;phase='idle';model.rotation.y=0;play('wait');walkTimer=0;
