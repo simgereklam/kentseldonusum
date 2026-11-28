@@ -326,7 +326,7 @@ function isYakutStopResult(result,answerInProgress){
 // Android and desktop: recognize short commands at the end of an echo transcript.
 const yakutAndroidBargeIn=/Android/i.test(navigator.userAgent)||!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let yakutAndroidLastControl='',yakutAndroidLastControlAt=0;
-function dispatchYakutAndroidBargeIn(results){
+function dispatchYakutAndroidBargeInOriginal(results){
  if(!yakutAndroidBargeIn||!yakutVoice||!results.length)return false;
  const paused=Boolean(yakutVoice.paused);
  const active=paused||Boolean(yakutAudioPlaying||yakutVoice.playing);
@@ -342,7 +342,7 @@ function dispatchYakutAndroidBargeIn(results){
    const resume=/(?:^| )devam et$/.test(heard);
    if(!stop&&!resume)continue;
    const command=stop?'stop':'resume';
-   if(command==='stop'&&paused)diag('DECISION','dispatchYakutAndroidBargeIn TRUE',diagSnap());return true;
+   if(command==='stop'&&paused)return true;
    if(command==='resume'&&!paused)return true;
    // Avoid the assistant triggering itself when its scripted speech contains
    // the same command. Exact full echo is not a user interruption.
@@ -357,20 +357,22 @@ function dispatchYakutAndroidBargeIn(results){
    return true;
   }
  }
- diag('DECISION','dispatchYakutAndroidBargeIn FALSE',diagSnap());return false;
+ return false;
 }
-function dispatchYakutControl(results){
+function dispatchYakutAndroidBargeIn(...args){const outcome=dispatchYakutAndroidBargeInOriginal(...args);diag('DECISION','dispatchYakutAndroidBargeIn',{outcome,...diagSnap()});return outcome;}
+function dispatchYakutControlOriginal(results){
  if(results.some(r=>isYakutStopResult(r,true)||Array.from(r).some(a=>{const heard=normalizeYakutCommand(a.transcript);return /^(?:yakut )?(?:sus|dur)(?: lütfen)?$/.test(heard)}))){
   if((phase==='walking'||phase==='reacting'||phase==='greeting')&&!speaking&&!processingSpeech&&!yakutAudioPlaying&&!yakutVoice?.playing)stopYakutAnswer();
   else if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing))pauseYakutAnswer();
-  diag('DECISION','dispatchYakutControl TRUE',diagSnap());return true;
+  return true;
  }
  if(results.some(r=>Array.from(r).some(a=>isYakutResumeCommand(normalizeYakutCommand(a.transcript))))){
   if(yakutVoice?.paused)resumeYakutAnswer();
   return true;
  }
- diag('DECISION','dispatchYakutControl FALSE',diagSnap());return false;
+ return false;
 }
+function dispatchYakutControl(...args){const outcome=dispatchYakutControlOriginal(...args);diag('DECISION','dispatchYakutControl',{outcome,...diagSnap()});return outcome;}
 function isYakutRepeatedUtterance(text,speechStartedAt){
  const command=normalizeYakutCommand(text)
   .replace(/^(?:(?:yakut|asistan|lütfen) )+/,'').replace(/ lütfen$/,'');
