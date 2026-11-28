@@ -346,15 +346,7 @@ function dispatchYakutAndroidBargeIn(results){
    if(command==='resume'&&!paused)return true;
    // Avoid the assistant triggering itself when its scripted speech contains
    // the same command. Exact full echo is not a user interruption.
-   // A long page narration can be recognized together with the user's
-   // short interruption. Only reject a pure echo; keep a trailing stop
-   // command that was not part of Yakut's spoken prompt.
-   if(isYakutOwnVoice(heard)){
-    const prompt=normalizeYakutCommand(yakutCurrentPrompt);
-    const tailStop=stop&&/^(?:sus|dur|bekle)(?: lütfen)?$/.test(tail);
-    const promptEndsWithStop=/(?:^| )(?:sus|dur|bekle)(?: lütfen)?$/.test(prompt);
-    if(!tailStop||promptEndsWithStop)continue;
-   }
+   if(isYakutOwnVoice(heard))continue;
    const now=Date.now();
    if(yakutAndroidLastControl===command&&now-yakutAndroidLastControlAt<900)return true;
    yakutAndroidLastControl=command;yakutAndroidLastControlAt=now;
@@ -797,8 +789,6 @@ function yakutReplyGesture(text){
 function beginYakutAudioPlayback(){
  if(model&&phase==='walking'&&!yakutIsGreetingWalking){targetX=posX;phase='idle';walkTimer=0;model.rotation.y=0;play('wait');}
  traceMic('Ses başladı; mikrofon: '+(recognition?'aktif veya açılıyor':'kapalı'));
- // Keep the same interruption listener active on every page, including
- // pages that begin speaking immediately after navigation.
  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
  yakutGestureClock=0;
  const gesture=pendingSpeechGesture||(!yakutGreetingInProgress?yakutReplyGesture(yakutCurrentPrompt):null);
@@ -1154,8 +1144,6 @@ function startSpeech(){
   if(micTrack&&/^(?:audio-capture|network|not-allowed|service-not-allowed)$/.test(micLastError)){
    yakutUseDefaultMic=true;releaseYakutMicStream();queueListen(0);return;
   }
-  // During playback, keep a microphone fallback available if browser
-  // speech recognition fails instead of losing the 'sus/dur' interruption.
   if(yakutAudioPlaying&&/^(?:network|audio-capture|service-not-allowed|language-not-supported|language-unavailable)$/.test(micLastError)){clearTimeout(listenRetry);startStopCapture();return;}
   if((speaking||processingSpeech)&&/^(?:no-speech|aborted|audio-capture)$/.test(micLastError)){micRestartAt=0;queueListen(150);return;}
   speechProblem(micLastError);if(listenEnabled&&!hidden)queueListen(180);
