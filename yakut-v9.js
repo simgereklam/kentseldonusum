@@ -136,6 +136,8 @@ function onYakutSoundReady(){
  }
  if(yakutAddressPending&&!speaking){
   yakutAddressPending=false;
+  // Contact-page narration must not postpone the interruption microphone.
+  if(listenEnabled&&!recognition){micRestartAt=0;queueListen(0);}
   react('agree',yakutContact.address,'center');return;
  }
  if(yakutPendingPageSpeech&&!speaking){offerYakutPage();return;}
@@ -1280,7 +1282,9 @@ function startYakutSession(){
  }catch(e){}
  // Start Aoede as early as the browser allows, without pausing recognition.
  resumeYakutSound();
- if(audioUnlocked||restoreYakutActivation())queueListen(0);
+ // On the contact page, start recognition immediately even when the audio
+ // unlock callback is still pending after navigation.
+ if(getYakutCurrentPage()==='iletisim.html'||audioUnlocked||restoreYakutActivation())queueListen(0);
 }
 window.addEventListener('pagehide',()=>{
  stopListening();
