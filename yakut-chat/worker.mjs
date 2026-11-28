@@ -393,8 +393,8 @@ async function alternativeResearchAnswer(question,sources,env,searchQuery,histor
     const evidence=sources.map(x=>x.content||'').join(' ');
     if(!scores.some(m=>{
       const a=m[1],b=m[2];
-      return new RegExp('\\\\b'+a+'\\\\s*[-:]\\\\s*'+b+'\\\\b').test(evidence)
-        ||new RegExp('\\\\b'+b+'\\\\s*[-:]\\\\s*'+a+'\\\\b').test(evidence);
+      return new RegExp('\\b'+a+'\\s*[-:]\\s*'+b+'\\b').test(evidence)
+        ||new RegExp('\\b'+b+'\\s*[-:]\\s*'+a+'\\b').test(evidence);
     }))return null;
   }
   return answer;
