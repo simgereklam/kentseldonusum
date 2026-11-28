@@ -346,7 +346,9 @@ function dispatchYakutAndroidBargeIn(results){
    if(command==='resume'&&!paused)return true;
    // Avoid the assistant triggering itself when its scripted speech contains
    // the same command. Exact full echo is not a user interruption.
-   if(isYakutOwnVoice(heard))continue;
+   // Short direct stop commands must not be discarded as playback echo.
+   // Keep echo protection for longer recognized phrases.
+   if(isYakutOwnVoice(heard)&&!(stop&&isYakutStopCommand(heard)))continue;
    const now=Date.now();
    if(yakutAndroidLastControl===command&&now-yakutAndroidLastControlAt<900)return true;
    yakutAndroidLastControl=command;yakutAndroidLastControlAt=now;
@@ -358,7 +360,7 @@ function dispatchYakutAndroidBargeIn(results){
  return false;
 }
 function dispatchYakutControl(results){
- if(results.some(r=>isYakutStopResult(r,true))){
+ if(results.some(r=>isYakutStopResult(r,true)||Array.from(r).some(a=>{const heard=normalizeYakutCommand(a.transcript);return /^(?:yakut )?(?:sus|dur)(?: lütfen)?$/.test(heard)}))){
   if((phase==='walking'||phase==='reacting'||phase==='greeting')&&!speaking&&!processingSpeech&&!yakutAudioPlaying&&!yakutVoice?.playing)stopYakutAnswer();
   else if(!yakutVoice?.paused&&(speaking||processingSpeech||yakutAudioPlaying||yakutVoice?.playing))pauseYakutAnswer();
   return true;
