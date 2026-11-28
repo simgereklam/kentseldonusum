@@ -1324,7 +1324,7 @@ let lastCanvasWidth=0,lastCanvasHeight=0;
 let blinkTime=0,blinkAt=2.5,blinkPhase=0;
 const speakingArms=[];
 model.traverse(bone=>{
- if(bone.isBone&&/(?:Left|Right)(?:ForeArm|Hand)$/.test(bone.name))
+ if(bone.isBone&&/(?:Left|Right)(?:UpperArm|Arm|ForeArm|Hand)$/.test(bone.name))
   speakingArms.push({bone,pose:bone.quaternion.clone(),side:bone.name.includes('Left')?1:-1});
 });
 const gestureAxis=new THREE.Vector3(0,0,1),gestureTurn=new THREE.Quaternion();
@@ -1343,13 +1343,14 @@ mixer.update(dt);
 gestureTime+=dt;
 // Small, varied conversational arm movements; keep authored walking and gestures.
 gestureLevel=yakutAudioPlaying&&phase==='idle'&&!yakutGreetingInProgress?1:0;
-const gestureCycle=gestureTime%9.6;
-const gestureEnvelope=gestureLevel*Math.pow(Math.sin(Math.PI*gestureCycle/9.6),2);
+const gestureCycle=gestureTime%7.2;
+const gestureEnvelope=gestureLevel*(.3+.7*Math.pow(Math.sin(Math.PI*gestureCycle/7.2),2));
 for(const {bone,pose,side} of speakingArms){
  pose.copy(bone.quaternion);
- const rhythm=Math.sin(gestureTime*(side>0?2.1:1.65)+side*.7);
- const accent=Math.sin(gestureTime*.85+side*1.4);
- const angle=side*gestureEnvelope*(.09*rhythm+.065*accent);
+ const rhythm=Math.sin(gestureTime*(side>0?1.9:1.45)+side*.7);
+ const accent=Math.sin(gestureTime*.8+side*1.4);
+ const isArm=/UpperArm|(?<!Fore)Arm$/.test(bone.name);
+ const angle=side*gestureEnvelope*(isArm?.16:.23)*(rhythm*.75+accent*.25);
  bone.quaternion.multiply(gestureTurn.setFromAxisAngle(gestureAxis,angle));
 }
 // Keep the authored wait pose as the base for subtle speech gestures.
