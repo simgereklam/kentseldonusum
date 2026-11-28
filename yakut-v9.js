@@ -891,7 +891,8 @@ if(/^(?:(?:yakut|lütfen|bana) )*(?:(?:bu|bulunduğumuz|açık) )?sayfa(?:yı|da
 const siteAnswer=yakutLocalTopic(spokenCommand);
 if(siteAnswer){react('agree',siteAnswer,'center');return;}
 const weather=yakutWeatherRequest(command);
-const webRequest=routeQuestion||/(?:araştır|internet|kaynak|webde ara|güncel|son dakika|en son|maç|skor|kaç kaç|kim kazandı|kim yendi|fikstür|puan durumu|haber|döviz|dolar|euro|altın|borsa|ne yenir|nerede yenir|gezilecek|konser|etkinlik|sefer saati)/.test(command);
+const correctionRequest=/(?:yanlış cevap|yanlış bilgi|bu yanlış|doğru değil|tekrar araştır|nereden öğrendin|nereden biliyorsun|kaynağı ne|emin misin|sen araştırmadın mı)/.test(command);
+const webRequest=routeQuestion||correctionRequest||/(?:araştır|internet|kaynak|webde ara|güncel|son dakika|en son|maç|skor|kaç kaç|kim kazandı|kim yendi|fikstür|puan durumu|haber|döviz|dolar|euro|altın|borsa|ne yenir|nerede yenir|gezilecek|konser|etkinlik|sefer saati|taşınma yardımı|tahliye desteği|destek tutarı|hibe|kaç (?:tl|lira)|ne kadar yardım)/.test(command);
 const officialResearch=/(?:yasal|kanun|mevzuat|güncel destek|kira yardımı)/.test(command);
 if(!weather&&!webRequest&&yakutScenarioRequest(q)){react('agree',yakutScenarioAnswer(q),'center');return}
 if(yakutChatController)return;
@@ -916,7 +917,11 @@ processingSpeech=true;
  const generation=yakutVoiceGeneration;
  const page=getYakutCurrentPage();
  const reference=(yakutPageSpeech(page.replace(/\.html$/,''))||yakutPageIntro(page)).slice(0,1500);
- const payload={question:q.slice(0,500),reference,history:yakutChatHistory};
+ const previousQuestion=[...yakutChatHistory].reverse().find(item=>item.role==='user')?.text||'';
+ const researchQuestion=correctionRequest&&previousQuestion
+  ?previousQuestion+' — Önceki yanıt yanlış bulundu. Resmî kaynaklardan güncel tutarı yeniden doğrula; farklı destek programlarını ayır. Kullanıcının itirazı: '+q
+  :q;
+ const payload={question:researchQuestion.slice(0,500),reference,history:yakutChatHistory};
  const controller=new AbortController();
  yakutChatController=controller;
  queueListen(100);
